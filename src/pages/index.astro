@@ -41,15 +41,17 @@ import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
 
 		<main class="ih-main">
 			<section class="hero">
-				<h1>Digital Invitations for Your Memorable Day!</h1>
+				<div class="hero-text">
+					<h1>Digital Invitations for Your Memorable Day!</h1>
 
-				<div class="copy">
-					<p>
-						Every celebration deserves a stunning start. We design elegant, personalized online
-						invitations that are ready to share on WhatsApp in hours - beautiful, effortless, and
-						unforgettable.
-					</p>
-					<a href="/blog" class="btn">Check Our Catalogue</a>
+					<div class="copy">
+						<p>
+							Every celebration deserves a stunning start. We design elegant, personalized online
+							invitations that are ready to share on WhatsApp in hours - beautiful, effortless, and
+							unforgettable.
+						</p>
+						<a href="/blog" class="btn">Check Our Catalogue</a>
+					</div>
 				</div>
 
 				<div class="visual">
@@ -151,39 +153,40 @@ import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
 		font-weight: 500;
 	}
 
-	/* Hero (mobile first): title, text + button, then image */
+	/* Mobile: first screen = text + button, image comes after scrolling */
 	.ih-main {
 		width: 100%;
 		max-width: 1200px;
 		margin: 0 auto;
-		padding: 24px 20px 40px;
+		padding: 0 20px 40px;
 		box-sizing: border-box;
 	}
 	.hero {
-		display: grid;
-		grid-template-columns: 1fr;
-		grid-template-areas:
-			'title'
-			'copy'
-			'visual';
-		row-gap: 18px;
-		align-items: start;
+		display: block;
+		text-align: center;
+	}
+	.hero-text {
+		min-height: calc(100vh - 80px);
+		min-height: calc(100svh - 80px);
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		align-items: center;
+		gap: 24px;
+		padding: 20px 0;
+		box-sizing: border-box;
 	}
 	.hero h1 {
-		grid-area: title;
 		margin: 0;
 		font-family: 'Playfair Display', serif;
 		font-weight: 700;
-		font-size: clamp(1.7rem, 6.6vw, 3.6rem);
+		font-size: clamp(2rem, 9vw, 3.6rem);
 		line-height: 1.2;
 		color: #1a1a1a;
 	}
-	.copy {
-		grid-area: copy;
-	}
 	.copy p {
-		margin: 0 0 24px;
-		font-size: 0.95rem;
+		margin: 0 0 28px;
+		font-size: 1rem;
 		line-height: 1.7;
 		color: #5a5a5a;
 	}
@@ -194,8 +197,8 @@ import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
 		color: #ffffff;
 		font-family: 'Poppins', sans-serif;
 		font-weight: 500;
-		font-size: 0.95rem;
-		padding: 14px 28px;
+		font-size: 1rem;
+		padding: 15px 32px;
 		border-radius: 12px;
 		text-decoration: none;
 		outline: 1px solid rgba(212, 162, 118, 0.7);
@@ -208,9 +211,9 @@ import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
 		box-shadow: 0 12px 24px rgba(212, 162, 118, 0.45);
 	}
 	.visual {
-		grid-area: visual;
 		display: flex;
 		justify-content: center;
+		padding-top: 10px;
 	}
 	.visual img {
 		display: block;
@@ -243,6 +246,7 @@ import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
 			padding: 60px 60px 80px;
 		}
 		.hero {
+			display: grid;
 			grid-template-columns: 1fr 1fr;
 			grid-template-areas:
 				'title visual'
@@ -250,11 +254,18 @@ import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
 			column-gap: 40px;
 			row-gap: 24px;
 			align-items: center;
+			text-align: left;
+		}
+		.hero-text {
+			display: contents;
 		}
 		.hero h1 {
+			grid-area: title;
 			align-self: end;
+			font-size: clamp(1.7rem, 4.2vw, 3.6rem);
 		}
 		.copy {
+			grid-area: copy;
 			align-self: start;
 			max-width: 520px;
 		}
@@ -267,12 +278,14 @@ import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
 			padding: 16px 40px;
 			outline-offset: 5px;
 		}
+		.visual {
+			grid-area: visual;
+			justify-content: flex-end;
+			padding-top: 0;
+		}
 		.visual img {
 			width: 100%;
 			max-width: none;
-			-webkit-mask-image: none;
-			mask-image: none;
-			mix-blend-mode: multiply;
 		}
 	}
 </style>
