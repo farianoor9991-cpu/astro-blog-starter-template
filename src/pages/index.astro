@@ -230,8 +230,8 @@ const loop = [...items, ...items];
 	}
 	.hero-text {
 		/* 75px header + 36px ticker + 30px = how much of the image peeks in */
-		min-height: calc(100vh - 75px - 36px - 30px);
-		min-height: calc(100svh - 75px - 36px - 30px);
+		min-height: calc(100vh - 75px - 36px - 15px);
+		min-height: calc(100svh - 75px - 36px - 15px);
 		display: flex;
 		flex-direction: column;
 		justify-content: center;
@@ -345,7 +345,7 @@ const loop = [...items, ...items];
 		.visual {
 			grid-area: visual;
 			justify-content: flex-end;
-			margin-top: -25px;
+			margin-top: 0px;
 		}
 		.visual img {
 			width: 100%;
