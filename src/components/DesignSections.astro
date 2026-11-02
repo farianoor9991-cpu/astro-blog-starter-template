@@ -1,6 +1,6 @@
 ---
-const makeCards = (type: string, price: string) =>
-	Array.from({ length: 6 }, (_, i) => ({
+const makeCards = (type: string, price: string, count: number) =>
+	Array.from({ length: count }, (_, i) => ({
 		id: `${type}-${i + 1}`,
 		name: 'Floral Wedding Invitation',
 		price,
@@ -8,9 +8,9 @@ const makeCards = (type: string, price: string) =>
 	}));
 
 const sections = [
-	{ type: 'ecard', title: 'Our Signature E-Cards', cards: makeCards('ecard', 'Rs. 800') },
-	{ type: 'video', title: 'Cinematic Invitation Videos', cards: makeCards('video', 'Rs. 2500') },
-	{ type: 'website', title: 'Website Invitations', cards: makeCards('website', 'Rs. 6000') },
+	{ type: 'ecard', cols: 4, title: 'Our Signature E-Cards', cards: makeCards('ecard', 'Rs. 800', 4) },
+	{ type: 'video', cols: 3, title: 'Cinematic Invitation Videos', cards: makeCards('video', 'Rs. 2500', 5) },
+	{ type: 'website', cols: 3, title: 'Website Invitations', cards: makeCards('website', 'Rs. 6000', 5) },
 ];
 ---
 
@@ -33,7 +33,7 @@ const sections = [
 					<a href="/blog" class="sc-all">View all &gt;</a>
 				</div>
 
-				<div class="sc-grid">
+				<div class:list={['sc-grid', `cols-${sec.cols}`]}>
 					{sec.cards.map((card, i) => (
 						<article class:list={['d-card', { 'd-extra': i >= 4 }]}>
 							<div class="d-img">
@@ -72,23 +72,25 @@ const sections = [
 		align-items: center;
 		justify-content: space-between;
 		gap: 12px;
-		margin-bottom: 16px;
+		margin-bottom: 18px;
 	}
 	.sc-title {
 		display: flex;
 		align-items: center;
-		gap: 8px;
+		gap: 10px;
+		flex: 1;
+		min-width: 0;
 		margin: 0;
 		font-family: 'Playfair Display', serif;
 		font-weight: 700;
-		font-size: clamp(1.1rem, 5vw, 2rem);
-		line-height: 1.2;
+		font-size: clamp(1.6rem, 7.5vw, 2.8rem);
+		line-height: 1.15;
 		color: #1a1a1a;
 	}
 	.sc-flower {
 		flex-shrink: 0;
-		width: 26px;
-		height: 26px;
+		width: 34px;
+		height: 34px;
 	}
 	.sc-all {
 		flex-shrink: 0;
@@ -173,7 +175,7 @@ const sections = [
 		background: #ffffff;
 	}
 	.d-body {
-		padding: 12px 8px 14px;
+		padding: 12px 10px 14px;
 		text-align: center;
 	}
 	.d-name {
@@ -192,21 +194,23 @@ const sections = [
 		font-size: 16px;
 		color: #1a1a1a;
 	}
+	/* Mobile: Customize on top, Buy Now below */
 	.d-btns {
 		display: flex;
-		gap: 6px;
+		flex-direction: column;
+		gap: 8px;
 	}
 	.d-btn {
-		flex: 1;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		height: 34px;
+		width: 100%;
+		height: 38px;
 		box-sizing: border-box;
 		border-radius: 999px;
 		font-family: 'Poppins', sans-serif;
 		font-weight: 500;
-		font-size: 10.5px;
+		font-size: 12.5px;
 		text-decoration: none;
 		white-space: nowrap;
 		transition: transform 0.2s ease;
@@ -225,7 +229,7 @@ const sections = [
 		color: #ffffff;
 	}
 
-	/* Laptop: 3 columns, all 6 designs */
+	/* Laptop: E-Cards 4 in one row, videos and websites 3 + 2 (centered) */
 	@media (min-width: 800px) {
 		.showcase {
 			margin-top: 80px;
@@ -237,11 +241,19 @@ const sections = [
 			margin-right: auto;
 		}
 		.sc-head {
-			margin-bottom: 24px;
+			margin-bottom: 26px;
 		}
 		.sc-grid {
-			grid-template-columns: repeat(3, minmax(0, 1fr));
+			display: flex;
+			flex-wrap: wrap;
+			justify-content: center;
 			gap: 16px;
+		}
+		.d-card {
+			width: calc((100% - 32px) / 3);
+		}
+		.sc-grid.cols-4 .d-card {
+			width: calc((100% - 48px) / 4);
 		}
 		.d-extra {
 			display: block;
@@ -256,10 +268,20 @@ const sections = [
 		.d-price {
 			margin-bottom: 12px;
 		}
+		.d-btns {
+			flex-direction: row;
+			gap: 8px;
+		}
 		.d-btn {
+			flex: 1;
+			width: auto;
 			height: 38px;
 			font-size: 13px;
 		}
+		.sc-grid.cols-4 .d-btn {
+			font-size: 12px;
+		}
 	}
 </style>
+
 
