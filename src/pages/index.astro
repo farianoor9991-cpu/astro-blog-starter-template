@@ -1,6 +1,15 @@
 ---
 import BaseHead from '../components/BaseHead.astro';
 import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
+
+// Ticker text: edit these lines to change what scrolls at the top
+const items = [
+	'✨ Digital Invitation Cards, Videos & Websites ✨ Instant Downloads',
+	'💍 Wedding · Mehndi · Walima · Birthday · Hajj/Umrah · Aqeeqah · Baby Announcements',
+	'🎁 Order Today',
+	'📲 Customization available',
+];
+const loop = [...items, ...items];
 ---
 
 <!doctype html>
@@ -15,6 +24,17 @@ import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
 		/>
 	</head>
 	<body>
+		<div class="ticker" aria-label="Announcements">
+			<div class="ticker-track">
+				<div class="ticker-group">
+					{loop.map((text) => <span class="tick">{text}</span>)}
+				</div>
+				<div class="ticker-group" aria-hidden="true">
+					{loop.map((text) => <span class="tick">{text}</span>)}
+				</div>
+			</div>
+		</div>
+
 		<header class="site-header">
 			<a href="/" class="logo" aria-label="Invite Hub home">
 				<svg viewBox="0 0 40 40" width="34" height="34" fill="none" stroke="#D4A276" stroke-width="1.2">
@@ -87,6 +107,50 @@ import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
 </style>
 
 <style>
+	/* Ticker bar */
+	.ticker {
+		background: #d4a276;
+		color: #ffffff;
+		overflow: hidden;
+		height: 36px;
+		display: flex;
+		align-items: center;
+	}
+	.ticker-track {
+		display: flex;
+		width: max-content;
+		animation: ticker-scroll 60s linear infinite;
+	}
+	.ticker:hover .ticker-track {
+		animation-play-state: paused;
+	}
+	.ticker-group {
+		display: flex;
+		align-items: center;
+		flex-shrink: 0;
+	}
+	.tick {
+		font-family: 'Poppins', sans-serif;
+		font-weight: 500;
+		font-size: 0.8rem;
+		letter-spacing: 0.04em;
+		white-space: nowrap;
+		margin-right: 48px;
+	}
+	@keyframes ticker-scroll {
+		from {
+			transform: translateX(0);
+		}
+		to {
+			transform: translateX(-50%);
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.ticker-track {
+			animation: none;
+		}
+	}
+
 	.site-header {
 		position: relative;
 		display: flex;
@@ -164,8 +228,9 @@ import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
 		text-align: center;
 	}
 	.hero-text {
-		min-height: calc(100vh - 75px - 30px);
-		min-height: calc(100svh - 75px - 30px);
+		/* 75px header + 36px ticker + 30px = how much of the image peeks in */
+		min-height: calc(100vh - 75px - 36px - 30px);
+		min-height: calc(100svh - 75px - 36px - 30px);
 		display: flex;
 		flex-direction: column;
 		justify-content: center;
@@ -289,4 +354,3 @@ import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
 		}
 	}
 </style>
-
