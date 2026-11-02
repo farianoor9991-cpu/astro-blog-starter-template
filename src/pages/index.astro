@@ -153,7 +153,7 @@ import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
 		font-weight: 500;
 	}
 
-	/* Mobile: first screen = text + button, image comes after scrolling */
+	/* Mobile: text + button on first screen, top of the phone image peeks in */
 	.ih-main {
 		width: 100%;
 		max-width: 1200px;
@@ -166,14 +166,14 @@ import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
 		text-align: center;
 	}
 	.hero-text {
-		min-height: calc(100vh - 80px);
-		min-height: calc(100svh - 80px);
+		min-height: calc(100vh - 75px - 150px);
+		min-height: calc(100svh - 75px - 150px);
 		display: flex;
 		flex-direction: column;
 		justify-content: center;
 		align-items: center;
-		gap: 24px;
-		padding: 20px 0;
+		gap: 20px;
+		padding: 16px 0;
 		box-sizing: border-box;
 	}
 	.hero h1 {
@@ -185,7 +185,7 @@ import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
 		color: #1a1a1a;
 	}
 	.copy p {
-		margin: 0 0 28px;
+		margin: 0 0 24px;
 		font-size: 1rem;
 		line-height: 1.7;
 		color: #5a5a5a;
@@ -213,7 +213,7 @@ import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
 	.visual {
 		display: flex;
 		justify-content: center;
-		padding-top: 10px;
+		margin-top: -50px;
 	}
 	.visual img {
 		display: block;
@@ -281,11 +281,13 @@ import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
 		.visual {
 			grid-area: visual;
 			justify-content: flex-end;
-			padding-top: 0;
+			margin-top: 0;
 		}
 		.visual img {
 			width: 100%;
 			max-width: none;
+			-webkit-mask-image: radial-gradient(ellipse at 55% 55%, #000 55%, transparent 80%);
+			mask-image: radial-gradient(ellipse at 55% 55%, #000 55%, transparent 80%);
 		}
 	}
 </style>
