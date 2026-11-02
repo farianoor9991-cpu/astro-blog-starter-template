@@ -1,0 +1,265 @@
+---
+const makeCards = (type: string, price: string) =>
+	Array.from({ length: 6 }, (_, i) => ({
+		id: `${type}-${i + 1}`,
+		name: 'Floral Wedding Invitation',
+		price,
+		image: '/sample-design.jpg',
+	}));
+
+const sections = [
+	{ type: 'ecard', title: 'Our Signature E-Cards', cards: makeCards('ecard', 'Rs. 800') },
+	{ type: 'video', title: 'Cinematic Invitation Videos', cards: makeCards('video', 'Rs. 2500') },
+	{ type: 'website', title: 'Website Invitations', cards: makeCards('website', 'Rs. 6000') },
+];
+---
+
+<div class="designs">
+	{
+		sections.map((sec) => (
+			<section class="showcase" id={sec.type}>
+				<div class="sc-head">
+					<h2 class="sc-title">
+						<svg class="sc-flower" viewBox="0 0 40 40" fill="none" stroke="#D4A276" stroke-width="1.4" aria-hidden="true">
+							<ellipse cx="20" cy="10" rx="5" ry="8" />
+							<ellipse cx="20" cy="10" rx="5" ry="8" transform="rotate(72 20 20)" />
+							<ellipse cx="20" cy="10" rx="5" ry="8" transform="rotate(144 20 20)" />
+							<ellipse cx="20" cy="10" rx="5" ry="8" transform="rotate(216 20 20)" />
+							<ellipse cx="20" cy="10" rx="5" ry="8" transform="rotate(288 20 20)" />
+							<circle cx="20" cy="20" r="2" fill="#D4A276" />
+						</svg>
+						<span>{sec.title}</span>
+					</h2>
+					<a href="/blog" class="sc-all">View all &gt;</a>
+				</div>
+
+				<div class="sc-grid">
+					{sec.cards.map((card, i) => (
+						<article class:list={['d-card', { 'd-extra': i >= 4 }]}>
+							<div class="d-img">
+								<img src={card.image} alt={card.name} loading="lazy" />
+								{sec.type === 'video' && (
+									<span class="d-play" aria-hidden="true">
+										<svg viewBox="0 0 24 24" width="22" height="22">
+											<path d="M8 5v14l11-7z" fill="#ffffff" />
+										</svg>
+									</span>
+								)}
+								{sec.type === 'website' && <span class="d-live">LIVE</span>}
+							</div>
+							<div class="d-body">
+								<p class="d-name">{card.name}</p>
+								<p class="d-price">{card.price}</p>
+								<div class="d-btns">
+									<a class="d-btn d-outline" href={`/customize?design=${card.id}`}>Customize</a>
+									<a class="d-btn d-fill" href={`/checkout?design=${card.id}`}>Buy Now</a>
+								</div>
+							</div>
+						</article>
+					))}
+				</div>
+			</section>
+		))
+	}
+</div>
+
+<style>
+	.showcase {
+		margin-top: 56px;
+	}
+	.sc-head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+		margin-bottom: 16px;
+	}
+	.sc-title {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		margin: 0;
+		font-family: 'Playfair Display', serif;
+		font-weight: 700;
+		font-size: clamp(1.1rem, 5vw, 2rem);
+		line-height: 1.2;
+		color: #1a1a1a;
+	}
+	.sc-flower {
+		flex-shrink: 0;
+		width: 26px;
+		height: 26px;
+	}
+	.sc-all {
+		flex-shrink: 0;
+		font-family: 'Poppins', sans-serif;
+		font-weight: 500;
+		font-size: 14px;
+		color: #d4a276;
+		text-decoration: none;
+		white-space: nowrap;
+	}
+	.sc-all:hover {
+		text-decoration: underline;
+	}
+
+	/* Mobile: 2 columns, first 4 designs */
+	.sc-grid {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 12px;
+	}
+	.d-extra {
+		display: none;
+	}
+	.d-card {
+		background: #ffffff;
+		border-radius: 16px;
+		overflow: hidden;
+		box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+	}
+	.d-img {
+		position: relative;
+		aspect-ratio: 9 / 16;
+		background: #fcf9f1;
+	}
+	.d-img img {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		display: block;
+		border-radius: 0;
+	}
+	.d-play {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		width: 52px;
+		height: 52px;
+		border-radius: 50%;
+		background: #d4a276;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+	}
+	.d-play svg {
+		margin-left: 3px;
+	}
+	.d-live {
+		position: absolute;
+		top: 10px;
+		right: 10px;
+		display: flex;
+		align-items: center;
+		gap: 5px;
+		background: #d4a276;
+		color: #ffffff;
+		font-family: 'Poppins', sans-serif;
+		font-weight: 500;
+		font-size: 11px;
+		letter-spacing: 0.06em;
+		padding: 4px 10px;
+		border-radius: 999px;
+	}
+	.d-live::before {
+		content: '';
+		width: 6px;
+		height: 6px;
+		border-radius: 50%;
+		background: #ffffff;
+	}
+	.d-body {
+		padding: 12px 8px 14px;
+		text-align: center;
+	}
+	.d-name {
+		margin: 0 0 4px;
+		min-height: calc(1.4em * 2);
+		font-family: 'Poppins', sans-serif;
+		font-weight: 400;
+		font-size: 12px;
+		line-height: 1.4;
+		color: #5a5a5a;
+	}
+	.d-price {
+		margin: 0 0 10px;
+		font-family: 'Poppins', sans-serif;
+		font-weight: 700;
+		font-size: 16px;
+		color: #1a1a1a;
+	}
+	.d-btns {
+		display: flex;
+		gap: 6px;
+	}
+	.d-btn {
+		flex: 1;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		height: 34px;
+		box-sizing: border-box;
+		border-radius: 999px;
+		font-family: 'Poppins', sans-serif;
+		font-weight: 500;
+		font-size: 10.5px;
+		text-decoration: none;
+		white-space: nowrap;
+		transition: transform 0.2s ease;
+	}
+	.d-btn:hover {
+		transform: translateY(-1px);
+	}
+	.d-outline {
+		border: 1.5px solid #1a1a1a;
+		color: #1a1a1a;
+		background: transparent;
+	}
+	.d-fill {
+		border: 1.5px solid #d4a276;
+		background: #d4a276;
+		color: #ffffff;
+	}
+
+	/* Laptop: 3 columns, all 6 designs */
+	@media (min-width: 800px) {
+		.showcase {
+			margin-top: 80px;
+		}
+		.sc-head,
+		.sc-grid {
+			max-width: 900px;
+			margin-left: auto;
+			margin-right: auto;
+		}
+		.sc-head {
+			margin-bottom: 24px;
+		}
+		.sc-grid {
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+			gap: 16px;
+		}
+		.d-extra {
+			display: block;
+		}
+		.d-body {
+			padding: 16px 14px 18px;
+		}
+		.d-name {
+			min-height: 0;
+			font-size: 13px;
+		}
+		.d-price {
+			margin-bottom: 12px;
+		}
+		.d-btn {
+			height: 38px;
+			font-size: 13px;
+		}
+	}
+</style>
+
