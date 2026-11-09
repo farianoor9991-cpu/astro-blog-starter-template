@@ -1,86 +1,118 @@
 ---
-const makeCards = (type: string, price: string, count: number) =>
-	Array.from({ length: count }, (_, i) => ({
-		id: `${type}-${i + 1}`,
-		name: 'Floral Wedding Invitation',
-		price,
-		image: '/sample-design.jpg',
-	}));
+import { categories, categoryOrder, designs } from '../data/designs';
 
-const sections = [
-	{ type: 'ecard', cols: 4, title: 'Our Signature E-Cards', cards: makeCards('ecard', 'Rs. 800', 4) },
-	{ type: 'video', cols: 3, title: 'Cinematic Invitation Videos', cards: makeCards('video', 'Rs. 2500', 5) },
-	{ type: 'website', cols: 3, title: 'Website Invitations', cards: makeCards('website', 'Rs. 6000', 5) },
-];
+const HOME_LIMIT = 7; // how many designs show in each homepage row
+
+const sections = categoryOrder
+	.map((type) => ({
+		type,
+		...categories[type],
+		items: designs[type].slice(0, HOME_LIMIT),
+	}))
+	.filter((s) => s.items.length > 0);
 ---
 
 <div class="designs">
 	{
 		sections.map((sec) => (
 			<section class="showcase" id={sec.type}>
-				<div class="sc-head">
-					<h2 class="sc-title">
-						<svg class="sc-flower" viewBox="0 0 40 40" fill="none" stroke="#D4A276" stroke-width="1.4" aria-hidden="true">
-							<ellipse cx="20" cy="10" rx="5" ry="8" />
-							<ellipse cx="20" cy="10" rx="5" ry="8" transform="rotate(72 20 20)" />
-							<ellipse cx="20" cy="10" rx="5" ry="8" transform="rotate(144 20 20)" />
-							<ellipse cx="20" cy="10" rx="5" ry="8" transform="rotate(216 20 20)" />
-							<ellipse cx="20" cy="10" rx="5" ry="8" transform="rotate(288 20 20)" />
-							<circle cx="20" cy="20" r="2" fill="#D4A276" />
+				<h2 class="sc-title">
+					<svg class="sc-flower" viewBox="0 0 40 40" fill="none" stroke="#D4A276" stroke-width="1.4" aria-hidden="true">
+						<ellipse cx="20" cy="10" rx="5" ry="8" />
+						<ellipse cx="20" cy="10" rx="5" ry="8" transform="rotate(72 20 20)" />
+						<ellipse cx="20" cy="10" rx="5" ry="8" transform="rotate(144 20 20)" />
+						<ellipse cx="20" cy="10" rx="5" ry="8" transform="rotate(216 20 20)" />
+						<ellipse cx="20" cy="10" rx="5" ry="8" transform="rotate(288 20 20)" />
+						<circle cx="20" cy="20" r="2" fill="#D4A276" />
+					</svg>
+					<span>{sec.title}</span>
+				</h2>
+				<p class="sc-blurb">{sec.blurb}</p>
+
+				<div class="sc-wrap">
+					<button class="sc-arrow sc-prev" type="button" aria-label="Scroll left">
+						<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+							<path d="M15 6l-6 6 6 6" />
 						</svg>
-						<span>{sec.title}</span>
-					</h2>
-					<a href="/blog" class="sc-all">View all &gt;</a>
+					</button>
+
+					<div class="sc-row">
+						{sec.items.map((card) => (
+							<article class="d-card">
+								<a
+									class="d-img"
+									href={card.link}
+									target={card.link ? '_blank' : undefined}
+									rel={card.link ? 'noopener' : undefined}
+									aria-label={card.name}
+								>
+									<img src={card.image} alt={card.name} loading="lazy" />
+									{sec.type === 'video' && (
+										<span class="d-play" aria-hidden="true">
+											<svg viewBox="0 0 24 24" width="22" height="22">
+												<path d="M8 5v14l11-7z" fill="#ffffff" />
+											</svg>
+										</span>
+									)}
+									{sec.type === 'website' && <span class="d-live">LIVE</span>}
+								</a>
+								<div class="d-body">
+									<p class="d-name">{card.name}</p>
+									<p class="d-price">{card.price}</p>
+									<div class="d-btns">
+										<a class="d-btn d-outline" href={`/customize?design=${card.id}`}>Customize</a>
+										<a class="d-btn d-fill" href={`/checkout?design=${card.id}`}>Buy Now</a>
+									</div>
+								</div>
+							</article>
+						))}
+					</div>
+
+					<button class="sc-arrow sc-next" type="button" aria-label="Scroll right">
+						<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+							<path d="M9 6l6 6-6 6" />
+						</svg>
+					</button>
 				</div>
 
-				<div class:list={['sc-grid', `cols-${sec.cols}`]}>
-					{sec.cards.map((card, i) => (
-						<article class:list={['d-card', { 'd-extra': i >= 4 }]}>
-							<div class="d-img">
-								<img src={card.image} alt={card.name} loading="lazy" />
-								{sec.type === 'video' && (
-									<span class="d-play" aria-hidden="true">
-										<svg viewBox="0 0 24 24" width="22" height="22">
-											<path d="M8 5v14l11-7z" fill="#ffffff" />
-										</svg>
-									</span>
-								)}
-								{sec.type === 'website' && <span class="d-live">LIVE</span>}
-							</div>
-							<div class="d-body">
-								<p class="d-name">{card.name}</p>
-								<p class="d-price">{card.price}</p>
-								<div class="d-btns">
-									<a class="d-btn d-outline" href={`/customize?design=${card.id}`}>Customize</a>
-									<a class="d-btn d-fill" href={`/checkout?design=${card.id}`}>Buy Now</a>
-								</div>
-							</div>
-						</article>
-					))}
+				<div class="sc-more">
+					<a class="sc-viewall" href={`/catalogue?type=${sec.type}`}>View all</a>
 				</div>
 			</section>
 		))
 	}
 </div>
 
+<script>
+	document.querySelectorAll<HTMLElement>('.sc-wrap').forEach((wrap) => {
+		const row = wrap.querySelector<HTMLElement>('.sc-row');
+		const prev = wrap.querySelector<HTMLButtonElement>('.sc-prev');
+		const next = wrap.querySelector<HTMLButtonElement>('.sc-next');
+		if (!row || !prev || !next) return;
+
+		const step = () => Math.max(row.clientWidth * 0.8, 240);
+		const update = () => {
+			prev.disabled = row.scrollLeft <= 4;
+			next.disabled = row.scrollLeft + row.clientWidth >= row.scrollWidth - 4;
+		};
+
+		prev.addEventListener('click', () => row.scrollBy({ left: -step(), behavior: 'smooth' }));
+		next.addEventListener('click', () => row.scrollBy({ left: step(), behavior: 'smooth' }));
+		row.addEventListener('scroll', update, { passive: true });
+		window.addEventListener('resize', update);
+		update();
+	});
+</script>
+
 <style>
 	.showcase {
 		margin-top: 56px;
-	}
-	.sc-head {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 12px;
-		margin-bottom: 18px;
 	}
 	.sc-title {
 		display: flex;
 		align-items: center;
 		gap: 10px;
-		flex: 1;
-		min-width: 0;
-		margin: 0;
+		margin: 0 0 8px;
 		font-family: 'Playfair Display', serif;
 		font-weight: 700;
 		font-size: clamp(1.6rem, 7.5vw, 2.8rem);
@@ -92,35 +124,51 @@ const sections = [
 		width: 34px;
 		height: 34px;
 	}
-	.sc-all {
-		flex-shrink: 0;
+	.sc-blurb {
+		margin: 0 0 18px;
+		max-width: 560px;
 		font-family: 'Poppins', sans-serif;
-		font-weight: 500;
+		font-weight: 400;
 		font-size: 14px;
-		color: #d4a276;
-		text-decoration: none;
-		white-space: nowrap;
-	}
-	.sc-all:hover {
-		text-decoration: underline;
+		line-height: 1.65;
+		color: #5a5a5a;
 	}
 
-	/* Mobile: 2 columns, first 4 designs */
-	.sc-grid {
-		display: grid;
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-		gap: 12px;
+	/* Scroll row (mobile: swipe, runs to the screen edge) */
+	.sc-wrap {
+		position: relative;
 	}
-	.d-extra {
+	.sc-row {
+		display: flex;
+		gap: 12px;
+		overflow-x: auto;
+		scroll-snap-type: x mandatory;
+		scroll-padding-left: 20px;
+		-webkit-overflow-scrolling: touch;
+		scrollbar-width: none;
+		padding: 6px 20px 22px;
+		margin: -6px -20px -10px;
+	}
+	.sc-row::-webkit-scrollbar {
 		display: none;
 	}
+	.sc-arrow {
+		display: none;
+	}
+
 	.d-card {
+		flex: 0 0 auto;
+		width: 40vw;
+		min-width: 138px;
+		max-width: 190px;
+		scroll-snap-align: start;
 		background: #ffffff;
 		border-radius: 16px;
 		overflow: hidden;
 		box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
 	}
 	.d-img {
+		display: block;
 		position: relative;
 		aspect-ratio: 9 / 16;
 		background: #fcf9f1;
@@ -205,12 +253,12 @@ const sections = [
 		align-items: center;
 		justify-content: center;
 		width: 100%;
-		height: 38px;
+		height: 36px;
 		box-sizing: border-box;
 		border-radius: 999px;
 		font-family: 'Poppins', sans-serif;
 		font-weight: 500;
-		font-size: 12.5px;
+		font-size: 12px;
 		text-decoration: none;
 		white-space: nowrap;
 		transition: transform 0.2s ease;
@@ -229,34 +277,49 @@ const sections = [
 		color: #ffffff;
 	}
 
-	/* Laptop: E-Cards 4 in one row, videos and websites 3 + 2 (centered) */
+	/* View all button */
+	.sc-more {
+		display: flex;
+		justify-content: center;
+		margin-top: 20px;
+	}
+	.sc-viewall {
+		display: inline-block;
+		background: #d4a276;
+		color: #ffffff;
+		font-family: 'Poppins', sans-serif;
+		font-weight: 500;
+		font-size: 14px;
+		padding: 12px 36px;
+		border-radius: 999px;
+		text-decoration: none;
+		box-shadow: 0 8px 18px rgba(212, 162, 118, 0.35);
+		transition: transform 0.2s ease, box-shadow 0.2s ease;
+	}
+	.sc-viewall:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 12px 24px rgba(212, 162, 118, 0.45);
+	}
+
+	/* Laptop: fixed card width, arrows on both sides */
 	@media (min-width: 800px) {
 		.showcase {
 			margin-top: 80px;
 		}
-		.sc-head,
-		.sc-grid {
-			max-width: 900px;
-			margin-left: auto;
-			margin-right: auto;
+		.sc-blurb {
+			font-size: 15px;
+			margin-bottom: 24px;
 		}
-		.sc-head {
-			margin-bottom: 26px;
-		}
-		.sc-grid {
-			display: flex;
-			flex-wrap: wrap;
-			justify-content: center;
+		.sc-row {
 			gap: 16px;
+			scroll-padding-left: 4px;
+			padding: 6px 4px 22px;
+			margin: -6px 0 -10px;
 		}
 		.d-card {
-			width: calc((100% - 32px) / 3);
-		}
-		.sc-grid.cols-4 .d-card {
-			width: calc((100% - 48px) / 4);
-		}
-		.d-extra {
-			display: block;
+			width: 230px;
+			min-width: 0;
+			max-width: none;
 		}
 		.d-body {
 			padding: 16px 14px 18px;
@@ -276,12 +339,37 @@ const sections = [
 			flex: 1;
 			width: auto;
 			height: 38px;
-			font-size: 13px;
+			font-size: 12.5px;
 		}
-		.sc-grid.cols-4 .d-btn {
-			font-size: 12px;
+		.sc-arrow {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			position: absolute;
+			top: 38%;
+			z-index: 2;
+			width: 42px;
+			height: 42px;
+			border-radius: 50%;
+			background: #ffffff;
+			border: 1.5px solid #1a1a1a;
+			color: #1a1a1a;
+			box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+			cursor: pointer;
+			transition: opacity 0.2s ease;
+		}
+		.sc-prev {
+			left: -21px;
+		}
+		.sc-next {
+			right: -21px;
+		}
+		.sc-arrow:disabled {
+			opacity: 0.35;
+			cursor: default;
+		}
+		.sc-more {
+			margin-top: 24px;
 		}
 	}
 </style>
-
-
