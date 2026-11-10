@@ -1,0 +1,336 @@
+---
+import { reviews, reviewLink } from '../data/reviews';
+
+const count = reviews.length;
+const average = count ? reviews.reduce((sum, r) => sum + r.rating, 0) / count : 0;
+const allVerified = count > 0 && reviews.every((r) => r.verified);
+const filled = Math.round(average);
+const starPath = 'M12 2l2.9 6.3 6.9.7-5.2 4.6 1.5 6.8L12 17l-6.1 3.4 1.5-6.8L2.2 9l6.9-.7L12 2z';
+const five = [0, 1, 2, 3, 4];
+---
+
+<section class="reviews" id="reviews">
+	<h2 class="rv-title">What Our Customers Say</h2>
+
+	{
+		count > 0 ? (
+			<>
+				<div class="rv-sum">
+					<span class="rv-stars" aria-label={`Average rating ${average.toFixed(1)} out of 5`}>
+						{five.map((i) => (
+							<svg viewBox="0 0 24 24" width="20" height="20" class:list={['star', { off: i >= filled }]} aria-hidden="true">
+								<path d={starPath} />
+							</svg>
+						))}
+					</span>
+					<span class="rv-avg">{average.toFixed(1)}</span>
+					<span class="rv-count">({count})</span>
+					{allVerified && (
+						<span class="rv-verified">
+							<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+								<circle cx="12" cy="12" r="10" fill="#D4A276" />
+								<path d="M7.5 12.5l3 3 6-6.5" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+							</svg>
+							Verified
+						</span>
+					)}
+				</div>
+
+				<div class="rv-slider">
+					<div class="rv-track">
+						{reviews.map((r) => (
+							<article class="rv-card">
+								<div class="rv-box">
+									{r.photo && <img class="rv-photo" src={r.photo} alt={`Photo shared by ${r.name}`} loading="lazy" />}
+									<div class="rv-body">
+										<p class="rv-text">{r.text}</p>
+										<div class="rv-stars rv-stars-sm">
+											{five.map((i) => (
+												<svg viewBox="0 0 24 24" width="18" height="18" class:list={['star', { off: i >= r.rating }]} aria-hidden="true">
+													<path d={starPath} />
+												</svg>
+											))}
+										</div>
+										<p class="rv-name">{r.name}</p>
+										<p class="rv-design">{r.design}</p>
+									</div>
+								</div>
+							</article>
+						))}
+					</div>
+				</div>
+
+				{count > 1 && (
+					<div class="rv-nav">
+						<button class="rv-arrow rv-prev" type="button" aria-label="Previous review">
+							<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+								<path d="M15 6l-6 6 6 6" />
+							</svg>
+						</button>
+						<div class="rv-dots">
+							{reviews.map(() => (
+								<span class="rv-dot" />
+							))}
+						</div>
+						<button class="rv-arrow rv-next" type="button" aria-label="Next review">
+							<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+								<path d="M9 6l6 6-6 6" />
+							</svg>
+						</button>
+					</div>
+				)}
+			</>
+		) : (
+			<div class="rv-empty">
+				<div class="rv-stars rv-stars-empty">
+					{five.map(() => (
+						<svg viewBox="0 0 24 24" width="22" height="22" class="star off" aria-hidden="true">
+							<path d={starPath} />
+						</svg>
+					))}
+				</div>
+				<p class="rv-empty-title">Be our first reviewer</p>
+				<p class="rv-empty-text">Share your experience with us, and your words could be featured right here.</p>
+				<a class="rv-btn" href={reviewLink} target="_blank" rel="noopener">Share your review</a>
+			</div>
+		)
+	}
+</section>
+
+<script>
+	document.querySelectorAll<HTMLElement>('.reviews').forEach((sec) => {
+		const track = sec.querySelector<HTMLElement>('.rv-track');
+		const prev = sec.querySelector<HTMLButtonElement>('.rv-prev');
+		const next = sec.querySelector<HTMLButtonElement>('.rv-next');
+		const dots = sec.querySelectorAll<HTMLElement>('.rv-dot');
+		if (!track || !prev || !next) return;
+
+		const update = () => {
+			const i = Math.round(track.scrollLeft / track.clientWidth);
+			dots.forEach((d, n) => d.classList.toggle('on', n === i));
+			prev.disabled = i <= 0;
+			next.disabled = i >= dots.length - 1;
+		};
+
+		prev.addEventListener('click', () => track.scrollBy({ left: -track.clientWidth, behavior: 'smooth' }));
+		next.addEventListener('click', () => track.scrollBy({ left: track.clientWidth, behavior: 'smooth' }));
+		track.addEventListener('scroll', update, { passive: true });
+		window.addEventListener('resize', update);
+		update();
+	});
+</script>
+
+<style>
+	.reviews {
+		margin-top: 64px;
+		text-align: center;
+	}
+	.rv-title {
+		margin: 0 0 14px;
+		font-family: 'Playfair Display', serif;
+		font-weight: 700;
+		font-size: clamp(1.6rem, 7.5vw, 2.8rem);
+		line-height: 1.2;
+		color: #1a1a1a;
+	}
+
+	/* Star summary */
+	.rv-sum {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-wrap: wrap;
+		gap: 8px;
+		margin-bottom: 22px;
+		font-family: 'Poppins', sans-serif;
+	}
+	.rv-stars {
+		display: flex;
+		gap: 2px;
+	}
+	.star {
+		fill: #d4a276;
+		stroke: #d4a276;
+		stroke-width: 1;
+		stroke-linejoin: round;
+	}
+	.star.off {
+		fill: none;
+	}
+	.rv-avg {
+		font-weight: 700;
+		font-size: 16px;
+		color: #1a1a1a;
+	}
+	.rv-count {
+		font-size: 14px;
+		color: #5a5a5a;
+	}
+	.rv-verified {
+		display: inline-flex;
+		align-items: center;
+		gap: 5px;
+		font-size: 14px;
+		font-weight: 500;
+		color: #1a1a1a;
+	}
+
+	/* One review at a time */
+	.rv-slider {
+		max-width: 360px;
+		margin: 0 auto;
+	}
+	.rv-track {
+		display: flex;
+		overflow-x: auto;
+		scroll-snap-type: x mandatory;
+		scrollbar-width: none;
+		padding: 6px 0 18px;
+	}
+	.rv-track::-webkit-scrollbar {
+		display: none;
+	}
+	.rv-card {
+		flex: 0 0 100%;
+		box-sizing: border-box;
+		padding: 0 8px;
+		scroll-snap-align: center;
+	}
+	.rv-box {
+		background: #ffffff;
+		border-radius: 16px;
+		overflow: hidden;
+		box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+	}
+	.rv-photo {
+		display: block;
+		width: 100%;
+		height: 170px;
+		object-fit: cover;
+		border-radius: 0;
+	}
+	.rv-body {
+		padding: 18px 18px 20px;
+	}
+	.rv-text {
+		margin: 0 0 14px;
+		font-family: 'Poppins', sans-serif;
+		font-weight: 400;
+		font-size: 14px;
+		line-height: 1.7;
+		color: #5a5a5a;
+	}
+	.rv-stars-sm {
+		justify-content: center;
+		margin-bottom: 8px;
+	}
+	.rv-name {
+		margin: 0;
+		font-family: 'Poppins', sans-serif;
+		font-weight: 700;
+		font-size: 15px;
+		color: #1a1a1a;
+	}
+	.rv-design {
+		margin: 2px 0 0;
+		font-family: 'Poppins', sans-serif;
+		font-size: 12px;
+		color: #5a5a5a;
+	}
+
+	/* Arrows and dots */
+	.rv-nav {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 14px;
+	}
+	.rv-arrow {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 38px;
+		height: 38px;
+		border-radius: 50%;
+		background: #ffffff;
+		border: 1.5px solid #1a1a1a;
+		color: #1a1a1a;
+		cursor: pointer;
+	}
+	.rv-arrow:disabled {
+		opacity: 0.35;
+		cursor: default;
+	}
+	.rv-dots {
+		display: flex;
+		gap: 6px;
+	}
+	.rv-dot {
+		display: block;
+		width: 7px;
+		height: 7px;
+		border-radius: 50%;
+		background: #d4a276;
+		opacity: 0.35;
+	}
+	.rv-dot.on {
+		opacity: 1;
+	}
+
+	/* Empty state: until you have real reviews */
+	.rv-empty {
+		max-width: 420px;
+		margin: 0 auto;
+		padding: 28px 22px 30px;
+		background: #ffffff;
+		border-radius: 16px;
+		box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+	}
+	.rv-stars-empty {
+		justify-content: center;
+		margin-bottom: 12px;
+	}
+	.rv-empty-title {
+		margin: 0 0 6px;
+		font-family: 'Playfair Display', serif;
+		font-weight: 700;
+		font-size: 1.4rem;
+		color: #1a1a1a;
+	}
+	.rv-empty-text {
+		margin: 0 0 20px;
+		font-family: 'Poppins', sans-serif;
+		font-size: 14px;
+		line-height: 1.7;
+		color: #5a5a5a;
+	}
+	.rv-btn {
+		display: inline-block;
+		background: #d4a276;
+		color: #ffffff;
+		font-family: 'Poppins', sans-serif;
+		font-weight: 500;
+		font-size: 14px;
+		padding: 12px 32px;
+		border-radius: 999px;
+		text-decoration: none;
+		box-shadow: 0 8px 18px rgba(212, 162, 118, 0.35);
+		transition: transform 0.2s ease, box-shadow 0.2s ease;
+	}
+	.rv-btn:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 12px 24px rgba(212, 162, 118, 0.45);
+	}
+
+	@media (min-width: 800px) {
+		.reviews {
+			margin-top: 90px;
+		}
+		.rv-slider {
+			max-width: 440px;
+		}
+		.rv-text {
+			font-size: 15px;
+		}
+	}
+</style>
