@@ -1,0 +1,273 @@
+---
+// Replace these with your real details later
+const whatsappLink = 'https://wa.me/920000000000?text=Hi%2C%20I%20would%20like%20to%20know%20more.';
+const contactEmail = ''; // add your email here later, e.g. 'hello@yourdomain.com'. Empty = hidden
+
+const socials = [
+	{
+		name: 'Instagram',
+		href: 'https://www.instagram.com/',
+		paths: [
+			'M4 8a4 4 0 0 1 4 -4h8a4 4 0 0 1 4 4v8a4 4 0 0 1 -4 4h-8a4 4 0 0 1 -4 -4z',
+			'M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0',
+			'M16.5 7.5v.01',
+		],
+	},
+	{
+		name: 'Pinterest',
+		href: 'https://www.pinterest.com/',
+		paths: [
+			'M8 20l4 -9',
+			'M10.7 14c.437 1.263 1.43 2 2.55 2c2.071 0 3.75 -1.554 3.75 -4a5 5 0 1 0 -9.7 1.7',
+			'M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0',
+		],
+	},
+	{
+		name: 'TikTok',
+		href: 'https://www.tiktok.com/',
+		paths: [
+			'M21 7.917v4.034a9.948 9.948 0 0 1 -5 -1.951v4.5a6.5 6.5 0 1 1 -8 -6.326v4.326a2.5 2.5 0 1 0 4 2v-11.5h4.083a6.005 6.005 0 0 0 4.917 4.917z',
+		],
+	},
+	{
+		name: 'WhatsApp',
+		href: whatsappLink,
+		paths: [
+			'M3 21l1.65 -3.8a9 9 0 1 1 3.4 2.9l-5.05 .9',
+			'M9 10a.5 .5 0 0 0 1 0v-1a.5 .5 0 0 0 -1 0v1a5 5 0 0 0 5 5h1a.5 .5 0 0 0 0 -1h-1a.5 .5 0 0 0 0 1',
+		],
+	},
+	{
+		name: 'YouTube',
+		href: 'https://www.youtube.com/',
+		paths: [
+			'M2 8a4 4 0 0 1 4 -4h12a4 4 0 0 1 4 4v8a4 4 0 0 1 -4 4h-12a4 4 0 0 1 -4 -4v-8z',
+			'M10 9l5 3l-5 3z',
+		],
+	},
+];
+
+const links = [
+	{ label: 'Home', href: '/' },
+	{ label: 'About Us', href: '/about' },
+	{ label: 'Contact Us', href: '/contact' },
+	{ label: 'Catalogue', href: '/catalogue' },
+	{ label: 'Blog', href: '/blog' },
+	{ label: 'FAQs', href: '/faqs' },
+];
+---
+
+<footer class="site-footer">
+	<div class="ft-inner">
+		<div class="ft-brand">
+			<a href="/" class="ft-logo" aria-label="InviteHeaven home">
+				<svg viewBox="0 0 40 40" width="34" height="34" fill="none" stroke="#D4A276" stroke-width="1.2" aria-hidden="true">
+					<ellipse cx="20" cy="10" rx="5" ry="8"></ellipse>
+					<ellipse cx="20" cy="10" rx="5" ry="8" transform="rotate(72 20 20)"></ellipse>
+					<ellipse cx="20" cy="10" rx="5" ry="8" transform="rotate(144 20 20)"></ellipse>
+					<ellipse cx="20" cy="10" rx="5" ry="8" transform="rotate(216 20 20)"></ellipse>
+					<ellipse cx="20" cy="10" rx="5" ry="8" transform="rotate(288 20 20)"></ellipse>
+					<circle cx="20" cy="20" r="2" fill="#D4A276"></circle>
+				</svg>
+				<span class="ft-logo-text">Invite<span class="ft-gold">Heaven</span></span>
+			</a>
+			<p class="ft-about">
+				Every celebration has a story worth telling beautifully. We craft elegant digital invitations, from timeless e-cards to cinematic videos and graceful invitation websites, so your special moments feel as magical as they are.
+			</p>
+		</div>
+
+		<div class="ft-connect">
+			<h3 class="ft-heading">Get in Touch</h3>
+			<a class="ft-wa" href={whatsappLink} target="_blank" rel="noopener">Chat on WhatsApp</a>
+			{contactEmail && <a class="ft-mail" href={`mailto:${contactEmail}`}>{contactEmail}</a>}
+			<ul class="ft-social">
+				{
+					socials.map((s) => (
+						<li>
+							<a href={s.href} target="_blank" rel="noopener" aria-label={s.name}>
+								<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+									{s.paths.map((d) => (
+										<path d={d} />
+									))}
+								</svg>
+							</a>
+						</li>
+					))
+				}
+			</ul>
+		</div>
+
+		<nav class="ft-links" aria-label="Quick links">
+			<h3 class="ft-heading">Quick Links</h3>
+			<ul>
+				{
+					links.map((l) => (
+						<li>
+							<a href={l.href}>{l.label}</a>
+						</li>
+					))
+				}
+			</ul>
+		</nav>
+	</div>
+
+	<p class="ft-copy">© 2026 InviteHeaven. All rights reserved.</p>
+</footer>
+
+<style>
+	.site-footer {
+		/* Dark footer. For a light footer, use these four instead:
+		   --f-bg: #fcf9f1; --f-text: #1a1a1a; --f-muted: #5a5a5a; --f-line: rgba(26, 26, 26, 0.15); */
+		--f-bg: #1a1a1a;
+		--f-text: #fcf9f1;
+		--f-muted: rgba(252, 249, 241, 0.72);
+		--f-line: rgba(252, 249, 241, 0.18);
+
+		margin-top: 40px;
+		background: var(--f-bg);
+		color: var(--f-text);
+		font-family: 'Poppins', sans-serif;
+	}
+	.ft-inner {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 40px;
+		max-width: 1100px;
+		margin: 0 auto;
+		padding: 56px 24px 40px;
+		text-align: center;
+	}
+
+	/* Brand */
+	.ft-logo {
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		text-decoration: none;
+	}
+	.ft-logo-text {
+		font-family: 'Playfair Display', serif;
+		font-weight: 700;
+		font-size: 1.6rem;
+		color: var(--f-text);
+	}
+	.ft-gold {
+		color: #d4a276;
+	}
+	.ft-about {
+		margin: 16px auto 0;
+		max-width: 420px;
+		font-size: 14px;
+		line-height: 1.75;
+		color: var(--f-muted);
+	}
+
+	/* Headings */
+	.ft-heading {
+		margin: 0 0 18px;
+		font-family: 'Playfair Display', serif;
+		font-weight: 700;
+		font-size: 1.25rem;
+		color: var(--f-text);
+	}
+
+	/* Get in touch */
+	.ft-wa {
+		display: inline-block;
+		background: #d4a276;
+		color: #ffffff;
+		font-weight: 500;
+		font-size: 14px;
+		padding: 13px 32px;
+		border-radius: 999px;
+		text-decoration: none;
+		box-shadow: 0 8px 18px rgba(212, 162, 118, 0.3);
+		transition: transform 0.2s ease, box-shadow 0.2s ease;
+	}
+	.ft-wa:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 12px 24px rgba(212, 162, 118, 0.4);
+	}
+	.ft-mail {
+		display: block;
+		margin-top: 16px;
+		font-size: 14px;
+		color: var(--f-muted);
+		text-decoration: none;
+	}
+	.ft-mail:hover {
+		color: #d4a276;
+	}
+	.ft-social {
+		display: flex;
+		justify-content: center;
+		flex-wrap: wrap;
+		gap: 10px;
+		list-style: none;
+		margin: 22px 0 0;
+		padding: 0;
+	}
+	.ft-social a {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 42px;
+		height: 42px;
+		border-radius: 50%;
+		border: 1px solid var(--f-line);
+		color: var(--f-text);
+		transition: color 0.2s ease, border-color 0.2s ease;
+	}
+	.ft-social a:hover {
+		color: #d4a276;
+		border-color: #d4a276;
+	}
+
+	/* Quick links */
+	.ft-links ul {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		gap: 12px;
+	}
+	.ft-links a {
+		font-size: 14px;
+		color: var(--f-muted);
+		text-decoration: none;
+		transition: color 0.2s ease;
+	}
+	.ft-links a:hover {
+		color: #d4a276;
+	}
+
+	/* Copyright */
+	.ft-copy {
+		margin: 0;
+		padding: 20px 24px;
+		border-top: 1px solid var(--f-line);
+		text-align: center;
+		font-size: 13px;
+		color: var(--f-muted);
+	}
+
+	/* Laptop: brand left, contact center, links right */
+	@media (min-width: 800px) {
+		.ft-inner {
+			grid-template-columns: 1.3fr 1fr 0.7fr;
+			gap: 56px;
+			padding: 72px 60px 56px;
+			text-align: left;
+		}
+		.ft-about {
+			margin-left: 0;
+		}
+		.ft-connect {
+			text-align: center;
+		}
+		.ft-links {
+			justify-self: end;
+			text-align: left;
+		}
+	}
+</style>
