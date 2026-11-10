@@ -57,8 +57,8 @@ const loop = [...items, ...items];
 
 			<nav class="site-nav">
 				<a href="/">Home</a>
-				<a >Catalogue</a>
-				<a href="/about">About</a>
+<a href="/catalogue">Catalogue</a>
+<a href="/about">About</a>
 			</nav>
 		</header>
 
@@ -71,8 +71,8 @@ const loop = [...items, ...items];
 						<p>
 							Every celebration deserves a stunning start. We design elegant, personalized online invitations that are ready to share in hours. Crafted to be beautiful, effortless, and truly unforgettable for your special moments.
 						</p>
-						<a  class="btn">Check Our Catalogue</a>
-					</div>
+<a href="/catalogue" class="btn">Check Our Catalogue</a>
+</div>
 				</div>
 
 				<div class="visual">
@@ -91,11 +91,19 @@ const loop = [...items, ...items];
 
 		<script>
 			const btn = document.querySelector('.menu-btn');
-			const nav = document.querySelector('.site-nav');
-			btn?.addEventListener('click', () => {
-				const open = nav?.classList.toggle('open');
-				btn.setAttribute('aria-expanded', String(!!open));
-			});
+const nav = document.querySelector('.site-nav');
+const setOpen = (open: boolean) => {
+	nav?.classList.toggle('open', open);
+	btn?.setAttribute('aria-expanded', String(open));
+};
+btn?.addEventListener('click', () => setOpen(!nav?.classList.contains('open')));
+document.addEventListener('click', (e) => {
+	if (btn?.contains(e.target as Node)) return;
+	setOpen(false);
+});
+document.addEventListener('keydown', (e) => {
+	if (e.key === 'Escape') setOpen(false);
+});
 		</script>
 	</body>
 </html>
