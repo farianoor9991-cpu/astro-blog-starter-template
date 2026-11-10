@@ -147,8 +147,22 @@ const all = categoryOrder.flatMap((type) => designs[type]);
 			<div class="cat-more" hidden>
 				<button class="more-btn" id="cat-more" type="button">Load more designs</button>
 			</div>
-		</main>
-
+	<section class="cat-next" id="cat-next">
+		<h2 class="cat-next-title">Explore More</h2>
+		<div class="cat-next-row">
+			{
+				tabs.map((t) => (
+					<button class="next-card" type="button" data-goto={t.type}>
+						{designs[t.type][0] && <img class="next-img" src={designs[t.type][0].image} alt="" loading="lazy" />}
+						<span class="next-name">{categories[t.type].title}</span>
+						<span class="next-price">{categories[t.type].price}</span>
+						<span class="next-go">View {t.tab}</span>
+					</button>
+				))
+			}
+		</div>
+	</section>
+</main>
 		<SiteFooter />
 
 		<script>
@@ -228,8 +242,27 @@ document.addEventListener('keydown', (e) => {
 
 			const wanted = new URLSearchParams(location.search).get('type');
 			setType(tabEls.some((t) => t.dataset.type === wanted) ? (wanted as string) : 'website');
-		</script>
-	</body>
+</script>
+
+<script>
+	const nextCards = Array.from(document.querySelectorAll<HTMLElement>('.next-card'));
+	const tabBtns = Array.from(document.querySelectorAll<HTMLButtonElement>('.cat-tab'));
+
+	const sync = () => {
+		const current = tabBtns.find((b) => b.classList.contains('on'))?.dataset.type;
+		nextCards.forEach((c) => (c.hidden = c.dataset.goto === current));
+	};
+
+	tabBtns.forEach((b) => b.addEventListener('click', () => setTimeout(sync, 0)));
+	nextCards.forEach((c) =>
+		c.addEventListener('click', () => {
+			tabBtns.find((b) => b.dataset.type === c.dataset.goto)?.click();
+			document.querySelector('.cat-title')?.scrollIntoView({ behavior: 'smooth' });
+		})
+	);
+	setTimeout(sync, 0);
+</script>
+</body>
 </html>
 
 <style is:global>
@@ -695,6 +728,87 @@ margin: 0 auto;
 			width: 100%;
 			height: 40px;
 			font-size: 13px;
+		}
+	}
+	/* Occasion chips: wrap, no scrolling */
+	.cat-chips {
+		flex-wrap: wrap;
+		justify-content: center;
+		overflow: visible;
+	}
+
+	/* Explore more (the other two categories) */
+	.cat-next {
+		margin-top: 56px;
+		padding-top: 40px;
+		border-top: 1px solid rgba(26, 26, 26, 0.12);
+		text-align: center;
+	}
+	.cat-next-title {
+		margin: 0 0 22px;
+		font-family: 'Playfair Display', serif;
+		font-weight: 700;
+		font-size: clamp(1.5rem, 6.5vw, 2.2rem);
+		color: #1a1a1a;
+	}
+	.cat-next-row {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 14px;
+		max-width: 520px;
+		margin: 0 auto;
+	}
+	.next-card {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 4px;
+		padding: 0 0 18px;
+		overflow: hidden;
+		background: #ffffff;
+		border: none;
+		border-radius: 16px;
+		box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+		cursor: pointer;
+		font-family: 'Poppins', sans-serif;
+		transition: transform 0.2s ease, box-shadow 0.2s ease;
+	}
+	.next-card:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+	}
+	.next-img {
+		display: block;
+		width: 100%;
+		height: 130px;
+		margin-bottom: 12px;
+		object-fit: cover;
+		border-radius: 0;
+	}
+	.next-name {
+		padding: 0 12px;
+		font-family: 'Playfair Display', serif;
+		font-weight: 700;
+		font-size: 1.15rem;
+		color: #1a1a1a;
+	}
+	.next-price {
+		font-size: 13px;
+		color: #5a5a5a;
+	}
+	.next-go {
+		margin-top: 8px;
+		background: #d4a276;
+		color: #ffffff;
+		font-weight: 500;
+		font-size: 13px;
+		padding: 9px 22px;
+		border-radius: 999px;
+	}
+	@media (min-width: 800px) {
+		.cat-next-row {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			max-width: 760px;
 		}
 	}
 </style>
