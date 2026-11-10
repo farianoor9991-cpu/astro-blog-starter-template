@@ -2,6 +2,7 @@
 import BaseHead from '../components/BaseHead.astro';
 import DesignSections from '../components/DesignSections.astro';
 import Reviews from '../components/Reviews.astro';
+import SiteFooter from '../components/SiteFooter.astro';
 import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
 
 // Ticker text: edit these lines to change what scrolls at the top
@@ -87,6 +88,7 @@ const loop = [...items, ...items];
 <Reviews />
 <DesignSections/>
 </main>
+<SiteFooter />
 
 		<script>
 			const btn = document.querySelector('.menu-btn');
