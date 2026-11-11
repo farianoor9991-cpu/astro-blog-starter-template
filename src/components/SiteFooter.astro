@@ -270,4 +270,49 @@ const links = [
 			text-align: left;
 		}
 	}
+	/* New order: Get in Touch on top (center), brand left and quick links right */
+	.ft-inner {
+		grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+		grid-template-areas:
+			'connect connect'
+			'brand links';
+		gap: 40px 20px;
+		text-align: left;
+	}
+	.ft-connect {
+		grid-area: connect;
+		text-align: center;
+	}
+	.ft-brand {
+		grid-area: brand;
+	}
+	.ft-links {
+		grid-area: links;
+		justify-self: end;
+		text-align: left;
+	}
+	.ft-logo-text {
+		font-size: 1.3rem;
+	}
+	.ft-about {
+		margin: 14px 0 0;
+		max-width: 420px;
+		font-size: 13px;
+	}
+	@media (min-width: 800px) {
+		.ft-inner {
+			grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+			gap: 56px 40px;
+		}
+		.ft-logo-text {
+			font-size: 1.6rem;
+		}
+		.ft-about {
+			font-size: 14px;
+		}
+		.ft-links {
+			justify-self: end;
+			min-width: 160px;
+		}
+	}
 </style>
