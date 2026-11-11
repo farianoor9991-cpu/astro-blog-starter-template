@@ -17,7 +17,7 @@ const tabs = categoryOrder.map((type) => ({
 	tab: categories[type].tab,
 	blurb: categories[type].blurb,
 	count: designs[type].length,
-	occasions: [...new Set(designs[type].map((d) => d.occasion).filter(Boolean))] as string[],
+occasions: ['Wedding', 'Nikkah', 'Mayun', 'Mehndi', 'Baraat', 'Walima', 'Birthday', 'Baby announcements', 'Aqeeqah', 'Hajj/Umrah'],
 }));
 const all = categoryOrder.flatMap((type) => designs[type]);
 ---
