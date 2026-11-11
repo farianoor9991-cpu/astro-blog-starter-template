@@ -315,4 +315,36 @@ const links = [
 			min-width: 160px;
 		}
 	}
+	/* Mobile only: logo + intro, then Get in Touch, then Quick Links, all centered */
+	@media (max-width: 799px) {
+		.ft-inner {
+			grid-template-columns: 1fr;
+			grid-template-areas:
+				'brand'
+				'connect'
+				'links';
+			gap: 40px;
+			text-align: center;
+		}
+		.ft-brand {
+			grid-area: brand;
+		}
+		.ft-connect {
+			grid-area: connect;
+			text-align: center;
+		}
+		.ft-links {
+			grid-area: links;
+			justify-self: center;
+			text-align: center;
+		}
+		.ft-logo-text {
+			font-size: 1.6rem;
+		}
+		.ft-about {
+			margin: 16px auto 0;
+			max-width: 420px;
+			font-size: 14px;
+		}
+	}
 </style>
