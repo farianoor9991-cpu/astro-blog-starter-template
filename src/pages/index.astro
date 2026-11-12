@@ -2,6 +2,7 @@
 import PageLayout from '../layouts/PageLayout.astro';
 import Hero from '../components/Hero.astro';
 import DesignGrid from '../components/DesignGrid.astro';
+import OccasionChips from '../components/OccasionChips.astro';
 import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
 
 // Ticker text: edit these lines to change what scrolls at the top
@@ -25,5 +26,9 @@ const ticker = [
 
 	
 
-	<DesignGrid type="website" limit={8} moreHref="/catalogue" />
+<DesignGrid type="website" limit={8} moreHref="/catalogue">
+	<div slot="filters">
+		<OccasionChips type="website" href="/catalogue" />
+	</div>
+</DesignGrid>
 </PageLayout>
