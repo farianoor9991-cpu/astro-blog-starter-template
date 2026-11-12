@@ -40,8 +40,7 @@ export const categories = {
 } as const;
 
 // Order shown on the homepage and catalogue
-export const categoryOrder: DesignType[] = ['website', 'video', 'ecard'];
-
+export const categoryOrder: DesignType[] = ['website', 'ecard']; // add 'video' back in the middle to show videos again
 const SAMPLE = '/sample-design.jpg';
 
 /* ------------------------------------------------------------------
