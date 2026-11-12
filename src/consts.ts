@@ -3,4 +3,4 @@
 
 export const SITE_TITLE = 'Invite Heaven';
 export const SITE_DESCRIPTION =
-	'Elegant digital invitations: invitation websites, cinematic videos and e-cards, ready to share on WhatsApp.';
+	'Elegant invitation websites for weddings and celebrations, with every detail in one beautiful link.';
