@@ -1,7 +1,9 @@
 ---
 import PageLayout from '../layouts/PageLayout.astro';
+import Hero from '../components/Hero.astro';
 import Reviews from '../components/Reviews.astro';
 import DesignGrid from '../components/DesignGrid.astro';
+import OccasionChips from '../components/OccasionChips.astro';
 
 // Ticker text for this page: edit these lines to change what scrolls at the top
 const ticker = [
@@ -13,17 +15,20 @@ const ticker = [
 ---
 
 <PageLayout
-	title="E-Cards"
+	title="E-Cards | Invite Heaven"
 	description="Elegant digital e-cards for weddings and celebrations, personalized with your details and ready to share on WhatsApp."
 	ticker={ticker}
+	section="ecards"
+	variant="home"
 >
-	<section class="ec-hero">
-		<h1>Digital E-Cards For Your Memorable Day</h1>
-		<p>
-			Beautifully designed e-cards, personalized with your names, date, and venue, and ready to share on WhatsApp within minutes.
-		</p>
-		<a href="#ecard" class="ec-btn">Browse E-Cards</a>
-	</section>
+	<Hero
+		heading='Digital E-Cards <br class="laptop-br" />For Your Memorable <br class="laptop-br" />Day!'
+		text="Beautifully designed e-cards, personalized with your names, date, and venue, and ready to share on WhatsApp within minutes."
+		buttonLabel="Browse E-Cards"
+		buttonHref="#ecard"
+		image="/hero-phone.jpg"
+		imageAlt="Floral wedding e-card shown on a phone"
+	/>
 
 	<Reviews />
 
@@ -33,52 +38,9 @@ const ticker = [
 		moreHref="/e-cards/catalogue"
 		secondHref="/"
 		secondLabel="Our Signature Website Invitations"
-	/>
+	>
+		<div slot="filters">
+			<OccasionChips type="ecard" href="/e-cards/catalogue" />
+		</div>
+	</DesignGrid>
 </PageLayout>
-
-<style>
-	.ec-hero {
-		text-align: center;
-		padding: 8px 0 0;
-	}
-	.ec-hero h1 {
-		margin: 0 auto 16px;
-		max-width: 760px;
-		font-family: 'Playfair Display', serif;
-		font-weight: 700;
-		font-size: clamp(2rem, 9vw, 3.4rem);
-		line-height: 1.2;
-		color: #1a1a1a;
-	}
-	.ec-hero p {
-		margin: 0 auto 26px;
-		max-width: 540px;
-		font-size: 1rem;
-		line-height: 1.7;
-		color: #5a5a5a;
-	}
-	.ec-btn {
-		display: inline-block;
-		background: #d4a276;
-		color: #ffffff;
-		font-family: 'Poppins', sans-serif;
-		font-weight: 500;
-		font-size: 1rem;
-		padding: 15px 36px;
-		border-radius: 12px;
-		text-decoration: none;
-		outline: 1px solid rgba(212, 162, 118, 0.7);
-		outline-offset: 4px;
-		box-shadow: 0 8px 18px rgba(212, 162, 118, 0.35);
-		transition: transform 0.2s ease, box-shadow 0.2s ease;
-	}
-	.ec-btn:hover {
-		transform: translateY(-2px);
-		box-shadow: 0 12px 24px rgba(212, 162, 118, 0.45);
-	}
-	@media (min-width: 800px) {
-		.ec-hero {
-			padding-top: 24px;
-		}
-	}
-</style>
