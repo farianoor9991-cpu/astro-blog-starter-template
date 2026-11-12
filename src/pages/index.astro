@@ -1,15 +1,14 @@
 ---
 import BaseHead from '../components/BaseHead.astro';
-import DesignSections from '../components/DesignSections.astro';
-import Reviews from '../components/Reviews.astro';
+import DesignGrid from '../components/DesignGrid.astro';import Reviews from '../components/Reviews.astro';
 import SiteFooter from '../components/SiteFooter.astro';
 import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
 
 // Ticker text: edit these lines to change what scrolls at the top
 const items = [
-'✨ Digital Invitation Websites, Videos & E-Cards',
-'✨ Instant Downloads',
-	'💍 Wedding · Mehndi · Walima · Birthday · Hajj/Umrah · Aqeeqah · Baby Announcements',
+	'✨ Digital Invitation Websites',
+	'🌐 One Link, Every Detail',
+	'💍 Wedding · Nikkah · Mayun · Mehndi · Baraat · Walima · Birthday · Hajj/Umrah · Aqeeqah · Baby Announcements',
 	'📲 Customization Available',
 ];
 const loop = [...items, ...items];
@@ -85,7 +84,7 @@ const loop = [...items, ...items];
 				</div>
 			</section>
 <Reviews />
-<DesignSections/>
+<DesignGrid type="website" limit={8} moreHref="/catalogue?type=website" />
 </main>
 <SiteFooter />
 
