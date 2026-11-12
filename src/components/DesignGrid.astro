@@ -18,8 +18,8 @@ const items = designs[type].slice(0, limit);
 	items.length > 0 && (
 		<section class="gs" id={type}>
 			<h2 class="gs-title">{cat.title}</h2>
-			<p class="gs-blurb">{cat.blurb}</p>
-
+<p class="gs-blurb">{cat.blurb}</p>
+<slot name="filters" />
 			<div class="gs-grid">
 				{items.map((card) => (
 					<article class="d-card">
