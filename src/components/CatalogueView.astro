@@ -1,6 +1,6 @@
 ---
 import { categories, designs, type DesignType } from '../data/designs';
-
+import { occasions as occasionData } from '../data/occasions';
 interface Props {
 	type: DesignType;
 }
@@ -8,18 +8,7 @@ const { type } = Astro.props;
 const cat = categories[type];
 const items = designs[type];
 const PAGE = 8;
-const occasions = [
-	'Wedding',
-	'Nikkah',
-	'Mayun',
-	'Mehndi',
-	'Baraat',
-	'Walima',
-	'Birthday',
-	'Baby announcements',
-	'Aqeeqah',
-	'Hajj/Umrah',
-];
+const occasions = occasionData[type];
 ---
 
 <div class="cat">
@@ -109,8 +98,16 @@ const occasions = [
 	});
 
 	render();
+	const wanted = new URLSearchParams(location.search).get('occasion');
+	const wantedChip = Array.from(document.querySelectorAll<HTMLButtonElement>('#cat-chips .chip')).find(
+		(c) => c.dataset.occ === wanted
+	);
+	if (wantedChip) {
+		document.querySelectorAll('#cat-chips .chip').forEach((c) => c.classList.toggle('on', c === wantedChip));
+		occ = wantedChip.dataset.occ ?? '';
+		render();
+	}
 </script>
-
 <style>
 	.cat-title {
 		margin: 0 0 14px;
