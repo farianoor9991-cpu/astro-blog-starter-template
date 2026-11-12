@@ -1,16 +1,19 @@
 ---
+interface Props {
+	section?: 'websites' | 'ecards';
+}
+const { section = 'websites' } = Astro.props;
 const path = Astro.url.pathname.replace(/\/$/, '') || '/';
-const links = [
-	{ label: 'Home', href: '/' },
-	{ label: 'Catalogue', href: '/catalogue' },
-	{ label: 'About', href: '/about' },
-];
-const isCurrent = (href: string) =>
-	href === '/' ? path === '/' : path === href || path.startsWith(`${href}/`);
+const isCards = section === 'ecards';
+const homeHref = isCards ? '/e-cards' : '/';
+const websitesOption = { label: 'Website Invitations', href: '/catalogue' };
+const cardsOption = { label: 'E-Cards', href: '/e-cards/catalogue' };
+// The product you are currently in is listed first
+const options = isCards ? [cardsOption, websitesOption] : [websitesOption, cardsOption];
 ---
 
 <header class="site-header">
-	<a href="/" class="logo" aria-label="Invite Heaven home">
+	<a href={homeHref} class="logo" aria-label="Invite Heaven home">
 		<svg viewBox="0 0 40 40" width="34" height="34" fill="none" stroke="#D4A276" stroke-width="1.2">
 			<ellipse cx="20" cy="10" rx="5" ry="8"></ellipse>
 			<ellipse cx="20" cy="10" rx="5" ry="8" transform="rotate(72 20 20)"></ellipse>
@@ -26,14 +29,19 @@ const isCurrent = (href: string) =>
 		<span></span><span></span><span></span>
 	</button>
 
-	<nav class="site-nav">
-		{
-			links.map((l) => (
-				<a href={l.href} class:list={[{ current: isCurrent(l.href) }]}>
-					{l.label}
-				</a>
-			))
-		}
+	<nav class="site-nav" aria-label="Main menu">
+		<a href={homeHref} class:list={[{ current: path === homeHref }]}>Home</a>
+		<p class="nav-group">Catalogue</p>
+		<div class="nav-sub">
+			{
+				options.map((o) => (
+					<a href={o.href} class:list={[{ current: path === o.href }]}>
+						{o.label}
+					</a>
+				))
+			}
+		</div>
+		<a href="/about" class:list={[{ current: path === '/about' }]}>About</a>
 	</nav>
 </header>
 
@@ -46,7 +54,8 @@ const isCurrent = (href: string) =>
 	};
 	btn?.addEventListener('click', () => setOpen(!nav?.classList.contains('open')));
 	document.addEventListener('click', (e) => {
-		if (btn?.contains(e.target as Node)) return;
+		const t = e.target as Node;
+		if (btn?.contains(t) || nav?.contains(t)) return;
 		setOpen(false);
 	});
 	document.addEventListener('keydown', (e) => {
@@ -95,6 +104,8 @@ const isCurrent = (href: string) =>
 		height: 2px;
 		background: #1a1a1a;
 	}
+
+	/* Menu panel: full width on mobile */
 	.site-nav {
 		display: none;
 		position: absolute;
@@ -120,22 +131,40 @@ const isCurrent = (href: string) =>
 	.site-nav a.current {
 		color: #d4a276;
 	}
+	.nav-group {
+		margin: 6px 0 0;
+		padding: 10px 0 2px;
+		font-family: 'Poppins', sans-serif;
+		font-weight: 500;
+		color: #1a1a1a;
+	}
+	.nav-sub {
+		display: flex;
+		flex-direction: column;
+		margin: 0 0 4px 4px;
+		padding-left: 12px;
+		border-left: 2px solid #d4a276;
+	}
+	.nav-sub a {
+		padding: 8px 0;
+		font-size: 14px;
+		font-weight: 400;
+	}
+
+	/* Laptop: same toggle, the menu opens as a small card on the right */
 	@media (min-width: 800px) {
-		.menu-btn {
-			display: none;
-		}
 		.site-header {
 			padding: 18px 60px;
 		}
-		.site-nav,
-		.site-nav.open {
-			display: flex;
-			flex-direction: row;
-			position: static;
-			background: none;
-			box-shadow: none;
-			padding: 0;
-			gap: 36px;
+		.site-nav {
+			left: auto;
+			right: 60px;
+			top: calc(100% + 8px);
+			width: 270px;
+			background: #ffffff;
+			border-radius: 14px;
+			box-shadow: 0 12px 30px rgba(0, 0, 0, 0.14);
+			padding: 8px 20px 12px;
 		}
 	}
 </style>
