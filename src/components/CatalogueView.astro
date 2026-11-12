@@ -1,0 +1,340 @@
+---
+import { categories, designs, type DesignType } from '../data/designs';
+
+interface Props {
+	type: DesignType;
+}
+const { type } = Astro.props;
+const cat = categories[type];
+const items = designs[type];
+const PAGE = 8;
+const occasions = [
+	'Wedding',
+	'Nikkah',
+	'Mayun',
+	'Mehndi',
+	'Baraat',
+	'Walima',
+	'Birthday',
+	'Baby announcements',
+	'Aqeeqah',
+	'Hajj/Umrah',
+];
+---
+
+<div class="cat">
+	<h1 class="cat-title">Catalogue</h1>
+	<p class="cat-blurb">{cat.blurb}</p>
+
+	<div class="cat-chips" id="cat-chips">
+		<button class="chip on" type="button" data-occ="">All occasions</button>
+		{
+			occasions.map((o) => (
+				<button class="chip" type="button" data-occ={o}>
+					{o}
+				</button>
+			))
+		}
+	</div>
+
+	<p class="cat-meta" id="cat-count"></p>
+
+	<div class="cat-grid">
+		{
+			items.map((card, i) => (
+				<article class="d-card" data-occ={card.occasion ?? ''} hidden={i >= PAGE}>
+					<a
+						class="d-img"
+						href={card.link}
+						target={card.link ? '_blank' : undefined}
+						rel={card.link ? 'noopener' : undefined}
+						aria-label={card.name}
+					>
+						<img src={card.image} alt={card.name} loading="lazy" />
+						{type === 'website' && <span class="d-live">LIVE</span>}
+					</a>
+					<div class="d-body">
+						<p class="d-name">{card.name}</p>
+						<p class="d-price">{card.price}</p>
+						<div class="d-btns">
+							<a class="d-btn d-outline" href={`/customize?design=${card.id}`}>Customize</a>
+							<a class="d-btn d-fill" href={`/checkout?design=${card.id}`}>Buy Now</a>
+						</div>
+					</div>
+				</article>
+			))
+		}
+	</div>
+
+	<p class="cat-empty" id="cat-empty" hidden>New designs are on the way. Please check back soon.</p>
+
+	<div class="cat-more" hidden>
+		<button class="more-btn" id="cat-more" type="button">Load more designs</button>
+	</div>
+</div>
+
+<script>
+	const PAGE = 8;
+	const chipBox = document.getElementById('cat-chips');
+	const cards = Array.from(document.querySelectorAll<HTMLElement>('.cat-grid .d-card'));
+	const countEl = document.getElementById('cat-count');
+	const emptyEl = document.getElementById('cat-empty');
+	const moreBtn = document.getElementById('cat-more');
+	const moreBox = moreBtn?.parentElement;
+
+	let occ = '';
+	let shown = PAGE;
+
+	const render = () => {
+		const matches = cards.filter((c) => !occ || c.dataset.occ === occ);
+		cards.forEach((c) => (c.hidden = true));
+		matches.slice(0, shown).forEach((c) => (c.hidden = false));
+		if (countEl) countEl.textContent = `${matches.length} design${matches.length === 1 ? '' : 's'}`;
+		if (emptyEl) emptyEl.hidden = matches.length > 0;
+		if (moreBox) moreBox.hidden = matches.length <= shown;
+	};
+
+	chipBox?.addEventListener('click', (e) => {
+		const chip = (e.target as HTMLElement).closest<HTMLButtonElement>('.chip');
+		if (!chip) return;
+		chipBox.querySelectorAll('.chip').forEach((c) => c.classList.toggle('on', c === chip));
+		occ = chip.dataset.occ ?? '';
+		shown = PAGE;
+		render();
+	});
+
+	moreBtn?.addEventListener('click', () => {
+		shown += PAGE;
+		render();
+	});
+
+	render();
+</script>
+
+<style>
+	.cat-title {
+		margin: 0 0 14px;
+		text-align: center;
+		font-family: 'Playfair Display', serif;
+		font-weight: 700;
+		font-size: clamp(1.9rem, 8vw, 3rem);
+		line-height: 1.2;
+		color: #1a1a1a;
+	}
+	.cat-blurb {
+		margin: 0 auto 24px;
+		padding: 0 6px;
+		max-width: 560px;
+		text-align: center;
+		font-family: 'Poppins', sans-serif;
+		font-size: 14px;
+		line-height: 1.75;
+		color: #5a5a5a;
+	}
+
+	/* Occasion chips: wrap, no scrolling */
+	.cat-chips {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: 8px;
+		padding: 4px 2px 12px;
+	}
+	.chip {
+		font-family: 'Poppins', sans-serif;
+		font-size: 12px;
+		color: #5a5a5a;
+		background: #ffffff;
+		border: none;
+		border-radius: 999px;
+		padding: 7px 14px;
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+		cursor: pointer;
+	}
+	.chip.on {
+		color: #1a1a1a;
+		font-weight: 500;
+		box-shadow: inset 0 0 0 1px #d4a276, 0 2px 8px rgba(0, 0, 0, 0.06);
+	}
+	.cat-meta {
+		margin: 4px 0 14px;
+		text-align: center;
+		font-family: 'Poppins', sans-serif;
+		font-size: 13px;
+		color: #5a5a5a;
+	}
+
+	/* Grid: 2 columns on mobile */
+	.cat-grid {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 12px;
+	}
+	.cat-empty {
+		margin: 30px 0 0;
+		text-align: center;
+		font-family: 'Poppins', sans-serif;
+		font-size: 14px;
+		color: #5a5a5a;
+	}
+	.cat-more {
+		display: flex;
+		justify-content: center;
+		margin-top: 28px;
+	}
+	.cat-more[hidden],
+	.cat-empty[hidden],
+	.d-card[hidden] {
+		display: none;
+	}
+	.more-btn {
+		background: #d4a276;
+		color: #ffffff;
+		font-family: 'Poppins', sans-serif;
+		font-weight: 500;
+		font-size: 14px;
+		padding: 12px 36px;
+		border: none;
+		border-radius: 999px;
+		cursor: pointer;
+		box-shadow: 0 8px 18px rgba(212, 162, 118, 0.35);
+		transition: transform 0.2s ease, box-shadow 0.2s ease;
+	}
+	.more-btn:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 12px 24px rgba(212, 162, 118, 0.45);
+	}
+
+	/* Cards */
+	.d-card {
+		background: #ffffff;
+		border-radius: 16px;
+		overflow: hidden;
+		box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+	}
+	.d-img {
+		display: block;
+		position: relative;
+		aspect-ratio: 9 / 16;
+		background: #fcf9f1;
+	}
+	.d-img img {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		display: block;
+		border-radius: 0;
+	}
+	.d-live {
+		position: absolute;
+		top: 10px;
+		right: 10px;
+		display: flex;
+		align-items: center;
+		gap: 5px;
+		background: #d4a276;
+		color: #ffffff;
+		font-family: 'Poppins', sans-serif;
+		font-weight: 500;
+		font-size: 11px;
+		letter-spacing: 0.06em;
+		padding: 4px 10px;
+		border-radius: 999px;
+	}
+	.d-live::before {
+		content: '';
+		width: 6px;
+		height: 6px;
+		border-radius: 50%;
+		background: #ffffff;
+	}
+	.d-body {
+		padding: 12px 10px 14px;
+		text-align: center;
+	}
+	.d-name {
+		margin: 0 0 4px;
+		min-height: calc(1.4em * 2);
+		font-family: 'Poppins', sans-serif;
+		font-weight: 400;
+		font-size: 12px;
+		line-height: 1.4;
+		color: #5a5a5a;
+	}
+	.d-price {
+		margin: 0 0 10px;
+		font-family: 'Poppins', sans-serif;
+		font-weight: 700;
+		font-size: 16px;
+		color: #1a1a1a;
+	}
+	.d-btns {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+	}
+	.d-btn {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 100%;
+		height: 36px;
+		box-sizing: border-box;
+		border-radius: 999px;
+		font-family: 'Poppins', sans-serif;
+		font-weight: 500;
+		font-size: 12px;
+		text-decoration: none;
+		white-space: nowrap;
+		transition: transform 0.2s ease;
+	}
+	.d-btn:hover {
+		transform: translateY(-1px);
+	}
+	.d-outline {
+		border: 1.5px solid #1a1a1a;
+		color: #1a1a1a;
+		background: transparent;
+	}
+	.d-fill {
+		border: 1.5px solid #d4a276;
+		background: #d4a276;
+		color: #ffffff;
+	}
+
+	/* Laptop: 3 columns, then 4 on wider screens */
+	@media (min-width: 800px) {
+		.cat-blurb {
+			font-size: 15px;
+			margin-bottom: 30px;
+		}
+		.cat-grid {
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+			gap: 16px;
+		}
+		.d-body {
+			padding: 16px 14px 18px;
+		}
+		.d-name {
+			min-height: 0;
+			font-size: 13px;
+		}
+		.d-price {
+			margin-bottom: 12px;
+		}
+		.d-btns {
+			gap: 10px;
+		}
+		.d-btn {
+			height: 40px;
+			font-size: 13px;
+		}
+	}
+	@media (min-width: 1000px) {
+		.cat-grid {
+			grid-template-columns: repeat(4, minmax(0, 1fr));
+		}
+	}
+</style>
