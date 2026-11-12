@@ -1,0 +1,21 @@
+---
+import PageLayout from '../../layouts/PageLayout.astro';
+import CatalogueView from '../../components/CatalogueView.astro';
+
+// Ticker text for this page: edit these lines to change what scrolls at the top
+const ticker = [
+	'✨ Digital E-Cards',
+	'⚡ Instant Downloads',
+	'💍 Wedding · Nikkah · Mayun · Mehndi · Baraat · Walima · Birthday · Hajj/Umrah · Aqeeqah · Baby Announcements',
+	'📲 Customization Available',
+];
+---
+
+<PageLayout
+	title="E-Cards Catalogue"
+	description="Browse our elegant e-cards for weddings and celebrations."
+	ticker={ticker}
+	section="ecards"
+>
+	<CatalogueView type="ecard" />
+</PageLayout>
