@@ -1,6 +1,10 @@
 ---
 // Replace these with your real details later
-const whatsappLink = 'https://wa.me/920000000000?text=Hi%2C%20I%20would%20like%20to%20know%20more.';
+const { section = 'websites' } = Astro.props;
+const isCards = section === 'ecards';
+const homeHref = isCards ? '/e-cards' : '/';
+const catalogueHref = isCards ? '/e-cards/catalogue' : '/catalogue';
+const whatsappLink =
 const contactEmail = ''; // add your email here later, e.g. 'hello@yourdomain.com'. Empty = hidden
 
 const socials = [
@@ -48,11 +52,11 @@ const socials = [
 ];
 
 const links = [
-	{ label: 'Home', href: '/' },
-	{ label: 'About Us', href: '/about' },
+{ label: 'Home', href: homeHref },
+{ label: 'About Us', href: '/about' },
 	{ label: 'Contact Us', href: '/contact' },
-	{ label: 'Catalogue', href: '/catalogue' },
-	{ label: 'Blog', href: '/blog' },
+{ label: 'Catalogue', href: catalogueHref },
+{ label: 'Blog', href: '/blog' },
 	{ label: 'FAQs', href: '/faqs' },
 ];
 ---
@@ -60,7 +64,7 @@ const links = [
 <footer class="site-footer">
 	<div class="ft-inner">
 		<div class="ft-brand">
-			<a href="/" class="ft-logo" aria-label="InviteHeaven home">
+			<a href={homeHref} class="ft-logo" aria-label="InviteHeaven home">
 				<svg viewBox="0 0 40 40" width="34" height="34" fill="none" stroke="#D4A276" stroke-width="1.2" aria-hidden="true">
 					<ellipse cx="20" cy="10" rx="5" ry="8"></ellipse>
 					<ellipse cx="20" cy="10" rx="5" ry="8" transform="rotate(72 20 20)"></ellipse>
