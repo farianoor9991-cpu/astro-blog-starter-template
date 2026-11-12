@@ -1,0 +1,141 @@
+---
+interface Props {
+	heading: string;
+	text: string;
+	buttonLabel: string;
+	buttonHref: string;
+	image: string;
+	imageAlt: string;
+}
+const { heading, text, buttonLabel, buttonHref, image, imageAlt } = Astro.props;
+---
+
+<section class="hero">
+	<div class="hero-text">
+		<h1 set:html={heading} />
+
+		<div class="copy">
+			<p>{text}</p>
+			<a href={buttonHref} class="btn">{buttonLabel}</a>
+		</div>
+	</div>
+
+	<div class="visual">
+		<img src={image} alt={imageAlt} width="1228" height="1248" />
+	</div>
+</section>
+
+<style>
+	/* Mobile: text + button on first screen, top of the phone image peeks in */
+	.hero {
+		display: block;
+		text-align: center;
+	}
+	.hero-text {
+		/* 75px header + 36px ticker + 5px = how much of the image peeks in */
+		min-height: calc(100vh - 75px - 36px - 5px);
+		min-height: calc(100svh - 75px - 36px - 5px);
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		align-items: center;
+		gap: 20px;
+		padding: 16px 0;
+		box-sizing: border-box;
+	}
+	.hero h1 {
+		margin: 0;
+		font-family: 'Playfair Display', serif;
+		font-weight: 700;
+		font-size: clamp(2rem, 9vw, 3.6rem);
+		line-height: 1.2;
+		color: #1a1a1a;
+	}
+	.copy p {
+		margin: 0 0 24px;
+		font-size: 1rem;
+		line-height: 1.7;
+		color: #5a5a5a;
+	}
+	.btn {
+		display: inline-block;
+		white-space: nowrap;
+		background: #d4a276;
+		color: #ffffff;
+		font-family: 'Poppins', sans-serif;
+		font-weight: 500;
+		font-size: 1rem;
+		padding: 15px 32px;
+		border-radius: 12px;
+		text-decoration: none;
+		outline: 1px solid rgba(212, 162, 118, 0.7);
+		outline-offset: 4px;
+		box-shadow: 0 8px 18px rgba(212, 162, 118, 0.35);
+		transition: transform 0.2s ease, box-shadow 0.2s ease;
+	}
+	.btn:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 12px 24px rgba(212, 162, 118, 0.45);
+	}
+	.visual {
+		display: flex;
+		justify-content: center;
+		margin-top: -25px;
+	}
+	.visual img {
+		display: block;
+		width: 100%;
+		max-width: 440px;
+		height: auto;
+		-webkit-mask-image: radial-gradient(ellipse at 55% 55%, #000 55%, transparent 80%);
+		mask-image: radial-gradient(ellipse at 55% 55%, #000 55%, transparent 80%);
+	}
+
+	/* Laptop */
+	@media (min-width: 800px) {
+		.hero {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			grid-template-areas:
+				'title visual'
+				'copy visual';
+			column-gap: 40px;
+			row-gap: 24px;
+			align-items: center;
+			text-align: left;
+		}
+		.hero-text {
+			display: contents;
+		}
+		.hero h1 {
+			grid-area: title;
+			align-self: end;
+			font-size: clamp(1.7rem, 3.3vw, 3.6rem);
+		}
+		.copy {
+			grid-area: copy;
+			align-self: start;
+			max-width: 520px;
+		}
+		.copy p {
+			font-size: 1.05rem;
+			margin-bottom: 36px;
+		}
+		.btn {
+			font-size: 1rem;
+			padding: 16px 40px;
+			outline-offset: 5px;
+		}
+		.visual {
+			grid-area: visual;
+			justify-content: flex-end;
+			margin-top: 0;
+		}
+		.visual img {
+			width: 100%;
+			max-width: none;
+			-webkit-mask-image: radial-gradient(ellipse at 55% 55%, #000 55%, transparent 80%);
+			mask-image: radial-gradient(ellipse at 55% 55%, #000 55%, transparent 80%);
+		}
+	}
+</style>
