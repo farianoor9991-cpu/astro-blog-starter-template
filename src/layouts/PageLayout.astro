@@ -2,14 +2,17 @@
 import BaseHead from '../components/BaseHead.astro';
 import SiteHeader from '../components/SiteHeader.astro';
 import SiteFooter from '../components/SiteFooter.astro';
+import Ticker from '../components/Ticker.astro';
 
 interface Props {
 	title: string;
 	description?: string;
+	ticker?: string[];
 }
 const {
 	title,
-	description = 'Elegant digital invitations: invitation websites, cinematic videos and e-cards.',
+	description = 'Elegant digital invitations for weddings and celebrations.',
+	ticker,
 } = Astro.props;
 ---
 
@@ -26,6 +29,7 @@ const {
 		/>
 	</head>
 	<body>
+		{ticker && <Ticker items={ticker} />}
 		<SiteHeader />
 		<main class="page-main">
 			<slot />
