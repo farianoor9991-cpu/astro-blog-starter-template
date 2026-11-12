@@ -8,18 +8,24 @@ interface Props {
 	title: string;
 	description?: string;
 	ticker?: string[];
+	section?: 'websites' | 'ecards';
+	variant?: 'default' | 'home';
 }
 const {
 	title,
 	description = 'Elegant digital invitations for weddings and celebrations.',
 	ticker,
+	section = 'websites',
+	variant = 'default',
 } = Astro.props;
+// "home" variant (homepage and E-Cards page): the title is used exactly as given
+const fullTitle = variant === 'home' ? title : `${title} | Invite Heaven`;
 ---
 
 <!doctype html>
 <html lang="en">
 	<head>
-		<BaseHead title={`${title} | Invite Heaven`} description={description} />
+		<BaseHead title={fullTitle} description={description} />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -30,11 +36,11 @@ const {
 	</head>
 	<body>
 		{ticker && <Ticker items={ticker} />}
-		<SiteHeader />
-		<main class="page-main">
+		<SiteHeader section={section} />
+		<main class:list={['page-main', { home: variant === 'home' }]}>
 			<slot />
 		</main>
-		<SiteFooter />
+		<SiteFooter section={section} />
 	</body>
 </html>
 
@@ -58,5 +64,16 @@ const {
 		margin: 0 auto;
 		padding: 56px 20px 80px;
 		box-sizing: border-box;
+	}
+	/* Homepage settings */
+	.page-main.home {
+		max-width: 1200px;
+		min-height: 0;
+		padding: 0 20px 40px;
+	}
+	@media (min-width: 800px) {
+		.page-main.home {
+			padding: 20px 60px 80px;
+		}
 	}
 </style>
