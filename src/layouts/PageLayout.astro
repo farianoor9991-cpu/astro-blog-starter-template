@@ -3,6 +3,7 @@ import BaseHead from '../components/BaseHead.astro';
 import SiteHeader from '../components/SiteHeader.astro';
 import SiteFooter from '../components/SiteFooter.astro';
 import Ticker from '../components/Ticker.astro';
+import Reviews from '../components/Reviews.astro';
 
 interface Props {
 	title: string;
@@ -10,6 +11,7 @@ interface Props {
 	ticker?: string[];
 	section?: 'websites' | 'ecards';
 	variant?: 'default' | 'home';
+	showReviews?: boolean;
 }
 const {
 	title,
@@ -17,6 +19,7 @@ const {
 	ticker,
 	section = 'websites',
 	variant = 'default',
+	showReviews = true,
 } = Astro.props;
 // "home" variant (homepage and E-Cards page): the title is used exactly as given
 const fullTitle = variant === 'home' ? title : `${title} | Invite Heaven`;
@@ -37,9 +40,16 @@ const fullTitle = variant === 'home' ? title : `${title} | Invite Heaven`;
 	<body>
 		{ticker && <Ticker items={ticker} />}
 		<SiteHeader section={section} />
-		<main class:list={['page-main', { home: variant === 'home' }]}>
+		<main class:list={['page-main', { home: variant === 'home', 'has-reviews': showReviews }]}>
 			<slot />
 		</main>
+		{
+			showReviews && (
+				<div class="page-reviews">
+					<Reviews />
+				</div>
+			)
+		}
 		<SiteFooter section={section} />
 	</body>
 </html>
@@ -75,5 +85,16 @@ const fullTitle = variant === 'home' ? title : `${title} | Invite Heaven`;
 		.page-main.home {
 			padding: 20px 60px 80px;
 		}
+	}
+	/* The reviews section brings its own top spacing */
+	.page-main.has-reviews {
+		padding-bottom: 0;
+	}
+	.page-reviews {
+		width: 100%;
+		max-width: 1100px;
+		margin: 0 auto;
+		padding: 0 20px 24px;
+		box-sizing: border-box;
 	}
 </style>
