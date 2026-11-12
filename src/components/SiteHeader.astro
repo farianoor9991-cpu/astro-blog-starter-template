@@ -10,6 +10,7 @@ const websitesOption = { label: 'Website Invitations', href: '/catalogue' };
 const cardsOption = { label: 'E-Cards', href: '/e-cards' };
 // The product you are currently in is listed first
 const options = isCards ? [cardsOption, websitesOption] : [websitesOption, cardsOption];
+const inCatalogue = path === '/catalogue' || path === '/e-cards/catalogue';
 ---
 
 <header class="site-header">
@@ -31,8 +32,19 @@ const options = isCards ? [cardsOption, websitesOption] : [websitesOption, cards
 
 	<nav class="site-nav" aria-label="Main menu">
 		<a href={homeHref} class:list={[{ current: path === homeHref }]}>Home</a>
-		<p class="nav-group">Catalogue</p>
-		<div class="nav-sub">
+
+		<button
+			class:list={['nav-toggle', { current: inCatalogue }]}
+			type="button"
+			aria-expanded="false"
+			aria-controls="nav-sub"
+		>
+			<span>Catalogue</span>
+			<svg class="chev" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+				<path d="M6 9l6 6 6-6" />
+			</svg>
+		</button>
+		<div class="nav-sub" id="nav-sub">
 			{
 				options.map((o) => (
 					<a href={o.href} class:list={[{ current: path === o.href }]}>
@@ -41,18 +53,32 @@ const options = isCards ? [cardsOption, websitesOption] : [websitesOption, cards
 				))
 			}
 		</div>
+
 		<a href="/about" class:list={[{ current: path === '/about' }]}>About</a>
+		<a href="/faqs" class:list={[{ current: path === '/faqs' }]}>FAQs</a>
+		<a href="/contact" class:list={[{ current: path === '/contact' }]}>Contact Us</a>
 	</nav>
 </header>
 
 <script>
 	const btn = document.querySelector('.menu-btn');
 	const nav = document.querySelector('.site-nav');
+	const group = document.querySelector('.nav-toggle');
+	const sub = document.querySelector('.nav-sub');
+
+	const setGroup = (open: boolean) => {
+		sub?.classList.toggle('show', open);
+		group?.classList.toggle('expanded', open);
+		group?.setAttribute('aria-expanded', String(open));
+	};
 	const setOpen = (open: boolean) => {
 		nav?.classList.toggle('open', open);
 		btn?.setAttribute('aria-expanded', String(open));
+		if (!open) setGroup(false);
 	};
+
 	btn?.addEventListener('click', () => setOpen(!nav?.classList.contains('open')));
+	group?.addEventListener('click', () => setGroup(!sub?.classList.contains('show')));
 	document.addEventListener('click', (e) => {
 		const t = e.target as Node;
 		if (btn?.contains(t) || nav?.contains(t)) return;
@@ -119,31 +145,49 @@ const options = isCards ? [cardsOption, websitesOption] : [websitesOption, cards
 	.site-nav.open {
 		display: flex;
 		flex-direction: column;
-		gap: 4px;
+		gap: 2px;
 	}
-	.site-nav a {
+	.site-nav a,
+	.nav-toggle {
 		padding: 10px 0;
 		text-decoration: none;
 		color: #1a1a1a;
 		font-family: 'Poppins', sans-serif;
+		font-size: 16px;
 		font-weight: 500;
 	}
-	.site-nav a.current {
+	.site-nav a.current,
+	.nav-toggle.current {
 		color: #d4a276;
 	}
-	.nav-group {
-		margin: 6px 0 0;
-		padding: 10px 0 2px;
-		font-family: 'Poppins', sans-serif;
-		font-weight: 500;
-		color: #1a1a1a;
+
+	/* Catalogue row: opens the two products */
+	.nav-toggle {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		width: 100%;
+		background: none;
+		border: none;
+		text-align: left;
+		cursor: pointer;
+	}
+	.chev {
+		flex-shrink: 0;
+		transition: transform 0.2s ease;
+	}
+	.nav-toggle.expanded .chev {
+		transform: rotate(180deg);
 	}
 	.nav-sub {
-		display: flex;
+		display: none;
 		flex-direction: column;
 		margin: 0 0 4px 4px;
 		padding-left: 12px;
 		border-left: 2px solid #d4a276;
+	}
+	.nav-sub.show {
+		display: flex;
 	}
 	.nav-sub a {
 		padding: 8px 0;
