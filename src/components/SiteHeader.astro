@@ -7,7 +7,7 @@ const path = Astro.url.pathname.replace(/\/$/, '') || '/';
 const isCards = section === 'ecards';
 const homeHref = isCards ? '/e-cards' : '/';
 const websitesOption = { label: 'Website Invitations', href: '/catalogue' };
-const cardsOption = { label: 'E-Cards', href: '/e-cards/catalogue' };
+const cardsOption = { label: 'E-Cards', href: '/e-cards' };
 // The product you are currently in is listed first
 const options = isCards ? [cardsOption, websitesOption] : [websitesOption, cardsOption];
 ---
