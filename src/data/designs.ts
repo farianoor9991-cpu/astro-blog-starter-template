@@ -50,7 +50,7 @@ const SAMPLE = '/sample-design.jpg';
 ------------------------------------------------------------------- */
 
 const websites: Design[] = [
-	{ name: 'Sample Website 01', image: SAMPLE, occasion: 'Wedding' },
+	{ name: 'Haya', image: '/haya-cover.png', occasion: 'Wedding' },
 	{ name: 'Sample Website 02', image: SAMPLE, occasion: 'Wedding' },
 	{ name: 'Sample Website 03', image: SAMPLE, occasion: 'Mehndi' },
 	{ name: 'Sample Website 04', image: SAMPLE, occasion: 'Walima' },
