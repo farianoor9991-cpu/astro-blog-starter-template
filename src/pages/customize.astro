@@ -1,0 +1,1412 @@
+---
+import PageLayout from '../layouts/PageLayout.astro';
+---
+
+<PageLayout title="Customize" description="Personalize your invitation cards." showReviews={false}>
+	<div class="cz" id="cz">
+		<div id="cz-main">
+			<header class="cz-head">
+				<h1 class="cz-title">Customize: <span id="cz-name"></span></h1>
+				<p class="cz-sub">Fill in your details step by step. Your cards update as you type.</p>
+				<div class="cz-progress">
+					<div class="cz-bar-t"><i id="cz-fill"></i></div>
+					<span class="cz-lab" id="cz-lab"></span>
+				</div>
+			</header>
+
+			<div class="cz-grid">
+				<div id="cz-steps"></div>
+				<aside class="cz-aside">
+					<div class="cz-aside-in">
+						<canvas data-preview></canvas>
+						<div class="ptabs" data-tabs></div>
+						<p class="wm-note">Preview only. Your final cards will not have the watermark.</p>
+					</div>
+				</aside>
+			</div>
+
+			<div class="cz-bar">
+				<button class="btn-o" type="button" data-act="preview">Preview</button>
+				<span class="pr" id="cz-price"></span>
+			</div>
+
+			<div class="cz-modal" id="cz-modal">
+				<div class="cz-sheet" role="dialog" aria-label="Card preview">
+					<div class="cz-sheet-h"><b>Preview</b><button class="lnk" type="button" data-act="close">Close</button></div>
+					<canvas data-preview></canvas>
+					<div class="ptabs" data-tabs></div>
+					<p class="wm-note">Preview only. Your final cards will not have the watermark.</p>
+				</div>
+			</div>
+		</div>
+
+		<div id="cz-missing" hidden>
+			<h1 class="cz-title">Customize</h1>
+			<p class="cz-sub">This design can't be customized yet. Please pick a design from our catalogue.</p>
+			<p class="cz-center"><a class="btn-g" href="/catalogue">Browse the catalogue</a></p>
+		</div>
+	</div>
+</PageLayout>
+
+<script>
+	import { templates } from '../data/templates/index';
+	import { categories } from '../data/designs';
+
+	type D = Record<string, any>;
+
+	const mainEl = document.getElementById('cz-main') as HTMLElement;
+	const missingEl = document.getElementById('cz-missing') as HTMLElement;
+	const designId = new URLSearchParams(location.search).get('design') || '';
+	const found: D | undefined = (templates as D)[designId];
+
+	if (!found) {
+		mainEl.hidden = true;
+		missingEl.hidden = false;
+	} else {
+		start(found);
+	}
+
+	function start(tpl: D) {
+		const price: string = categories.website.price;
+		const KEY = 'ih-customize:' + tpl.id;
+		const MAX_HOSTS: number = tpl.maxHosts || 6;
+		const L: D = tpl.eventLayout;
+		const HL: D = tpl.hostsLayout;
+		const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+		const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+		const STEPS = [
+			{ n: 1, title: 'Couple details', sub: 'Names of the bride, groom and their parents' },
+			{ n: 2, title: 'Your events', sub: 'Choose the cards you want' },
+			{ n: 3, title: 'Reception hosts', sub: 'Optional, you can skip' },
+			{ n: 4, title: 'Share links', sub: 'One link, or one per group of guests' },
+			{ n: 5, title: 'Review and preview', sub: 'See your cards before paying' },
+		];
+
+		const $ = (s: string) => document.querySelector(s) as HTMLElement | null;
+		const esc = (s: unknown) =>
+			String(s ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' } as D)[ch]);
+		const uid = () => 'l' + Date.now().toString(36) + Math.floor(Math.random() * 1000).toString(36);
+		const tc = (s: string) =>
+			String(s || '')
+				.trim()
+				.replace(/\s+/g, ' ')
+				.replace(/(^|[\s\-'])(\p{L})/gu, (_m: string, a: string, b: string) => a + b.toUpperCase());
+		const cleanParents = (s: string) =>
+			String(s || '')
+				.trim()
+				.replace(/^(d\s*\/\s*o|s\s*\/\s*o)\s*/i, '')
+				.replace(/^mr\.?\s*(&|and)\s*mrs\.?\s*/i, '')
+				.trim();
+		const digits = (s: string) => String(s || '').replace(/\D/g, '');
+		const parseDate = (v: string): Date | null => {
+			const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v || '');
+			if (!m) return null;
+			const d = new Date(+m[1], +m[2] - 1, +m[3]);
+			return isNaN(d.getTime()) ? null : d;
+		};
+		const fmtTime = (v: string) => {
+			const m = /^(\d{1,2}):(\d{2})/.exec(v || '');
+			if (!m) return '';
+			let h = +m[1];
+			const ap = h >= 12 ? 'PM' : 'AM';
+			h = h % 12 || 12;
+			return m[2] === '00' ? `At ${h} ${ap}` : `At ${h}:${m[2]} ${ap}`;
+		};
+
+		/* ---------- state ---------- */
+		const blank = (): D => ({
+			open: 1,
+			done: {},
+			active: tpl.events[0].id,
+			couple: { brideName: '', brideParents: '', groomName: '', groomParents: '' },
+			events: {},
+			hosts: { want: null, list: [{ name: '', phone: '' }] },
+			links: { mode: 'one', list: [] },
+		});
+		let S: D = blank();
+		try {
+			const raw = localStorage.getItem(KEY);
+			if (raw) S = Object.assign(blank(), JSON.parse(raw));
+		} catch (e) {}
+		tpl.events.forEach((e: D) => {
+			if (!S.events[e.id]) S.events[e.id] = { on: false, date: '', time: '', venue: '' };
+		});
+		if (!Array.isArray(S.hosts.list) || !S.hosts.list.length) S.hosts.list = [{ name: '', phone: '' }];
+		const save = () => {
+			try {
+				localStorage.setItem(KEY, JSON.stringify(S));
+			} catch (e) {}
+		};
+
+		const evDef = (id: string): D => tpl.events.find((e: D) => e.id === id);
+		const selEvents = (): D[] => tpl.events.filter((e: D) => S.events[e.id].on);
+		const byDate = (a: D, b: D) => {
+			const da = S.events[a.id].date || '9999';
+			const db = S.events[b.id].date || '9999';
+			return da < db ? -1 : da > db ? 1 : tpl.events.indexOf(a) - tpl.events.indexOf(b);
+		};
+		const pkg = (): string[] => {
+			const ids = selEvents().sort(byDate).map((e: D) => e.id);
+			if (S.hosts.want) ids.push('hosts');
+			return ids;
+		};
+		const tabs = (): string[] => {
+			const p = pkg();
+			return p.length ? p : tpl.events.map((e: D) => e.id);
+		};
+		const label = (id: string) => (id === 'hosts' ? 'Reception Hosts' : evDef(id).label);
+		const ensureActive = () => {
+			const t = tabs();
+			if (t.indexOf(S.active) < 0) S.active = t[0];
+		};
+		const hostCount = () => S.hosts.list.filter((h: D) => h.name.trim()).length;
+		const syncLinks = () => {
+			const ok = pkg();
+			S.links.list.forEach((lk: D) => {
+				lk.cards = lk.cards.filter((k: string) => ok.indexOf(k) >= 0);
+			});
+		};
+
+		/* ---------- fonts and images ---------- */
+		const fontsReady: Promise<void> = (async () => {
+			await new Promise<void>((res) => {
+				const l = document.createElement('link');
+				l.rel = 'stylesheet';
+				l.href = 'https://fonts.googleapis.com/css2?family=Unna:wght@400;700&family=Berkshire+Swash&display=swap';
+				l.onload = () => res();
+				l.onerror = () => res();
+				document.head.appendChild(l);
+			});
+			try {
+				await Promise.all([
+					document.fonts.load('700 40px "Unna"'),
+					document.fonts.load('400 40px "Berkshire Swash"'),
+					document.fonts.load('700 40px "Playfair Display"'),
+				]);
+			} catch (e) {}
+		})();
+
+		const imgCache: D = {};
+		const loadOne = (src: string): Promise<HTMLImageElement> => {
+			if (!imgCache[src]) {
+				imgCache[src] = new Promise((res, rej) => {
+					const i = new Image();
+					i.onload = () => res(i);
+					i.onerror = () => rej(new Error(src));
+					i.src = src;
+				});
+			}
+			return imgCache[src];
+		};
+		const loadBg = async (list: string[]): Promise<HTMLImageElement | null> => {
+			for (const s of list) {
+				try {
+					return await loadOne(s);
+				} catch (e) {}
+			}
+			return null;
+		};
+
+		/* ---------- what is written on each card ---------- */
+		const texts = (id: string): D => {
+			const def = evDef(id);
+			const e = S.events[id];
+			const c = S.couple;
+			const sm = tpl.sample;
+			const real = (t: string) => ({ t, real: true });
+			const fake = (t: string) => ({ t, real: false });
+			const d = parseDate(e.date);
+			const dd = d || (parseDate(def.sample.date) as Date);
+			const dr = !!d;
+			const bp = cleanParents(c.brideParents);
+			const gp = cleanParents(c.groomParents);
+			const venue = String(e.venue || '').trim();
+			return {
+				title: real(def.title),
+				brideName: c.brideName.trim() ? real(tc(c.brideName)) : fake(sm.brideName),
+				brideParents: bp ? real('D/O Mr & Mrs ' + tc(bp)) : fake('D/O Mr & Mrs ' + sm.brideParents),
+				groomName: c.groomName.trim() ? real(tc(c.groomName)) : fake(sm.groomName),
+				groomParents: gp ? real('S/O Mr & Mrs ' + tc(gp)) : fake('S/O Mr & Mrs ' + sm.groomParents),
+				month: { t: MONTHS[dd.getMonth()], real: dr },
+				dayName: { t: DAYS[dd.getDay()], real: dr },
+				date: { t: String(dd.getDate()).padStart(2, '0'), real: dr },
+				year: { t: String(dd.getFullYear()), real: dr },
+				time: e.time ? real(fmtTime(e.time)) : fake(fmtTime(def.sample.time)),
+				venue: venue ? real('Venue: ' + venue) : fake('Venue: ' + tpl.sampleVenue),
+			};
+		};
+		const hostRows = (): D[] => {
+			const filled = S.hosts.list.filter((h: D) => h.name.trim());
+			if (filled.length) {
+				return filled.map((h: D) => ({ t: tc(h.name) + (h.phone.trim() ? '\u2003\u2002' + h.phone.trim() : ''), real: true }));
+			}
+			return tpl.sampleHosts.map((h: D) => ({ t: h.name + '\u2003\u2002' + h.phone, real: false }));
+		};
+
+		/* ---------- drawing ---------- */
+		const tokens = new WeakMap<HTMLCanvasElement, number>();
+		let tokenN = 0;
+
+		const put = (ctx: CanvasRenderingContext2D, t: string, f: D, W: number, H: number, real: boolean) => {
+			let size = f.size * W;
+			ctx.font = `${f.weight} ${size}px "${f.font}", serif`;
+			const w = ctx.measureText(t).width;
+			const max = f.maxW * W;
+			if (w > max) {
+				size = Math.max((size * max) / w, size * 0.55);
+				ctx.font = `${f.weight} ${size}px "${f.font}", serif`;
+			}
+			ctx.globalAlpha = real ? 1 : 0.4;
+			ctx.fillStyle = tpl.color;
+			ctx.textAlign = 'center';
+			ctx.textBaseline = 'middle';
+			ctx.fillText(t, f.x * W, f.y * H);
+			ctx.globalAlpha = 1;
+		};
+
+		const wrapWords = (ctx: CanvasRenderingContext2D, str: string, maxPx: number): string[] => {
+			const words = str.split(/\s+/);
+			const lines: string[] = [];
+			let cur = '';
+			for (const w of words) {
+				const t = cur ? cur + ' ' + w : w;
+				if (ctx.measureText(t).width > maxPx && cur) {
+					lines.push(cur);
+					cur = w;
+				} else cur = t;
+			}
+			if (cur) lines.push(cur);
+			return lines;
+		};
+
+		const drawVenue = (ctx: CanvasRenderingContext2D, v: D, f: D, W: number, H: number) => {
+			let size = f.size * W;
+			const setFont = (s: number) => (ctx.font = `${f.weight} ${s}px "${f.font}", serif`);
+			setFont(size);
+			const maxPx = f.maxW * W;
+			const full = ctx.measureText(v.t).width;
+			let lines: string[] = [v.t];
+			if (v.t.indexOf(',') >= 0 && full > W * 0.4) {
+				let best = -1;
+				let bestW = Infinity;
+				for (let i = 0; i < v.t.length; i++) {
+					if (v.t[i] !== ',') continue;
+					const a = v.t.slice(0, i + 1).trim();
+					const b = v.t.slice(i + 1).trim();
+					if (!b) continue;
+					const m = Math.max(ctx.measureText(a).width, ctx.measureText(b).width);
+					if (m < bestW) {
+						bestW = m;
+						best = i;
+					}
+				}
+				if (best >= 0) lines = [v.t.slice(0, best + 1).trim(), v.t.slice(best + 1).trim()];
+			}
+			if (lines.length === 1 && full > maxPx) lines = wrapWords(ctx, v.t, maxPx);
+			if (lines.length > 2) lines = [lines[0], lines.slice(1).join(' ')];
+			const widest = Math.max(...lines.map((l) => ctx.measureText(l).width));
+			if (widest > maxPx) {
+				size = Math.max((size * maxPx) / widest, size * 0.6);
+				setFont(size);
+			}
+			ctx.globalAlpha = v.real ? 1 : 0.4;
+			ctx.fillStyle = tpl.color;
+			ctx.textAlign = 'center';
+			ctx.textBaseline = 'middle';
+			lines.forEach((l, i) => ctx.fillText(l, f.x * W, f.y * H + i * f.lh * H));
+			ctx.globalAlpha = 1;
+		};
+
+		const watermark = (ctx: CanvasRenderingContext2D, W: number, H: number) => {
+			ctx.save();
+			ctx.translate(W / 2, H / 2);
+			ctx.rotate(-Math.PI / 6);
+			const size = W * 0.075;
+			ctx.font = `700 ${size}px "Playfair Display", serif`;
+			ctx.textAlign = 'center';
+			ctx.textBaseline = 'middle';
+			ctx.lineWidth = size * 0.06;
+			ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+			ctx.fillStyle = 'rgba(39,96,65,0.30)';
+			const stepX = W * 0.55;
+			const stepY = W * 0.26;
+			let row = 0;
+			for (let y = -H; y <= H; y += stepY) {
+				const off = row % 2 ? stepX / 2 : 0;
+				for (let x = -W * 1.2; x <= W * 1.2; x += stepX) {
+					ctx.strokeText('InviteHeaven', x + off, y);
+					ctx.fillText('InviteHeaven', x + off, y);
+				}
+				row++;
+			}
+			ctx.restore();
+		};
+
+		const drawCard = async (canvas: HTMLCanvasElement, id: string, maxW: number) => {
+			const tok = ++tokenN;
+			tokens.set(canvas, tok);
+			await fontsReady;
+			const isHosts = id === 'hosts';
+			const lay: D = isHosts ? HL : L;
+			const img = await loadBg(lay.bg);
+			if (tokens.get(canvas) !== tok) return;
+			const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+			if (!img) {
+				canvas.width = 540;
+				canvas.height = 960;
+				ctx.fillStyle = '#fcf9f1';
+				ctx.fillRect(0, 0, 540, 960);
+				ctx.fillStyle = '#1a1a1a';
+				ctx.font = '16px sans-serif';
+				ctx.textAlign = 'center';
+				ctx.fillText('Card image not found.', 270, 440);
+				ctx.fillText('Upload ' + lay.bg[lay.bg.length - 1] + ' to the public folder.', 270, 470);
+				return;
+			}
+			const W = Math.min(img.naturalWidth, maxW);
+			const H = Math.round((W * img.naturalHeight) / img.naturalWidth);
+			canvas.width = W;
+			canvas.height = H;
+			ctx.imageSmoothingQuality = 'high';
+			ctx.drawImage(img, 0, 0, W, H);
+			if (isHosts) {
+				const rows = hostRows();
+				const n = rows.length;
+				const gap = n <= 3 ? 0.0388 : n === 4 ? 0.0334 : n === 5 ? 0.02795 : 0.0256;
+				const y0 = HL.field.centerY - ((n - 1) * gap) / 2;
+				rows.forEach((r: D, i: number) => put(ctx, r.t, { ...HL.field, y: y0 + i * gap }, W, H, r.real));
+			} else {
+				const T = texts(id);
+				['title', 'brideName', 'brideParents', 'groomName', 'groomParents', 'month', 'dayName', 'date', 'time', 'year'].forEach((k) =>
+					put(ctx, T[k].t, L.fields[k], W, H, T[k].real)
+				);
+				drawVenue(ctx, T.venue, L.fields.venue, W, H);
+			}
+			watermark(ctx, W, H);
+		};
+
+		const canvases = Array.from(document.querySelectorAll<HTMLCanvasElement>('canvas[data-preview]'));
+		let raf = 0;
+		const scheduleDraw = () => {
+			cancelAnimationFrame(raf);
+			raf = requestAnimationFrame(() => {
+				ensureActive();
+				canvases.forEach((c) => {
+					if (c.getClientRects().length) drawCard(c, S.active, 800);
+				});
+			});
+		};
+		const renderTabs = () => {
+			ensureActive();
+			const html = tabs()
+				.map((id) => `<button type="button" class="pt${id === S.active ? ' on' : ''}" data-card="${id}">${esc(label(id))}</button>`)
+				.join('');
+			document.querySelectorAll('[data-tabs]').forEach((el) => (el.innerHTML = html));
+		};
+		const renderGallery = () => {
+			const g = document.getElementById('gal');
+			if (!g) return;
+			g.innerHTML = '';
+			pkg().forEach((id) => {
+				const fig = document.createElement('figure');
+				fig.className = 'gal-i';
+				const c = document.createElement('canvas');
+				const cap = document.createElement('figcaption');
+				cap.textContent = label(id);
+				fig.appendChild(c);
+				fig.appendChild(cap);
+				g.appendChild(fig);
+				drawCard(c, id, 420);
+			});
+		};
+
+		/* ---------- step bodies ---------- */
+		const inp = (attr: string, val: string, ph: string) => `<input ${attr} value="${esc(val)}" placeholder="e.g. ${esc(ph)}" autocomplete="off">`;
+
+		const body1 = (): string => {
+			const c = S.couple;
+			const sm = tpl.sample;
+			return `
+				<div class="f"><label>Bride's name</label>${inp('data-couple="brideName"', c.brideName, sm.brideName)}</div>
+				<div class="f"><label>Bride's parents</label><div class="pre"><span>D/O Mr &amp; Mrs</span>${inp('data-couple="brideParents"', c.brideParents, sm.brideParents)}</div></div>
+				<div class="f"><label>Groom's name</label>${inp('data-couple="groomName"', c.groomName, sm.groomName)}</div>
+				<div class="f"><label>Groom's parents</label><div class="pre"><span>S/O Mr &amp; Mrs</span>${inp('data-couple="groomParents"', c.groomParents, sm.groomParents)}</div><p class="hint">Type only the names, like the examples. We add "D/O Mr &amp; Mrs" and "S/O Mr &amp; Mrs" for you.</p></div>
+				<div class="err" data-err="1"></div>
+				<div class="acts"><button class="btn-o" type="button" data-act="sample">Fill with sample details</button><button class="btn-g" type="button" data-act="next" data-n="1">Continue to Step 2</button></div>`;
+		};
+
+		const body2 = (): string => {
+			const chips = tpl.events
+				.map(
+					(e: D) =>
+						`<button type="button" class="chip${S.events[e.id].on ? ' on' : ''}" data-ev-toggle="${e.id}" aria-pressed="${S.events[e.id].on}">${esc(e.label)}</button>`
+				)
+				.join('');
+			const sel = selEvents();
+			const t = new Date();
+			const min = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
+			const blocks = sel
+				.map((e: D, i: number) => {
+					const v = S.events[e.id];
+					const d = parseDate(v.date);
+					return `
+					<div class="ev">
+						<div class="ev-h"><b>${esc(e.label)}</b><span class="tag" data-day="${e.id}">${d ? DAYS[d.getDay()] : ''}</span></div>
+						<div class="two">
+							<div class="f"><label>Date</label><input type="date" min="${min}" data-ev="${e.id}" data-k="date" value="${esc(v.date)}"></div>
+							<div class="f"><label>Time</label><input type="time" data-ev="${e.id}" data-k="time" value="${esc(v.time)}"></div>
+						</div>
+						<div class="f"><label>Venue</label>${inp(`data-ev="${e.id}" data-k="venue"`, v.venue, tpl.sampleVenue)}</div>
+						${i > 0 ? `<button type="button" class="lnk" data-act="samevenue" data-ev="${e.id}">Same venue as the event above</button>` : ''}
+					</div>`;
+				})
+				.join('');
+			return `
+				<p class="hint">Tap the events you want cards for.</p>
+				<div class="chips">${chips}</div>
+				${blocks || '<p class="hint">Choose at least one event to continue.</p>'}
+				<div class="err" data-err="2"></div>
+				<div class="acts"><button class="btn-g" type="button" data-act="next" data-n="2">Continue to Step 3</button></div>`;
+		};
+
+		const body3 = (): string => {
+			const w = S.hosts.want;
+			const yn = `<div class="chips"><button type="button" class="chip${w === true ? ' on' : ''}" data-hosts="yes">Yes, add it</button><button type="button" class="chip${w === false ? ' on' : ''}" data-hosts="no">No, skip it</button></div>`;
+			let rows = '';
+			if (w) {
+				rows =
+					S.hosts.list
+						.map(
+							(h: D, i: number) => `
+						<div class="host">
+							<div class="two">
+								<div class="f"><label>Host ${i + 1} name</label><input data-host="${i}" data-k="name" value="${esc(h.name)}" placeholder="e.g. Ahmed Raza Khan" autocomplete="off"></div>
+								<div class="f"><label>Phone number</label><input data-host="${i}" data-k="phone" inputmode="tel" value="${esc(h.phone)}" placeholder="e.g. 0300 1234567" autocomplete="off"></div>
+							</div>
+							${S.hosts.list.length > 1 ? `<button type="button" class="lnk" data-act="rmhost" data-i="${i}">Remove host</button>` : ''}
+						</div>`
+						)
+						.join('') +
+					(S.hosts.list.length < MAX_HOSTS
+						? `<button type="button" class="btn-o" data-act="addhost">Add another host (${S.hosts.list.length} of ${MAX_HOSTS})</button>`
+						: `<p class="hint">You have added the maximum of ${MAX_HOSTS} hosts.</p>`) +
+					`<p class="hint">The card spaces the names evenly, whether you add 1 host or ${MAX_HOSTS}.</p>`;
+			}
+			return `
+				<p class="hint">Would you like a Reception Hosts card? It lists the people your guests can call for the reception.</p>
+				${yn}${rows}
+				<div class="err" data-err="3"></div>
+				<div class="acts"><button class="btn-g" type="button" data-act="next" data-n="3">Continue to Step 4</button></div>`;
+		};
+
+		const body4 = (): string => {
+			const cards = pkg();
+			if (!cards.length) {
+				return `<p class="hint">Please choose your events in Step 2 first.</p><div class="acts"><button class="btn-o" type="button" data-open="2">Go to Step 2</button></div>`;
+			}
+			syncLinks();
+			const m = S.links.mode;
+			const opts = `
+				<div class="opts">
+					<button type="button" class="opt${m === 'one' ? ' on' : ''}" data-mode="one"><b>One link for everyone</b><small>All your cards in a single link.</small></button>
+					<button type="button" class="opt${m === 'many' ? ' on' : ''}" data-mode="many"><b>Different links for different guests</b><small>For example, close family see all cards and friends see only some.</small></button>
+				</div>`;
+			let extra = '';
+			if (m === 'one') {
+				extra = `<p class="hint">Your link will show: ${cards.map((c) => esc(label(c))).join(', ')}.</p>`;
+			} else {
+				extra =
+					S.links.list
+						.map(
+							(lk: D, i: number) => `
+						<div class="lk">
+							<div class="f"><label>Link ${i + 1} name</label><input data-lk="${lk.id}" data-k="label" value="${esc(lk.label)}" placeholder="e.g. Close Family" autocomplete="off"></div>
+							<div class="chips">${cards
+								.map(
+									(c) =>
+										`<label class="chip ck${lk.cards.indexOf(c) >= 0 ? ' on' : ''}"><input type="checkbox" data-lk="${lk.id}" data-card-pick="${c}" ${lk.cards.indexOf(c) >= 0 ? 'checked' : ''}>${esc(label(c))}</label>`
+								)
+								.join('')}</div>
+							<p class="hint" data-count="${lk.id}">${lk.cards.length} card${lk.cards.length === 1 ? '' : 's'} selected</p>
+							${S.links.list.length > 1 ? `<button type="button" class="lnk" data-act="rmlink" data-lk="${lk.id}">Remove this link</button>` : ''}
+						</div>`
+						)
+						.join('') + `<button type="button" class="btn-o" data-act="addlink">Add another link</button>`;
+			}
+			return `${opts}${extra}<div class="err" data-err="4"></div><div class="acts"><button class="btn-g" type="button" data-act="next" data-n="4">Continue to Step 5</button></div>`;
+		};
+
+		const body5 = (): string => {
+			const cards = pkg();
+			if (!cards.length) return '<p class="hint">Please complete the earlier steps first.</p>';
+			const c = S.couple;
+			const evLines = selEvents()
+				.sort(byDate)
+				.map((e: D) => {
+					const v = S.events[e.id];
+					const d = parseDate(v.date);
+					const when = d ? `${DAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}` : 'date missing';
+					return `<p>${esc(e.label)}: ${esc(when)}, ${esc(fmtTime(v.time).replace('At ', ''))}, ${esc(String(v.venue).trim())}</p>`;
+				})
+				.join('');
+			const hostLine = S.hosts.want ? `${hostCount()} host${hostCount() === 1 ? '' : 's'} added` : 'Not included';
+			let linkLines = '';
+			if (S.links.mode === 'one') {
+				linkLines = `<p>One link with ${cards.length} card${cards.length === 1 ? '' : 's'}</p>`;
+			} else {
+				linkLines =
+					`<p>${S.links.list.length} link${S.links.list.length === 1 ? '' : 's'}</p>` +
+					S.links.list.map((lk: D) => `<p>${esc(lk.label || 'Untitled')}: ${lk.cards.map((k: string) => esc(label(k))).join(', ')}</p>`).join('');
+			}
+			const row = (title: string, html: string, n: number) =>
+				`<div class="rv-row"><div><b>${title}</b>${html}</div><button class="lnk" type="button" data-open="${n}">Edit</button></div>`;
+			return `
+				<div class="rv">
+					${row('Couple', `<p>${esc(tc(c.brideName))}, D/O Mr &amp; Mrs ${esc(tc(cleanParents(c.brideParents)))}</p><p>${esc(tc(c.groomName))}, S/O Mr &amp; Mrs ${esc(tc(cleanParents(c.groomParents)))}</p>`, 1)}
+					${row('Events', evLines, 2)}
+					${row('Reception hosts', `<p>${hostLine}</p>`, 3)}
+					${row('Invitation links', linkLines, 4)}
+				</div>
+				<p class="hint">Your cards, with the preview watermark:</p>
+				<div class="gal" id="gal"></div>
+				<p class="hint">This is a preview. Your final cards will not have the watermark.</p>
+				<div class="acts"><button class="btn-g" type="button" data-act="finish">Looks good, continue</button></div>
+				<div class="ok" id="finish-note" hidden>Your details are saved on this device. The payment step is coming next, and your invitation link(s) will go live after payment.</div>`;
+		};
+
+		const renderBody = (n: number): string => (n === 1 ? body1() : n === 2 ? body2() : n === 3 ? body3() : n === 4 ? body4() : body5());
+		const refreshBody = (n: number) => {
+			const el = $(`[data-body="${n}"]`);
+			if (el) el.innerHTML = renderBody(n);
+			if (n === 5) renderGallery();
+		};
+
+		/* ---------- summaries, progress, steps ---------- */
+		const updateSummaries = () => {
+			const c = S.couple;
+			const evN = selEvents().length;
+			const sum: D = {
+				1: S.done[1] ? `${tc(c.brideName)} and ${tc(c.groomName)}` : STEPS[0].sub,
+				2: S.done[2] ? `${evN} event${evN === 1 ? '' : 's'} chosen` : STEPS[1].sub,
+				3: S.done[3] ? (S.hosts.want ? `${hostCount()} host${hostCount() === 1 ? '' : 's'} added` : 'Skipped') : STEPS[2].sub,
+				4: S.done[4] ? (S.links.mode === 'one' ? 'One link for everyone' : `${S.links.list.length} link${S.links.list.length === 1 ? '' : 's'}`) : STEPS[3].sub,
+				5: STEPS[4].sub,
+			};
+			STEPS.forEach((s) => {
+				const el = $(`[data-sum="${s.n}"]`);
+				if (el) el.textContent = sum[s.n];
+				const sec = $(`.st[data-n="${s.n}"]`);
+				if (sec) sec.classList.toggle('done', !!S.done[s.n] && s.n < 5);
+			});
+		};
+		const updateProgress = () => {
+			const fill = $('#cz-fill');
+			const lab = $('#cz-lab');
+			if (fill) fill.style.width = (S.open / 5) * 100 + '%';
+			if (lab) lab.textContent = `Step ${S.open} of 5`;
+		};
+
+		const openStep = (n: number, scroll = false) => {
+			S.open = n;
+			if (n === 3 && S.hosts.want) S.active = 'hosts';
+			else if (S.active === 'hosts' && n !== 3 && n !== 5) S.active = tabs()[0];
+			save();
+			document.querySelectorAll<HTMLElement>('.st').forEach((el) => {
+				const on = Number(el.dataset.n) === n;
+				el.classList.toggle('open', on);
+				const h = el.querySelector('.st-h');
+				if (h) h.setAttribute('aria-expanded', String(on));
+			});
+			refreshBody(n);
+			updateSummaries();
+			renderTabs();
+			updateProgress();
+			scheduleDraw();
+			if (scroll) {
+				const sec = $(`.st[data-n="${n}"]`);
+				if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+			}
+		};
+
+		/* ---------- validation ---------- */
+		const validate = (n: number): string[] => {
+			const er: string[] = [];
+			if (n === 1) {
+				const c = S.couple;
+				if (!c.brideName.trim()) er.push("Please enter the bride's name.");
+				if (!cleanParents(c.brideParents)) er.push("Please enter the bride's parents' names.");
+				if (!c.groomName.trim()) er.push("Please enter the groom's name.");
+				if (!cleanParents(c.groomParents)) er.push("Please enter the groom's parents' names.");
+			}
+			if (n === 2) {
+				const sel = selEvents();
+				if (!sel.length) er.push('Please choose at least one event.');
+				sel.forEach((e: D) => {
+					const v = S.events[e.id];
+					if (!parseDate(v.date)) er.push(`${e.label}: please choose a date.`);
+					if (!v.time) er.push(`${e.label}: please choose a time.`);
+					if (!String(v.venue).trim()) er.push(`${e.label}: please enter the venue.`);
+				});
+			}
+			if (n === 3) {
+				if (S.hosts.want === null) er.push('Please choose Yes or No.');
+				if (S.hosts.want) {
+					const rows = S.hosts.list.filter((h: D) => h.name.trim() || h.phone.trim());
+					if (!rows.length) er.push('Please add at least one host, or choose No.');
+					rows.forEach((h: D, i: number) => {
+						if (!h.name.trim()) er.push(`Host ${i + 1}: please enter a name.`);
+						if (digits(h.phone).length < 10) er.push(`Host ${i + 1}: please enter a valid phone number.`);
+					});
+				}
+			}
+			if (n === 4 && S.links.mode === 'many') {
+				syncLinks();
+				if (!S.links.list.length) er.push('Please add at least one link.');
+				S.links.list.forEach((lk: D, i: number) => {
+					if (!lk.label.trim()) er.push(`Link ${i + 1}: please give it a name.`);
+					if (!lk.cards.length) er.push(`Link ${i + 1}: please select at least one card.`);
+				});
+			}
+			return er;
+		};
+
+		const next = (n: number) => {
+			const er = validate(n);
+			const box = $(`[data-err="${n}"]`);
+			if (er.length) {
+				if (box) box.innerHTML = er.map((e) => `<p>${esc(e)}</p>`).join('');
+				return;
+			}
+			if (box) box.innerHTML = '';
+			if (n === 3 && S.hosts.want) S.hosts.list = S.hosts.list.filter((h: D) => h.name.trim() || h.phone.trim());
+			S.done[n] = true;
+			save();
+			openStep(n + 1, true);
+		};
+
+		/* ---------- actions ---------- */
+		const toggleEvent = (id: string) => {
+			const v = S.events[id];
+			v.on = !v.on;
+			if (v.on) S.active = id;
+			syncLinks();
+			ensureActive();
+			refreshBody(2);
+			renderTabs();
+			updateSummaries();
+			save();
+			scheduleDraw();
+		};
+		const setMode = (m: string) => {
+			S.links.mode = m;
+			if (m === 'many' && !S.links.list.length) S.links.list.push({ id: uid(), label: '', cards: pkg() });
+			refreshBody(4);
+			save();
+		};
+		const fillSample = () => {
+			const sm = tpl.sample;
+			S.couple = { brideName: sm.brideName, brideParents: sm.brideParents, groomName: sm.groomName, groomParents: sm.groomParents };
+			tpl.events.forEach((e: D) => {
+				S.events[e.id] = { on: true, date: e.sample.date, time: e.sample.time, venue: tpl.sampleVenue };
+			});
+			S.hosts = { want: true, list: tpl.sampleHosts.map((h: D) => ({ name: h.name, phone: String(h.phone).replace(/x/gi, '1') })) };
+			S.links = { mode: 'one', list: [] };
+			S.done = {};
+			S.active = pkg()[0];
+			save();
+			openStep(1);
+		};
+		const finish = () => {
+			S.done[5] = true;
+			save();
+			const n = $('#finish-note');
+			if (n) {
+				n.hidden = false;
+				n.scrollIntoView({ behavior: 'smooth', block: 'center' });
+			}
+		};
+		const modal = $('#cz-modal') as HTMLElement;
+		const openModal = () => {
+			modal.classList.add('open');
+			document.body.style.overflow = 'hidden';
+			renderTabs();
+			scheduleDraw();
+		};
+		const closeModal = () => {
+			modal.classList.remove('open');
+			document.body.style.overflow = '';
+		};
+
+		const root = document.getElementById('cz') as HTMLElement;
+
+		root.addEventListener('input', (ev) => {
+			const t = ev.target as HTMLInputElement;
+			const ds = t.dataset;
+			if (ds.couple) {
+				S.couple[ds.couple] = t.value;
+			} else if (ds.ev) {
+				const id = ds.ev;
+				const k = ds.k as string;
+				S.events[id][k] = t.value;
+				S.active = id;
+				if (k === 'date') {
+					const d = parseDate(t.value);
+					const tag = $(`[data-day="${id}"]`);
+					if (tag) tag.textContent = d ? DAYS[d.getDay()] : '';
+				}
+				renderTabs();
+			} else if (ds.host !== undefined) {
+				S.hosts.list[Number(ds.host)][ds.k as string] = t.value;
+				S.active = 'hosts';
+				renderTabs();
+			} else if (ds.lk && ds.k === 'label') {
+				const lk = S.links.list.find((l: D) => l.id === ds.lk);
+				if (lk) lk.label = t.value;
+			} else {
+				return;
+			}
+			save();
+			updateSummaries();
+			scheduleDraw();
+		});
+
+		root.addEventListener('change', (ev) => {
+			const t = ev.target as HTMLInputElement;
+			if (!t.dataset.cardPick) return;
+			const lk = S.links.list.find((l: D) => l.id === t.dataset.lk);
+			if (!lk) return;
+			const c = t.dataset.cardPick;
+			const i = lk.cards.indexOf(c);
+			if (t.checked && i < 0) lk.cards.push(c);
+			if (!t.checked && i >= 0) lk.cards.splice(i, 1);
+			const chip = t.closest('.chip');
+			if (chip) chip.classList.toggle('on', t.checked);
+			const cnt = $(`[data-count="${lk.id}"]`);
+			if (cnt) cnt.textContent = `${lk.cards.length} card${lk.cards.length === 1 ? '' : 's'} selected`;
+			save();
+			updateSummaries();
+		});
+
+		root.addEventListener('click', (ev) => {
+			const b = (ev.target as HTMLElement).closest('button') as HTMLElement | null;
+			if (!b) return;
+			const d = b.dataset;
+			if (d.open) return openStep(Number(d.open), true);
+			if (d.card) {
+				S.active = d.card;
+				save();
+				renderTabs();
+				scheduleDraw();
+				return;
+			}
+			if (d.evToggle) return toggleEvent(d.evToggle);
+			if (d.hosts) {
+				S.hosts.want = d.hosts === 'yes';
+				if (S.hosts.want) S.active = 'hosts';
+				ensureActive();
+				refreshBody(3);
+				renderTabs();
+				updateSummaries();
+				save();
+				scheduleDraw();
+				return;
+			}
+			if (d.mode) return setMode(d.mode);
+			switch (d.act) {
+				case 'next':
+					next(Number(d.n));
+					break;
+				case 'sample':
+					fillSample();
+					break;
+				case 'samevenue': {
+					const sel = selEvents();
+					const i = sel.findIndex((e: D) => e.id === d.ev);
+					if (i > 0 && d.ev) {
+						const v = S.events[sel[i - 1].id].venue;
+						S.events[d.ev].venue = v;
+						const input = document.querySelector(`input[data-ev="${d.ev}"][data-k="venue"]`) as HTMLInputElement | null;
+						if (input) input.value = v;
+						S.active = d.ev;
+						save();
+						renderTabs();
+						scheduleDraw();
+					}
+					break;
+				}
+				case 'addhost':
+					if (S.hosts.list.length < MAX_HOSTS) S.hosts.list.push({ name: '', phone: '' });
+					refreshBody(3);
+					save();
+					break;
+				case 'rmhost':
+					S.hosts.list.splice(Number(d.i), 1);
+					if (!S.hosts.list.length) S.hosts.list.push({ name: '', phone: '' });
+					refreshBody(3);
+					updateSummaries();
+					save();
+					scheduleDraw();
+					break;
+				case 'addlink':
+					S.links.list.push({ id: uid(), label: '', cards: [] });
+					refreshBody(4);
+					save();
+					break;
+				case 'rmlink':
+					S.links.list = S.links.list.filter((l: D) => l.id !== d.lk);
+					if (!S.links.list.length) S.links.list.push({ id: uid(), label: '', cards: [] });
+					refreshBody(4);
+					save();
+					break;
+				case 'finish':
+					finish();
+					break;
+				case 'preview':
+					openModal();
+					break;
+				case 'close':
+					closeModal();
+					break;
+			}
+		});
+
+		modal.addEventListener('click', (ev) => {
+			if (ev.target === modal) closeModal();
+		});
+		document.addEventListener('keydown', (e) => {
+			if (e.key === 'Escape') closeModal();
+		});
+
+		/* ---------- start ---------- */
+		($('#cz-name') as HTMLElement).textContent = tpl.name;
+		($('#cz-price') as HTMLElement).textContent = price;
+		($('#cz-steps') as HTMLElement).innerHTML = STEPS.map(
+			(s) =>
+				`<section class="st" data-n="${s.n}"><button class="st-h" type="button" data-open="${s.n}" aria-expanded="false"><span class="st-n">${s.n}</span><span class="st-t"><b>${s.title}</b><small data-sum="${s.n}">${s.sub}</small></span><svg class="chev" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button><div class="st-b" data-body="${s.n}"></div></section>`
+		).join('');
+		loadBg(L.bg);
+		loadBg(HL.bg);
+		openStep(S.open || 1);
+	}
+</script>
+
+<style is:global>
+	.cz [hidden] {
+		display: none !important;
+	}
+	.cz {
+		padding-bottom: 76px;
+		font-family: 'Poppins', sans-serif;
+	}
+	.cz-head {
+		text-align: center;
+		margin-bottom: 22px;
+	}
+	.cz-title {
+		margin: 0 0 8px;
+		font-family: 'Playfair Display', serif;
+		font-weight: 700;
+		font-size: clamp(1.7rem, 7vw, 2.6rem);
+		line-height: 1.2;
+		color: #1a1a1a;
+	}
+	.cz-sub {
+		margin: 0 auto 14px;
+		max-width: 520px;
+		font-size: 14px;
+		line-height: 1.7;
+		color: #5a5a5a;
+		text-align: center;
+	}
+	.cz-center {
+		text-align: center;
+	}
+	.cz-progress {
+		max-width: 420px;
+		margin: 0 auto;
+		display: flex;
+		align-items: center;
+		gap: 10px;
+	}
+	.cz-bar-t {
+		flex: 1;
+		height: 6px;
+		border-radius: 99px;
+		background: rgba(26, 26, 26, 0.1);
+		overflow: hidden;
+	}
+	.cz-bar-t i {
+		display: block;
+		height: 100%;
+		width: 20%;
+		background: #d4a276;
+		border-radius: 99px;
+		transition: width 0.3s ease;
+	}
+	.cz-lab {
+		font-size: 12px;
+		font-weight: 500;
+		color: #1a1a1a;
+		white-space: nowrap;
+	}
+	.cz-grid {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 24px;
+		align-items: start;
+	}
+
+	/* Step blocks */
+	.cz .st {
+		background: #ffffff;
+		border-radius: 14px;
+		box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+		margin-bottom: 10px;
+		overflow: hidden;
+	}
+	.cz .st.open {
+		box-shadow: inset 0 0 0 1.5px #d4a276, 0 2px 10px rgba(0, 0, 0, 0.06);
+	}
+	.cz .st-h {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		width: 100%;
+		padding: 14px;
+		background: none;
+		border: none;
+		text-align: left;
+		cursor: pointer;
+		font-family: 'Poppins', sans-serif;
+		color: #1a1a1a;
+	}
+	.cz .st-n {
+		width: 28px;
+		height: 28px;
+		border-radius: 50%;
+		border: 1.5px solid #d4a276;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 12px;
+		font-weight: 700;
+		flex-shrink: 0;
+	}
+	.cz .st.done .st-n {
+		background: #d4a276;
+		color: #ffffff;
+		font-size: 0;
+	}
+	.cz .st.done .st-n::after {
+		content: '\2713';
+		font-size: 14px;
+	}
+	.cz .st-t {
+		flex: 1;
+		min-width: 0;
+		display: flex;
+		flex-direction: column;
+	}
+	.cz .st-t b {
+		font-size: 14px;
+		font-weight: 500;
+	}
+	.cz .st-t small {
+		margin-top: 1px;
+		font-size: 12px;
+		color: #5a5a5a;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.cz .chev {
+		flex-shrink: 0;
+		transition: transform 0.2s ease;
+	}
+	.cz .st.open .chev {
+		transform: rotate(180deg);
+	}
+	.cz .st-b {
+		display: none;
+		padding: 2px 14px 16px;
+	}
+	.cz .st.open .st-b {
+		display: block;
+	}
+
+	/* Fields */
+	.cz .f {
+		margin-bottom: 12px;
+	}
+	.cz label {
+		display: block;
+		margin-bottom: 5px;
+		font-size: 12px;
+		font-weight: 500;
+		color: #1a1a1a;
+	}
+	.cz .f input {
+		width: 100%;
+		box-sizing: border-box;
+		font: 400 14px 'Poppins', sans-serif;
+		color: #1a1a1a;
+		background: #fcf9f1;
+		border: 1px solid rgba(26, 26, 26, 0.18);
+		border-radius: 10px;
+		padding: 10px 12px;
+	}
+	.cz .pre {
+		display: flex;
+		align-items: stretch;
+		background: #fcf9f1;
+		border: 1px solid rgba(26, 26, 26, 0.18);
+		border-radius: 10px;
+		overflow: hidden;
+	}
+	.cz .pre span {
+		display: flex;
+		align-items: center;
+		padding: 0 10px;
+		font-size: 12px;
+		color: #5a5a5a;
+		white-space: nowrap;
+		border-right: 1px solid rgba(26, 26, 26, 0.18);
+	}
+	.cz .pre input {
+		flex: 1;
+		min-width: 0;
+		width: 100%;
+		box-sizing: border-box;
+		font: 400 14px 'Poppins', sans-serif;
+		color: #1a1a1a;
+		background: transparent;
+		border: none;
+		border-radius: 0;
+		padding: 10px 12px;
+	}
+	.cz input:focus {
+		outline: 2px solid #d4a276;
+		outline-offset: 0;
+	}
+	.cz input::placeholder {
+		color: rgba(90, 90, 90, 0.65);
+	}
+	.cz .two {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 8px;
+	}
+	.cz .hint {
+		margin: 4px 0 10px;
+		font-size: 12px;
+		line-height: 1.6;
+		color: #5a5a5a;
+	}
+	.cz .err {
+		margin-top: 10px;
+	}
+	.cz .err p {
+		margin: 0 0 4px;
+		padding: 8px 10px;
+		font-size: 12px;
+		font-weight: 500;
+		color: #1a1a1a;
+		background: #fcf9f1;
+		border-left: 3px solid #d4a276;
+		border-radius: 6px;
+	}
+	.cz .acts {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px;
+		justify-content: space-between;
+		margin-top: 14px;
+	}
+
+	/* Buttons and chips */
+	.cz .btn-g,
+	.cz .btn-o {
+		display: inline-block;
+		font: 500 13px 'Poppins', sans-serif;
+		padding: 10px 22px;
+		border-radius: 999px;
+		cursor: pointer;
+		text-decoration: none;
+	}
+	.cz .btn-g {
+		background: #d4a276;
+		color: #ffffff;
+		border: 1.5px solid #d4a276;
+		box-shadow: 0 6px 14px rgba(212, 162, 118, 0.35);
+	}
+	.cz .btn-o {
+		background: transparent;
+		color: #1a1a1a;
+		border: 1.5px solid #1a1a1a;
+	}
+	.cz .lnk {
+		background: none;
+		border: none;
+		padding: 4px 0;
+		font: 400 12px 'Poppins', sans-serif;
+		color: #1a1a1a;
+		text-decoration: underline;
+		cursor: pointer;
+	}
+	.cz .chips {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px;
+		margin: 6px 0 12px;
+	}
+	.cz .chip {
+		font: 500 12px 'Poppins', sans-serif;
+		padding: 7px 14px;
+		border-radius: 999px;
+		border: 1px solid rgba(26, 26, 26, 0.18);
+		background: #fcf9f1;
+		color: #5a5a5a;
+		cursor: pointer;
+	}
+	.cz .chip.on {
+		background: #d4a276;
+		border-color: #d4a276;
+		color: #ffffff;
+	}
+	.cz .chip.ck {
+		position: relative;
+		display: inline-block;
+		margin: 0;
+	}
+	.cz .ck input {
+		position: absolute;
+		opacity: 0;
+		width: 0;
+		height: 0;
+	}
+
+	/* Blocks inside steps */
+	.cz .ev,
+	.cz .lk,
+	.cz .host {
+		background: #fcf9f1;
+		border-radius: 10px;
+		padding: 12px;
+		margin-bottom: 10px;
+	}
+	.cz .ev .f input,
+	.cz .host .f input,
+	.cz .lk .f input {
+		background: #ffffff;
+	}
+	.cz .ev-h {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 8px;
+		font-size: 13px;
+		color: #1a1a1a;
+	}
+	.cz .tag {
+		font-size: 11px;
+		font-weight: 500;
+		color: #d4a276;
+	}
+	.cz .opts {
+		display: grid;
+		gap: 8px;
+		margin: 8px 0 12px;
+	}
+	.cz .opt {
+		text-align: left;
+		padding: 12px;
+		border-radius: 12px;
+		border: 1.5px solid rgba(26, 26, 26, 0.18);
+		background: #fcf9f1;
+		cursor: pointer;
+		font-family: 'Poppins', sans-serif;
+	}
+	.cz .opt b {
+		display: block;
+		font-size: 13px;
+		font-weight: 500;
+		color: #1a1a1a;
+	}
+	.cz .opt small {
+		display: block;
+		margin-top: 2px;
+		font-size: 11.5px;
+		color: #5a5a5a;
+	}
+	.cz .opt.on {
+		border-color: #d4a276;
+		box-shadow: inset 0 0 0 1px #d4a276;
+	}
+
+	/* Review */
+	.cz .rv-row {
+		display: flex;
+		justify-content: space-between;
+		gap: 10px;
+		padding: 10px 0;
+		border-bottom: 1px solid rgba(26, 26, 26, 0.1);
+	}
+	.cz .rv-row b {
+		font-size: 13px;
+		color: #1a1a1a;
+	}
+	.cz .rv-row p {
+		margin: 2px 0 0;
+		font-size: 12px;
+		line-height: 1.6;
+		color: #5a5a5a;
+	}
+	.cz .gal {
+		display: flex;
+		gap: 10px;
+		overflow-x: auto;
+		padding: 10px 2px 6px;
+		scroll-snap-type: x mandatory;
+	}
+	.cz .gal-i {
+		margin: 0;
+		flex: 0 0 150px;
+		scroll-snap-align: start;
+		text-align: center;
+	}
+	.cz .gal-i canvas {
+		width: 100%;
+		height: auto;
+		border-radius: 10px;
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+	}
+	.cz .gal-i figcaption {
+		margin-top: 4px;
+		font-size: 11px;
+		color: #5a5a5a;
+	}
+	.cz .ok {
+		margin-top: 12px;
+		padding: 12px;
+		background: #fcf9f1;
+		border-left: 3px solid #d4a276;
+		border-radius: 8px;
+		font-size: 13px;
+		line-height: 1.6;
+		color: #1a1a1a;
+	}
+
+	/* Preview */
+	.cz canvas[data-preview] {
+		display: block;
+		margin: 0 auto;
+		width: auto;
+		height: auto;
+		max-width: 100%;
+		max-height: calc(100vh - 190px);
+		border-radius: 12px;
+		box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+		background: #ffffff;
+	}
+	.cz .ptabs {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: 6px;
+		margin: 12px 0 6px;
+	}
+	.cz .pt {
+		font: 500 11.5px 'Poppins', sans-serif;
+		padding: 6px 12px;
+		border-radius: 999px;
+		border: 1px solid rgba(26, 26, 26, 0.18);
+		background: #ffffff;
+		color: #5a5a5a;
+		cursor: pointer;
+	}
+	.cz .pt.on {
+		background: #d4a276;
+		border-color: #d4a276;
+		color: #ffffff;
+	}
+	.cz .wm-note {
+		margin: 4px 0 0;
+		text-align: center;
+		font-size: 11px;
+		color: #5a5a5a;
+	}
+	.cz .cz-aside {
+		display: none;
+	}
+
+	/* Mobile: bottom bar and full-screen preview */
+	.cz .cz-bar {
+		position: fixed;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		z-index: 40;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 10px;
+		padding: 10px 16px;
+		background: #ffffff;
+		box-shadow: 0 -4px 14px rgba(0, 0, 0, 0.08);
+	}
+	.cz .cz-bar .pr {
+		font: 700 15px 'Poppins', sans-serif;
+		color: #1a1a1a;
+	}
+	.cz .cz-modal {
+		display: none;
+		position: fixed;
+		inset: 0;
+		z-index: 100;
+		align-items: center;
+		justify-content: center;
+		padding: 14px;
+		background: rgba(26, 26, 26, 0.6);
+	}
+	.cz .cz-modal.open {
+		display: flex;
+	}
+	.cz .cz-sheet {
+		width: 100%;
+		max-width: 420px;
+		max-height: 100%;
+		overflow: auto;
+		background: #fcf9f1;
+		border-radius: 16px;
+		padding: 12px;
+	}
+	.cz .cz-sheet-h {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 10px;
+		font-size: 14px;
+		color: #1a1a1a;
+	}
+
+	/* Laptop: form on the left, live preview on the right */
+	@media (min-width: 900px) {
+		.cz {
+			padding-bottom: 0;
+		}
+		.cz-grid {
+			grid-template-columns: minmax(0, 1fr) minmax(0, 420px);
+			gap: 36px;
+		}
+		.cz .cz-aside {
+			display: block;
+		}
+		.cz .cz-aside-in {
+			position: sticky;
+			top: 16px;
+		}
+		.cz .cz-bar {
+			display: none;
+		}
+	}
+</style>
