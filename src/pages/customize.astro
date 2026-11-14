@@ -117,7 +117,7 @@ const MAX_HOSTS: number = tpl.maxHosts || 6;
 		const blank = (): D => ({
 			open: 1,
 			done: {},
-			active: tpl.events[0].id,
+			active: tpl.events.find(e => e.label.toLowerCase().includes('nikah'))?.id || tpl.events[0].id,
 			couple: { brideName: '', brideParents: '', groomName: '', groomParents: '' },
 			events: {},
 			hosts: { want: null, list: [{ name: '', phone: '' }] },
