@@ -124,20 +124,12 @@ const MAX_HOSTS: number = tpl.maxHosts || 6;
 			links: { mode: 'one', list: [] },
 		});
 		let S: D = blank();
-		try {
-			const raw = localStorage.getItem(KEY);
-			if (raw) S = Object.assign(blank(), JSON.parse(raw));
-		} catch (e) {}
-		tpl.events.forEach((e: D) => {
-			if (!S.events[e.id]) S.events[e.id] = { on: false, date: '', time: '', venue: '' };
-		});
-		if (!Array.isArray(S.hosts.list) || !S.hosts.list.length) S.hosts.list = [{ name: '', phone: '' }];
-		const save = () => {
-			try {
-				localStorage.setItem(KEY, JSON.stringify(S));
-			} catch (e) {}
-		};
 
+tpl.events.forEach((e: D) => {
+    S.events[e.id] = { on: false, date: '', time: '', venue: '' };
+});
+
+const save = () => {};
 		const evDef = (id: string): D => tpl.events.find((e: D) => e.id === id);
 		const selEvents = (): D[] => tpl.events.filter((e: D) => S.events[e.id].on);
 		const byDate = (a: D, b: D) => {
@@ -156,9 +148,10 @@ const MAX_HOSTS: number = tpl.maxHosts || 6;
 		};
 		const label = (id: string) => (id === 'hosts' ? 'Reception Hosts' : evDef(id).label);
 		const ensureActive = () => {
-			const t = tabs();
-			if (!t.length) S.active = tpl.events[0].id; 			else if (t.indexOf(S.active) < 0) S.active = t[0];
-		};
+    const t = tabs();
+    if (!t.length) return;
+    else if (t.indexOf(S.active) < 0) S.active = t[0];
+};
 		const hostCount = () => S.hosts.list.filter((h: D) => h.name.trim()).length;
 		const syncLinks = () => {
 			const ok = pkg();
