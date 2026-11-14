@@ -68,8 +68,8 @@ import PageLayout from '../layouts/PageLayout.astro';
 
 	function start(tpl: D) {
 		const price: string = categories.website.price;
-		const KEY = 'ih-customize:' + tpl.id;
-		const MAX_HOSTS: number = tpl.maxHosts || 6;
+const KEY = 'ih-customize-v2:' + tpl.id;
+const MAX_HOSTS: number = tpl.maxHosts || 6;
 		const L: D = tpl.eventLayout;
 		const HL: D = tpl.hostsLayout;
 		const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -321,15 +321,15 @@ import PageLayout from '../layouts/PageLayout.astro';
 			ctx.save();
 			ctx.translate(W / 2, H / 2);
 			ctx.rotate(-Math.PI / 6);
-			const size = W * 0.075;
+						const size = W * 0.058;
 			ctx.font = `700 ${size}px "Playfair Display", serif`;
 			ctx.textAlign = 'center';
 			ctx.textBaseline = 'middle';
-			ctx.lineWidth = size * 0.06;
-			ctx.strokeStyle = 'rgba(255,255,255,0.55)';
-			ctx.fillStyle = 'rgba(39,96,65,0.30)';
-			const stepX = W * 0.55;
-			const stepY = W * 0.26;
+			ctx.lineWidth = size * 0.05;
+			ctx.strokeStyle = 'rgba(39,96,65,0.16)';
+			ctx.fillStyle = 'rgba(255,255,255,0.32)';
+			const stepX = W * 0.7;
+			const stepY = W * 0.34;
 			let row = 0;
 			for (let y = -H; y <= H; y += stepY) {
 				const off = row % 2 ? stepX / 2 : 0;
@@ -493,7 +493,7 @@ import PageLayout from '../layouts/PageLayout.astro';
 					`<p class="hint">The card spaces the names evenly, whether you add 1 host or ${MAX_HOSTS}.</p>`;
 			}
 			return `
-				<p class="hint">Would you like a Reception Hosts card? It lists the people your guests can call for the reception.</p>
+				<p class="hint">Would you like a Reception Hosts card? It lists the people your guests can call for the reception. You can add up to ${MAX_HOSTS} reception hosts.</p>
 				${yn}${rows}
 				<div class="err" data-err="3"></div>
 				<div class="acts"><button class="btn-g" type="button" data-act="next" data-n="3">Continue to Step 4</button></div>`;
@@ -520,7 +520,7 @@ import PageLayout from '../layouts/PageLayout.astro';
 						.map(
 							(lk: D, i: number) => `
 						<div class="lk">
-							<div class="f"><label>Link ${i + 1} name</label><input data-lk="${lk.id}" data-k="label" value="${esc(lk.label)}" placeholder="e.g. Close Family" autocomplete="off"></div>
+							<div class="f"><label>Link ${i + 1} name</label><input data-lk="${lk.id}" data-k="label" value="${esc(lk.label)}" placeholder="e.g. ${['Nikkah &amp; Baraat only', 'Walima only', 'Close family', 'Friends'][i % 4]}" autocomplete="off"></div>
 							<div class="chips">${cards
 								.map(
 									(c) =>
@@ -603,10 +603,10 @@ import PageLayout from '../layouts/PageLayout.astro';
 			const fill = $('#cz-fill');
 			const lab = $('#cz-lab');
 			if (fill) fill.style.width = (S.open / 5) * 100 + '%';
-			if (lab) lab.textContent = `Step ${S.open} of 5`;
+			if (lab) lab.textContent = S.open ? `Step ${S.open} of 5` : 'All steps closed';
 		};
 
-		const openStep = (n: number, scroll = false) => {
+		const closeStep = () => { 			S.open = 0; 			save(); 			document.querySelectorAll<HTMLElement>('.st').forEach((el) => { 				el.classList.remove('open'); 				const h = el.querySelector('.st-h'); 				if (h) h.setAttribute('aria-expanded', 'false'); 			}); 			updateProgress(); 		}; 		const openStep = (n: number, scroll = false) => {
 			S.open = n;
 			if (n === 3 && S.hosts.want) S.active = 'hosts';
 			else if (S.active === 'hosts' && n !== 3 && n !== 5) S.active = tabs()[0];
@@ -791,7 +791,7 @@ import PageLayout from '../layouts/PageLayout.astro';
 			const b = (ev.target as HTMLElement).closest('button') as HTMLElement | null;
 			if (!b) return;
 			const d = b.dataset;
-			if (d.open) return openStep(Number(d.open), true);
+			if (d.open) { 				if (b.classList.contains('st-h') && S.open === Number(d.open)) return closeStep(); 				return openStep(Number(d.open), true); 			}
 			if (d.card) {
 				S.active = d.card;
 				save();
