@@ -152,12 +152,12 @@ const MAX_HOSTS: number = tpl.maxHosts || 6;
 		};
 		const tabs = (): string[] => {
 			const p = pkg();
-			return p.length ? p : tpl.events.map((e: D) => e.id);
+			return p;
 		};
 		const label = (id: string) => (id === 'hosts' ? 'Reception Hosts' : evDef(id).label);
 		const ensureActive = () => {
 			const t = tabs();
-			if (t.indexOf(S.active) < 0) S.active = t[0];
+			if (!t.length) S.active = tpl.events[0].id; 			else if (t.indexOf(S.active) < 0) S.active = t[0];
 		};
 		const hostCount = () => S.hosts.list.filter((h: D) => h.name.trim()).length;
 		const syncLinks = () => {
@@ -401,7 +401,7 @@ const MAX_HOSTS: number = tpl.maxHosts || 6;
 			const html = tabs()
 				.map((id) => `<button type="button" class="pt${id === S.active ? ' on' : ''}" data-card="${id}">${esc(label(id))}</button>`)
 				.join('');
-			document.querySelectorAll('[data-tabs]').forEach((el) => (el.innerHTML = html));
+			document.querySelectorAll('[data-tabs]').forEach((el) => (el.innerHTML = html)); 			modal.classList.toggle('single', tabs().length < 2);
 		};
 		const renderGallery = () => {
 			const g = document.getElementById('gal');
@@ -435,7 +435,7 @@ const MAX_HOSTS: number = tpl.maxHosts || 6;
 				<div class="acts"><button class="btn-o" type="button" data-act="sample">Fill with sample details</button><button class="btn-g" type="button" data-act="next" data-n="1">Continue to Step 2</button></div>`;
 		};
 
-		const body2 = (): string => {
+		const partsOf = (v: D): D => { 			if (v.p) return v.p; 			const d = parseDate(v.date); 			const t = /^(\d{2}):(\d{2})$/.exec(v.time || ''); 			return { 				day: d ? String(d.getDate()) : '', 				month: d ? String(d.getMonth() + 1) : '', 				year: d ? String(d.getFullYear()) : '', 				hour: t ? String(Number(t[1]) % 12 || 12) : '', 				minute: t ? t[2] : '', 				ampm: t ? (Number(t[1]) >= 12 ? 'PM' : 'AM') : '', 			}; 		};  		const setPart = (id: string, part: string, val: string) => { 			const v = S.events[id]; 			v.p = Object.assign(partsOf(v), { [part]: val }); 			const p = v.p; 			v.date = ''; 			if (p.day && p.month && p.year) { 				const iso = `${p.year}-${String(p.month).padStart(2, '0')}-${String(p.day).padStart(2, '0')}`; 				const d = parseDate(iso); 				if (d && d.getMonth() + 1 === Number(p.month)) v.date = iso; 			} 			v.time = ''; 			if (p.hour && p.minute && p.ampm) { 				const h = (Number(p.hour) % 12) + (p.ampm === 'PM' ? 12 : 0); 				v.time = `${String(h).padStart(2, '0')}:${p.minute}`; 			} 			S.active = id; 			const tag = $(`[data-day="${id}"]`); 			if (tag) tag.textContent = v.date ? DAYS[(parseDate(v.date) as Date).getDay()] : p.day && p.month && p.year ? 'Please check the date' : ''; 			renderTabs(); 		};  		const body2 = (): string => { 			const chips = tpl.events 				.map( 					(e: D) => 						`<button type="button" class="chip${S.events[e.id].on ? ' on' : ''}" data-ev-toggle="${e.id}" aria-pressed="${S.events[e.id].on}">${esc(e.label)}</button>` 				) 				.join(''); 			const sel = selEvents(); 			const yr = new Date().getFullYear(); 			const opt = (val: string, text: string, cur: string) => `<option value="${val}"${String(cur) === String(val) ? ' selected' : ''}>${text}</option>`; 			const mk = (id: string, part: string, ph: string, opts: string) => 				`<select data-ev="${id}" data-part="${part}" aria-label="${ph}"><option value="">${ph}</option>${opts}</select>`; 			const blocks = sel 				.map((e: D, i: number) => { 					const v = S.events[e.id]; 					const p = partsOf(v); 					const d = parseDate(v.date); 					const days = Array.from({ length: 31 }, (_, k) => opt(String(k + 1), String(k + 1), p.day)).join(''); 					const months = MONTHS.map((m, k) => opt(String(k + 1), m, p.month)).join(''); 					const years = Array.from({ length: 4 }, (_, k) => opt(String(yr + k), String(yr + k), p.year)).join(''); 					const hours = Array.from({ length: 12 }, (_, k) => opt(String(k + 1), String(k + 1), p.hour)).join(''); 					const mins = Array.from({ length: 12 }, (_, k) => opt(String(k * 5).padStart(2, '0'), String(k * 5).padStart(2, '0'), p.minute)).join(''); 					const aps = opt('AM', 'AM', p.ampm) + opt('PM', 'PM', p.ampm); 					return ` 					<div class="ev"> 						<div class="ev-h"><b>${esc(e.label)}</b><span class="tag" data-day="${e.id}">${d ? DAYS[d.getDay()] : ''}</span></div> 						<div class="f"><label>Date</label><div class="three">${mk(e.id, 'day', 'Day', days)}${mk(e.id, 'month', 'Month', months)}${mk(e.id, 'year', 'Year', years)}</div></div> 						<div class="f"><label>Time</label><div class="three">${mk(e.id, 'hour', 'Hour', hours)}${mk(e.id, 'minute', 'Min', mins)}${mk(e.id, 'ampm', 'AM/PM', aps)}</div></div> 						<div class="f"><label>Venue</label>${inp(`data-ev="${e.id}" data-k="venue"`, v.venue, tpl.sampleVenue)}</div> 						${i > 0 ? `<button type="button" class="lnk" data-act="samevenue" data-ev="${e.id}">Same venue as the event above</button>` : ''} 					</div>`; 				}) 				.join(''); 			return ` 				<p class="hint">Tap the events you want cards for.</p> 				<div class="chips">${chips}</div> 				${blocks || '<p class="hint">Choose at least one event to continue.</p>'} 				<div class="err" data-err="2"></div> 				<div class="acts"><button class="btn-g" type="button" data-act="next" data-n="2">Continue to Step 3</button></div>`; 		};  		const body2Old = (): string => {
 			const chips = tpl.events
 				.map(
 					(e: D) =>
@@ -567,7 +567,7 @@ const MAX_HOSTS: number = tpl.maxHosts || 6;
 					${row('Reception hosts', `<p>${hostLine}</p>`, 3)}
 					${row('Invitation links', linkLines, 4)}
 				</div>
-				<p class="hint">Your cards, with the preview watermark:</p>
+				<p class="hint">Your cards, with the preview watermark:</p><button class="btn-o" type="button" data-act="preview">Preview your cards</button>
 				<div class="gal" id="gal"></div>
 				<p class="hint">This is a preview. Your final cards will not have the watermark.</p>
 				<div class="acts"><button class="btn-g" type="button" data-act="finish">Looks good, continue</button></div>
@@ -742,7 +742,7 @@ const MAX_HOSTS: number = tpl.maxHosts || 6;
 		root.addEventListener('input', (ev) => {
 			const t = ev.target as HTMLInputElement;
 			const ds = t.dataset;
-			if (ds.couple) {
+			if (ds.part && ds.ev) { 				setPart(ds.ev, ds.part, t.value); 			} else if (ds.couple) {
 				S.couple[ds.couple] = t.value;
 			} else if (ds.ev) {
 				const id = ds.ev;
@@ -870,11 +870,11 @@ const MAX_HOSTS: number = tpl.maxHosts || 6;
 			}
 		});
 
-		modal.addEventListener('click', (ev) => {
+		const go = (dir: number) => { 			const t = tabs(); 			if (t.length < 2) return; 			const i = Math.max(0, t.indexOf(S.active)); 			S.active = t[(i + dir + t.length) % t.length]; 			save(); 			renderTabs(); 			scheduleDraw(); 		}; 		const sheet = modal.querySelector('.cz-sheet') as HTMLElement; 		const mkArrow = (cls: string, txt: string, dir: number, aria: string) => { 			const b = document.createElement('button'); 			b.type = 'button'; 			b.className = 'sw ' + cls; 			b.innerHTML = txt; 			b.setAttribute('aria-label', aria); 			b.addEventListener('click', () => go(dir)); 			sheet.appendChild(b); 		}; 		mkArrow('sw-l', '&#8249;', -1, 'Previous card'); 		mkArrow('sw-r', '&#8250;', 1, 'Next card'); 		const pc = modal.querySelector('canvas') as HTMLCanvasElement; 		let sx = 0; 		pc.addEventListener('pointerdown', (e) => { 			sx = e.clientX; 		}); 		pc.addEventListener('pointerup', (e) => { 			const dx = e.clientX - sx; 			if (Math.abs(dx) > 40) go(dx < 0 ? 1 : -1); 		}); 		modal.addEventListener('click', (ev) => {
 			if (ev.target === modal) closeModal();
 		});
 		document.addEventListener('keydown', (e) => {
-			if (e.key === 'Escape') closeModal();
+			if (e.key === 'Escape') closeModal(); 			if (modal.classList.contains('open')) { 				if (e.key === 'ArrowLeft') go(-1); 				if (e.key === 'ArrowRight') go(1); 			}
 		});
 
 		/* ---------- start ---------- */
@@ -1296,7 +1296,7 @@ const MAX_HOSTS: number = tpl.maxHosts || 6;
 		color: #1a1a1a;
 	}
 
-	/* Preview */
+	/* Swipe arrows in the preview popup */ 	.cz .cz-sheet { 		position: relative; 	} 	.cz .sw { 		position: absolute; 		top: 45%; 		z-index: 2; 		width: 38px; 		height: 38px; 		border: none; 		border-radius: 50%; 		background: rgba(255, 255, 255, 0.92); 		color: #1a1a1a; 		font-size: 26px; 		line-height: 1; 		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); 		cursor: pointer; 	} 	.cz .sw-l { 		left: 18px; 	} 	.cz .sw-r { 		right: 18px; 	} 	.cz .cz-modal.single .sw { 		display: none; 	} 	.cz .cz-modal canvas { 		touch-action: pan-y; 		cursor: grab; 	}  	/* Date and time dropdowns */ 	.cz .three { 		display: grid; 		grid-template-columns: 1fr 1fr 1fr; 		gap: 6px; 	} 	.cz select { 		width: 100%; 		box-sizing: border-box; 		font: 400 13px 'Poppins', sans-serif; 		color: #1a1a1a; 		background: #ffffff; 		border: 1px solid rgba(26, 26, 26, 0.18); 		border-radius: 10px; 		padding: 10px 6px; 	} 	.cz select:focus { 		outline: 2px solid #d4a276; 		outline-offset: 0; 	}  	/* Preview */
 	.cz canvas[data-preview] {
 		display: block;
 		margin: 0 auto;
