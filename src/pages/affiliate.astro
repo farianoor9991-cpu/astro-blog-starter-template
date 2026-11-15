@@ -1,0 +1,135 @@
+---
+import PageLayout from '../layouts/PageLayout.astro';
+
+// Replace with your Google Form link
+const applyLink = 'https://forms.gle/REPLACE_WITH_YOUR_FORM';
+const whatsappLink = 'https://wa.me/920000000000?text=Hi%2C%20I%20have%20a%20question%20about%20the%20affiliate%20program.';
+
+const steps = [
+	{ t: 'Apply', d: 'Fill in a short form. We review every application.' },
+	{ t: 'Get your code', d: 'Once approved, we send you your own referral code.' },
+	{ t: 'Share', d: 'Share it on Instagram, WhatsApp, TikTok or Facebook.' },
+	{ t: 'Earn', d: 'When a customer enters your code at checkout, you earn 20%.' },
+];
+const earn = [
+	{ p: 'Website invitation (starting price)', price: 'Rs. 2,999', c: 'about Rs. 600' },
+	{ p: 'Premium website invitation', price: 'Rs. 7,999', c: 'about Rs. 1,600' },
+	{ p: 'E-Card', price: 'Rs. 999', c: 'about Rs. 200' },
+];
+const who = ['Wedding planners and decorators', 'Makeup artists and photographers', 'Fashion and lifestyle influencers', 'Bloggers, content creators and page owners'];
+const rules = [
+	'Commission is confirmed once the order is paid and delivered.',
+	'Cancelled or refunded orders do not earn commission.',
+	'Orders placed with your own code are not eligible.',
+	'Please promote honestly and make no false claims.',
+	'InviteHeaven may approve, reject or remove affiliates at its discretion.',
+];
+const faqs = [
+	{ q: 'Is it free to join?', a: 'Yes. There is no joining fee and nothing to buy. Just share your code.' },
+	{ q: 'How do I get my referral code?', a: 'After your application is approved, we send your personal code to you.' },
+	{ q: 'How does a customer use my code?', a: 'They enter it at checkout, and the order is linked to you.' },
+	{ q: 'When is my commission confirmed?', a: 'After the order is paid and delivered.' },
+	{ q: 'How do I get paid?', a: 'Payouts are sent manually via JazzCash, Easypaisa or bank transfer once you have Rs. 500 or more confirmed. Just message us to request it.' },
+	{ q: 'Can I refer e-cards too?', a: 'Yes. You earn 20% on every product, including e-cards.' },
+	{ q: 'Where can I promote InviteHeaven?', a: 'On your own social media, WhatsApp and website, honestly and without spam.' },
+];
+---
+
+<PageLayout
+	title="Affiliate Program"
+	description="Join the InviteHeaven Affiliate Program and earn 20% on every invitation you refer."
+	showReviews={false}
+>
+	<div class="af">
+		<section class="af-hero">
+			<h1>InviteHeaven Affiliate Program</h1>
+			<p class="af-tag">Share the beauty. Earn 20% on every invitation.</p>
+			<p class="af-sub">
+				Share your personal referral code and earn 20% commission on every order. Our website invitations start at
+				Rs. 2,999, so a single sale pays about Rs. 600.
+			</p>
+			<a class="af-btn" href={applyLink} target="_blank" rel="noopener">Apply Now</a>
+			<ul class="af-stats">
+				<li><b>20%</b><span>commission on every order</span></li>
+				<li><b>Your code</b><span>a personal referral code</span></li>
+				<li><b>Free</b><span>to join, no stock to buy</span></li>
+			</ul>
+		</section>
+
+		<section class="af-sec">
+			<h2>How it works</h2>
+			<ol class="af-steps">
+				{steps.map((s, i) => (
+					<li><span class="af-n">{i + 1}</span><div><b>{s.t}</b><p>{s.d}</p></div></li>
+				))}
+			</ol>
+		</section>
+
+		<section class="af-sec">
+			<h2>What you earn</h2>
+			<p class="af-note">You earn 20% of the product price on every confirmed order.</p>
+			<div class="af-table">
+				{earn.map((e) => (
+					<div class="af-row"><div><b>{e.p}</b><span>{e.price}</span></div><strong>{e.c}</strong></div>
+				))}
+			</div>
+			<p class="af-note">For example, 10 website invitation sales at Rs. 2,999 earn about Rs. 6,000.</p>
+		</section>
+
+		<section class="af-sec">
+			<h2>Who can join</h2>
+			<ul class="af-list">{who.map((w) => <li>{w}</li>)}</ul>
+			<p class="af-note">Anyone with a genuine audience who loves beautiful celebrations.</p>
+		</section>
+
+		<section class="af-sec">
+			<h2>Rules</h2>
+			<ul class="af-list">{rules.map((r) => <li>{r}</li>)}</ul>
+		</section>
+
+		<section class="af-sec">
+			<h2>Questions</h2>
+			{faqs.map((f) => (
+				<details class="af-faq"><summary>{f.q}</summary><p>{f.a}</p></details>
+			))}
+		</section>
+
+		<section class="af-cta">
+			<h2>Ready to start earning?</h2>
+			<a class="af-btn" href={applyLink} target="_blank" rel="noopener">Join the Program</a>
+			<p class="af-note">Questions? <a href={whatsappLink} target="_blank" rel="noopener">Message us on WhatsApp</a></p>
+		</section>
+	</div>
+</PageLayout>
+
+<style>
+	.af { width: 100%; max-width: 720px; margin: 0 auto; box-sizing: border-box; font-family: 'Poppins', sans-serif; color: #1a1a1a; }
+	.af h1, .af h2 { font-family: 'Playfair Display', serif; font-weight: 700; line-height: 1.2; text-align: center; margin: 0 0 10px; }
+	.af h1 { font-size: clamp(1.9rem, 8vw, 2.8rem); }
+	.af h2 { font-size: clamp(1.4rem, 6vw, 1.9rem); }
+	.af-hero { text-align: center; padding: 10px 0 28px; }
+	.af-tag { margin: 0 0 10px; font-size: 17px; font-weight: 500; color: #d4a276; }
+	.af-sub, .af-note { margin: 0 auto 16px; max-width: 520px; font-size: 14px; line-height: 1.7; color: #5a5a5a; text-align: center; }
+	.af-note a { color: #1a1a1a; }
+	.af-btn { display: inline-block; padding: 12px 28px; border-radius: 999px; background: #d4a276; color: #fff; font-size: 14px; font-weight: 500; text-decoration: none; box-shadow: 0 6px 14px rgba(212, 162, 118, 0.35); }
+	.af-stats { list-style: none; margin: 26px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+	.af-stats li { background: #fff; border-radius: 14px; padding: 14px 6px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06); }
+	.af-stats b { display: block; font-family: 'Playfair Display', serif; font-size: 1.2rem; color: #d4a276; }
+	.af-stats span { display: block; margin-top: 2px; font-size: 11.5px; color: #5a5a5a; }
+	.af-sec { padding: 22px 0; }
+	.af-steps { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 10px; }
+	.af-steps li { display: flex; gap: 12px; align-items: flex-start; background: #fff; border-radius: 14px; padding: 14px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06); }
+	.af-steps b { font-size: 14px; font-weight: 500; }
+	.af-steps p { margin: 2px 0 0; font-size: 13px; line-height: 1.6; color: #5a5a5a; }
+	.af-n { flex: 0 0 28px; width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid #d4a276; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+	.af-table { display: grid; gap: 8px; margin: 14px 0; }
+	.af-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; background: #fff; border-radius: 14px; padding: 14px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06); }
+	.af-row b { display: block; font-size: 13.5px; font-weight: 500; }
+	.af-row span { font-size: 12px; color: #5a5a5a; }
+	.af-row strong { font-size: 14px; color: #d4a276; white-space: nowrap; }
+	.af-list { margin: 12px 0; padding-left: 20px; font-size: 14px; line-height: 1.8; color: #5a5a5a; }
+	.af-faq { background: #fff; border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06); }
+	.af-faq summary { cursor: pointer; font-size: 14px; font-weight: 500; }
+	.af-faq p { margin: 8px 0 0; font-size: 13px; line-height: 1.7; color: #5a5a5a; }
+	.af-cta { text-align: center; padding: 26px 0 10px; }
+</style>
