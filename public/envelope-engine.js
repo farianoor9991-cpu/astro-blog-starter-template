@@ -114,6 +114,7 @@
 		'<button class="ev-arrow ev-prev" id="ev-prev" type="button" aria-label="Previous card">&#8249;</button>' +
 		'<button class="ev-arrow ev-next" id="ev-next" type="button" aria-label="Next card">&#8250;</button>' +
 		'</div>' +
+		'<div class="ev-zoom" id="ev-zoom" aria-hidden="true"><img alt="" draggable="false"></div>' +
 		'<button class="ev-close" id="ev-close" type="button">' + esc(S.buttons.closeLabel) + '</button>';
 
 	var $ = function (id) {
@@ -627,6 +628,59 @@
 		});
 	};
 
+	/* ----- full-screen card (tap a card in the reading view) ----- */
+	var zoomEl = $('ev-zoom');
+	var zoomImg = zoomEl.querySelector('img');
+	var zoomOpen = false;
+	var openZoom = function (i) {
+		if (!cards[i]) return;
+		zoomImg.src = cards[i].url;
+		zoomEl.classList.add('on');
+		zoomEl.setAttribute('aria-hidden', 'false');
+		zoomOpen = true;
+	};
+	var closeZoom = function () {
+		zoomEl.classList.remove('on');
+		zoomEl.setAttribute('aria-hidden', 'true');
+		zoomOpen = false;
+	};
+	zoomEl.addEventListener('click', closeZoom);
+
+	/* ----- mouse drag to swipe on a laptop (phones swipe with the finger) ----- */
+	var drag = null;
+	var wasDrag = false;
+	track.addEventListener('pointerdown', function (e) {
+		if (e.pointerType !== 'mouse' || e.button !== 0) return;
+		drag = { x: e.clientX, s: track.scrollLeft, moved: false };
+		track.style.scrollSnapType = 'none';
+		track.classList.add('grab');
+	});
+	window.addEventListener('pointermove', function (e) {
+		if (!drag) return;
+		var dx = e.clientX - drag.x;
+		if (Math.abs(dx) > 5) drag.moved = true;
+		track.scrollLeft = drag.s - dx;
+	});
+	window.addEventListener('pointerup', function () {
+		if (!drag) return;
+		wasDrag = drag.moved;
+		drag = null;
+		track.classList.remove('grab');
+		track.style.scrollSnapType = '';
+		goTo(Math.round(track.scrollLeft / slideW()), true);
+		setTimeout(function () {
+			wasDrag = false;
+		}, 50);
+	});
+	track.addEventListener('click', function (e) {
+		if (wasDrag) return;
+		var slide = e.target.closest('.ev-vw-slide');
+		if (!slide) return;
+		var idx = Array.prototype.indexOf.call(track.children, slide);
+		if (idx === vwIndex) openZoom(idx);
+		else goTo(idx, true);
+	});
+
 	/* ---------- events ---------- */
 	tapBtn.addEventListener('click', openAll);
 	cardsEl.addEventListener('click', function (e) {
@@ -654,7 +708,10 @@
 		if (!vwOpen) return;
 		if (e.key === 'ArrowLeft') goTo(vwIndex - 1, true);
 		if (e.key === 'ArrowRight') goTo(vwIndex + 1, true);
-		if (e.key === 'Escape') closeAll();
+		if (e.key === 'Escape') {
+			if (zoomOpen) closeZoom();
+			else closeAll();
+		}
 	});
 	window.addEventListener('resize', function () {
 		if (state === 'open') {

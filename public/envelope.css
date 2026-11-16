@@ -321,10 +321,11 @@ body {
 	pointer-events: none !important;
 }
 
-/* Reading view: swipe through the cards, neighbours peek at the edges */
+/* Reading view: one card at a time, swipe (or drag, or arrows); neighbours peek at the edges */
 .ev-vw {
-	--sw: min(76vw, 330px, calc((100vh - 230px) * 0.5625));
-	--sw: min(76vw, 330px, calc((100svh - 230px) * 0.5625));
+	--sw: min(78vw, 400px, calc((100vh - 210px) * 0.5625));
+	--sw: min(78vw, 400px, calc((100svh - 210px) * 0.5625));
+	--tw: min(100vw, calc(var(--sw) * 1.42));
 	position: fixed;
 	inset: 0;
 	z-index: 60;
@@ -349,18 +350,22 @@ body {
 .ev-vw-track {
 	display: flex;
 	gap: 14px;
-	width: min(100vw, 430px);
-	padding: 0 calc(50% - var(--sw) / 2);
+	width: var(--tw);
+	padding: 0 calc((var(--tw) - var(--sw)) / 2);
 	overflow-x: auto;
 	scroll-snap-type: x mandatory;
 	-webkit-overflow-scrolling: touch;
 	scrollbar-width: none;
+	cursor: grab;
+	user-select: none;
 }
+.ev-vw-track.grab { cursor: grabbing; }
 .ev-vw-track::-webkit-scrollbar { display: none; }
 .ev-vw-slide {
 	flex: 0 0 var(--sw);
 	margin: 0;
 	scroll-snap-align: center;
+	scroll-snap-stop: always;
 }
 .ev-vw-slide img {
 	display: block;
@@ -370,6 +375,7 @@ body {
 	box-shadow: 0 14px 36px rgba(0, 0, 0, 0.45);
 	user-select: none;
 	-webkit-user-drag: none;
+	cursor: zoom-in;
 }
 .ev-vw-label {
 	margin: 16px 0 0;
@@ -396,22 +402,49 @@ body {
 	display: none;
 	position: absolute;
 	top: calc(50% - 60px);
-	width: 44px;
-	height: 44px;
+	width: 46px;
+	height: 46px;
 	padding: 0 0 4px;
 	border: 0;
 	border-radius: 50%;
-	background: rgba(255, 250, 240, 0.9);
+	background: rgba(255, 250, 240, 0.92);
 	color: #3a1d0f;
 	font-size: 30px;
 	line-height: 1;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 	cursor: pointer;
 }
 @media (hover: hover) and (min-width: 700px) {
 	.ev-arrow { display: block; }
 }
-.ev-prev { left: calc(50% - min(50vw, 215px) + 8px); }
-.ev-next { right: calc(50% - min(50vw, 215px) + 8px); }
+.ev-prev { left: calc(50% - var(--tw) / 2 - 64px); }
+.ev-next { right: calc(50% - var(--tw) / 2 - 64px); }
+
+/* A card shown as large as the screen allows */
+.ev-zoom {
+	position: fixed;
+	inset: 0;
+	z-index: 90;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: rgba(20, 8, 4, 0.94);
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity 0.25s ease;
+	cursor: zoom-out;
+}
+.ev-zoom.on { opacity: 1; pointer-events: auto; }
+.ev-zoom img {
+	display: block;
+	max-width: 96vw;
+	max-height: 96vh;
+	max-height: 96svh;
+	width: auto;
+	height: auto;
+	border-radius: 6px;
+	box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5);
+}
 
 /* Closing section */
 .ev-footwrap {
