@@ -30,58 +30,66 @@ export const hayaEnvelope = {
 
 	images: {
 		tray: '/haya2-tray.webp',
-		closed: '/haya2-env-closed.webp',
-		slight: '/haya2-env-slight.webp',
-		open: '/haya2-env-open.webp',
-		ovSlight: '/haya2-env-ovslight.webp',
-		ovOpen: '/haya2-env-ovopen.webp',
+		closed: '/haya3-closed.webp', // the full closed envelope
+		body: '/haya3-body.webp', // the open envelope without its flap
+		front: '/haya3-front.webp', // the front of the pocket (cut-out where the cards show)
+		flap: '/haya3-flap.webp', // the flap, outside (with the wax seal)
+		flapBack: '/haya3-flapback.webp', // the flap, inside (what you see once it is open)
 	},
 
-	// Where the wax seal is on the envelope picture (% of envelope width / height). Do not change unless the pictures change.
-	envelope: { ratio: 1.0403, sealX: 50.5, sealY: 60.8, sealR: 6 },
+	// Sizes of the envelope pictures in pixels, and where the wax seal is (% of envelope width / height).
+	// Do not change unless the pictures change.
+	envelope: {
+		w: 789,
+		h: 519,
+		ratio: 0.6578, // height / width
+		flap: { x: 5, y: 0, w: 780, h: 388 }, // where the flap picture sits on the envelope
+		holeBottom: 228, // the lowest point of the pocket opening
+		sealX: 49.9,
+		sealY: 63.1,
+		sealR: 7.4,
+	},
 
 	// The ring of light from the wax seal
-	ring: { enabled: true, color: '255, 236, 170', duration: 2000, scale: 9 },
+	ring: { enabled: true, color: '255, 236, 170', duration: 2000, scale: 7 },
 
 	// Optional background music. Put the file in the public folder and write its name, e.g. '/haya-music.mp3'. Empty = no music.
 	music: { src: '', volume: 0.6 },
 
 	layout: {
-		trayWidth: 92, // tray width (% of column)
+		trayWidth: 100, // tray width (% of column)
 		trayBottom: 21, // gap under the tray (% of screen height)
-		envelopeWidth: 72, // envelope width (% of column)
+		envelopeWidth: 66, // envelope width (% of column)
 		envelopeLift: 0.1, // how far the envelope sits above the tray bottom (x column width)
-		cardWidth: 66, // card width (% of envelope width)
-		cardCenterX: 50.5, // where cards come out, left to right (% of envelope width)
-		insideTop: 0.4, // where cards wait inside the envelope (x envelope height)
-		deckTop: -0.03, // top of the front card when out (x envelope height)
-		deckSpread: 3, // sideways gap between cards in the deck (% of envelope width)
-		deckDrop: 1.2, // each back card sits a little lower (% of envelope height)
-		deckTilt: 2.4, // tilt per card, in degrees
+		cardWidth: 62, // card width (% of envelope width)
+		maxVisible: 4, // at most this many cards show as a stack (2 to 4 look best)
+		peekMax: 0.3, // how much of a card may stick out above the envelope (0.3 = 30% of the card height)
+		peekStep: 0.03, // each card behind sticks out a little more than the one in front
 	},
 
-	// All times in milliseconds
+	// Opening and closing animation. All times in seconds.
+	anim: {
+		lift: 0.5, // the envelope lifts a little
+		cross: 0.35, // closed picture melts into the layered one
+		flap: 1.9, // the flap turning over
+		perspective: 1.3, // depth of the turn (x envelope width). Smaller = stronger 3D
+		cardsAfter: 0.9, // cards start rising this long after the flap starts turning
+		cards: 1.5, // each card's rise
+		cardStagger: 0.22, // gap between cards rising
+		cardStaggerTotal: 0.9,
+		settle: 0.6,
+		openSpeed: 1, // 1 = as written, 0.8 = slower
+		closeSpeed: 1,
+	},
+
+	// Other times in milliseconds
 	timing: {
 		entrance: 1100, // text, tray and envelope rising in
 		hintDelay: 1700, // when the "tap" hint appears
-		titleFadeDelay: 300, // welcome text fades after the tap
 		peek: 900, // the strip rising from the bottom
 		peekDelay: 1200, // when it starts after the tap
-		toSlightDelay: 700, // flap starts lifting this long after the tap (ring starts at once)
-		toSlight: 1500, // closed > slightly open
-		slightPause: 250, // short rest in the slightly open position
-		toOpen: 1400, // slightly open > fully open
-		cardRise: 1400, // each card's rise
-		cardStagger: 200, // gap between cards rising
-		cardStaggerTotal: 1500, // the whole rise never takes longer than this
 		viewerIn: 450, // reading screen opening
 		viewerOut: 380, // reading screen closing
-		tidy: 600, // cards gathering into one stack
-		sink: 1300, // each card sinking into the envelope
-		sinkStagger: 150,
-		sinkStaggerTotal: 900,
-		closeToSlight: 1300, // open > slightly open
-		closeToClosed: 1300, // slightly open > closed
 	},
 };
 
