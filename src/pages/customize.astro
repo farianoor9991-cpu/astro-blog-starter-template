@@ -420,7 +420,7 @@ const save = () => {};
 			const c = S.couple;
 			const sm = tpl.sample;
 			return `
-				<div class="f"><label>Bride's name</label>${inp('data-couple="brideName"', c.brideName, sm.brideName)}</div>
+				<div class="acts" style="margin:0 0 10px"><button class="btn-o" type="button" data-act="sample">Fill with sample details</button></div><div class="f"><label>Bride's name</label>${inp('data-couple="brideName"', c.brideName, sm.brideName)}</div>
 				<div class="f"><label>Bride's parents</label><div class="pre"><span>D/O Mr &amp; Mrs</span>${inp('data-couple="brideParents"', c.brideParents, sm.brideParents)}</div></div>
 				<div class="f"><label>Groom's name</label>${inp('data-couple="groomName"', c.groomName, sm.groomName)}</div>
 				<div class="f"><label>Groom's parents</label><div class="pre"><span>S/O Mr &amp; Mrs</span>${inp('data-couple="groomParents"', c.groomParents, sm.groomParents)}</div><p class="hint">Type only the names, like the examples. We add "D/O Mr &amp; Mrs" and "S/O Mr &amp; Mrs" for you.</p></div>
@@ -498,7 +498,7 @@ const save = () => {};
 				return `<p class="hint">Please choose your events in Step 2 first.</p><div class="acts"><button class="btn-o" type="button" data-open="2">Go to Step 2</button></div>`;
 			}
 			syncLinks();
-			const m = S.links.mode;
+			const m = S.links.mode; const evCards = cards.filter((c: string) => c !== 'hosts'); const hostNote = S.hosts.want ? '<p class="hint">Your Reception Hosts card is included in every link automatically.</p>' : '';
 			const opts = `
 				<div class="opts">
 					<button type="button" class="opt${m === 'one' ? ' on' : ''}" data-mode="one"><b>One link for everyone</b><small>All your cards in a single link.</small></button>
@@ -514,17 +514,17 @@ const save = () => {};
 							(lk: D, i: number) => `
 						<div class="lk">
 							<div class="f"><label>Link ${i + 1} name</label><input data-lk="${lk.id}" data-k="label" value="${esc(lk.label)}" placeholder="e.g. ${['Nikkah &amp; Baraat only', 'Walima only', 'Close family', 'Friends'][i % 4]}" autocomplete="off"></div>
-							<div class="chips">${cards
+							<p class="hint" style="margin:10px 0 4px;color:#1a1a1a"><b>Choose the events for Link ${i + 1}</b></p><div class="chips">${evCards
 								.map(
 									(c) =>
 										`<label class="chip ck${lk.cards.indexOf(c) >= 0 ? ' on' : ''}"><input type="checkbox" data-lk="${lk.id}" data-card-pick="${c}" ${lk.cards.indexOf(c) >= 0 ? 'checked' : ''}>${esc(label(c))}</label>`
 								)
 								.join('')}</div>
-							<p class="hint" data-count="${lk.id}">${lk.cards.length} card${lk.cards.length === 1 ? '' : 's'} selected</p>
+							<p class="hint" data-count="${lk.id}">${lk.cards.length} event${lk.cards.length === 1 ? '' : 's'} selected</p>
 							${S.links.list.length > 1 ? `<button type="button" class="lnk" data-act="rmlink" data-lk="${lk.id}">Remove this link</button>` : ''}
 						</div>`
 						)
-						.join('') + `<button type="button" class="btn-o" data-act="addlink">Add another link</button>`;
+						.join('') + hostNote + `<button type="button" class="btn-o" data-act="addlink">Add another link</button>`;
 			}
 			return `${opts}${extra}<div class="err" data-err="4"></div><div class="acts"><button class="btn-g" type="button" data-act="next" data-n="4">Continue to Step 5</button></div>`;
 		};
@@ -549,7 +549,7 @@ const save = () => {};
 			} else {
 				linkLines =
 					`<p>${S.links.list.length} link${S.links.list.length === 1 ? '' : 's'}</p>` +
-					S.links.list.map((lk: D) => `<p>${esc(lk.label || 'Untitled')}: ${lk.cards.map((k: string) => esc(label(k))).join(', ')}</p>`).join('');
+					S.links.list.map((lk: D) => `<p>${esc(lk.label || 'Untitled')}: ${lk.cards.map((k: string) => esc(label(k))).concat(S.hosts.want ? ['Reception Hosts'] : []).join(', ')}</p>`).join('');
 			}
 			const row = (title: string, html: string, n: number) =>
 				`<div class="rv-row"><div><b>${title}</b>${html}</div><button class="lnk" type="button" data-open="${n}">Edit</button></div>`;
@@ -657,7 +657,7 @@ const save = () => {};
 				if (!S.links.list.length) er.push('Please add at least one link.');
 				S.links.list.forEach((lk: D, i: number) => {
 					if (!lk.label.trim()) er.push(`Link ${i + 1}: please give it a name.`);
-					if (!lk.cards.length) er.push(`Link ${i + 1}: please select at least one card.`);
+					if (!lk.cards.length) er.push(`Link ${i + 1}: please choose at least one event.`);
 				});
 			}
 			return er;
@@ -692,7 +692,7 @@ const save = () => {};
 		};
 		const setMode = (m: string) => {
 			S.links.mode = m;
-			if (m === 'many' && !S.links.list.length) S.links.list.push({ id: uid(), label: '', cards: pkg() });
+			if (m === 'many' && !S.links.list.length) S.links.list.push({ id: uid(), label: '', cards: [] });
 			refreshBody(4);
 			save();
 		};
@@ -775,7 +775,7 @@ const save = () => {};
 			const chip = t.closest('.chip');
 			if (chip) chip.classList.toggle('on', t.checked);
 			const cnt = $(`[data-count="${lk.id}"]`);
-			if (cnt) cnt.textContent = `${lk.cards.length} card${lk.cards.length === 1 ? '' : 's'} selected`;
+			if (cnt) cnt.textContent = `${lk.cards.length} event${lk.cards.length === 1 ? '' : 's'} selected`;
 			save();
 			updateSummaries();
 		});
