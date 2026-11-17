@@ -560,7 +560,7 @@ const save = () => {};
 					${row('Reception hosts', `<p>${hostLine}</p>`, 3)}
 					${row('Invitation links', linkLines, 4)}
 				</div>
-				<p class="hint">Your cards, with the preview watermark:</p><button class="btn-o" type="button" data-act="preview">Preview your cards</button>
+				<p class="hint">Your cards, with the preview watermark:</p><button class="btn-o" type="button" data-act="preview">Preview your cards</button> <button class="btn-o" type="button" data-act="envelope">See it in the envelope</button>
 				<div class="gal" id="gal"></div>
 				<p class="hint">This is a preview. Your final cards will not have the watermark.</p>
 				<div class="acts"><button class="btn-g" type="button" data-act="finish">Looks good, continue</button></div>
@@ -709,7 +709,7 @@ const save = () => {};
 			save();
 			openStep(1);
 		};
-		const finish = () => {
+		const openInEnvelope = () => { 	const data = { 		couple: { 			brideName: tc(S.couple.brideName), 			brideParents: tc(cleanParents(S.couple.brideParents)), 			groomName: tc(S.couple.groomName), 			groomParents: tc(cleanParents(S.couple.groomParents)), 		}, 		events: selEvents() 			.sort(byDate) 			.map((e: D) => ({ id: e.id, date: S.events[e.id].date, time: S.events[e.id].time, venue: String(S.events[e.id].venue).trim() })), 		hosts: S.hosts.want ? S.hosts.list.filter((h: D) => h.name.trim()).map((h: D) => ({ name: tc(h.name), phone: h.phone })) : [], 	}; 	try { 		localStorage.setItem('ih-haya-preview', JSON.stringify(data)); 	} catch (e) {} 	window.open('/demo-haya?preview=1', '_blank'); }; const finish = () => {
 			S.done[5] = true;
 			save();
 			const n = $('#finish-note');
@@ -851,7 +851,7 @@ const save = () => {};
 					refreshBody(4);
 					save();
 					break;
-				case 'finish':
+				case 'envelope': 	openInEnvelope(); 	break; case 'finish':
 					finish();
 					break;
 				case 'preview':
