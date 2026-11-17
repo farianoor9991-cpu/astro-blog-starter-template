@@ -28,6 +28,22 @@ const config = {
 	<body>
 		<div id="env-root"></div>
 		<script is:inline id="env-config" type="application/json" set:html={JSON.stringify(config)} />
+		<script is:inline>
+			// Preview from the customize form: show the guest's chosen events instead of the sample ones
+			(function () {
+				try {
+					if (new URLSearchParams(location.search).get('preview') !== '1') return;
+					var raw = localStorage.getItem('ih-haya-preview');
+					if (!raw) return;
+					var d = JSON.parse(raw);
+					if (!d || !d.events || !d.events.length) return;
+					var el = document.getElementById('env-config');
+					var cfg = JSON.parse(el.textContent);
+					cfg.invitation = { couple: d.couple, events: d.events, hosts: d.hosts || [] };
+					el.textContent = JSON.stringify(cfg);
+				} catch (e) {}
+			})();
+		</script>
 		<script is:inline src="/gsap.min.js"></script>
 		<script is:inline src="/envelope-engine.js?v=6"></script>
 	</body>
