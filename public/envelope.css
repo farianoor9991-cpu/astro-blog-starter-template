@@ -138,7 +138,7 @@ body {
 	user-select: none;
 	-webkit-user-drag: none;
 }
-.ev-fb { transform: rotateX(180deg); }
+.ev-fb { transform: rotateX(180deg) translateX(-0.32%) scaleX(1.0234); }
 .ev-tap {
 	position: absolute;
 	inset: 0;
@@ -207,6 +207,7 @@ body {
 	clip-path: inset(-400% 0.4% 0 0.4%);
 	pointer-events: none;
 }
+.ev-cards-top { z-index: 5; clip-path: none; }
 .ev-card {
 	position: absolute;
 	left: 50%;
@@ -552,4 +553,34 @@ body {
 @media (prefers-reduced-motion: reduce) {
 	.ev-hint.show,
 	.peek-on .ev-peek svg { animation: none; }
+}
+
+/* Cards flying between the envelope and the row */
+.ev-vw.vw-hold {
+	transform: none !important;
+	transition: opacity var(--vw-in, 450ms) ease !important;
+}
+.ev-vw.vw-hold:not(.on) { transition: opacity var(--vw-out, 380ms) ease !important; }
+.ev-vw.vw-hold .ev-vw-track,
+.ev-vw.vw-hold .ev-vw-label,
+.ev-vw.vw-hold .ev-dots,
+.ev-vw.vw-hold .ev-arrow {
+	opacity: 0 !important;
+	transition: none !important;
+	pointer-events: none !important;
+}
+.ev-flyers {
+	position: fixed;
+	inset: 0;
+	z-index: 65;
+	pointer-events: none;
+}
+.ev-fly {
+	position: absolute;
+	display: block;
+	height: auto;
+	border-radius: 3px;
+	box-shadow: 0 8px 22px rgba(0, 0, 0, 0.42);
+	will-change: transform;
+	user-select: none;
 }

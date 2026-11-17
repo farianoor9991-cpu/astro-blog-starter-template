@@ -101,6 +101,7 @@
 		img('ev-img ev-body', S.images.body) +
 		'<div class="ev-cards" id="ev-cards"></div>' +
 		img('ev-img ev-front', S.images.front) +
+		'<div class="ev-cards ev-cards-top" id="ev-cards-top"></div>' +
 		'<div class="ev-flap" id="ev-flap" style="left:' + pc(ENV.flap.x, ENV.w) + ';top:' + pc(ENV.flap.y, ENV.h) + ';width:' + pc(ENV.flap.w, ENV.w) + ';height:' + pc(ENV.flap.h, ENV.h) + '">' +
 		img('ev-face ev-ff', S.images.flap) +
 		img('ev-face ev-fb', S.images.flapBack) +
@@ -120,6 +121,7 @@
 		'<div class="ev-brandbox ev-fade"><span class="ev-by">' + esc(S.footer.createdBy) + '</span><span class="ev-brand">' + esc(S.footer.brandStart) + '<span>' + esc(S.footer.brandEnd) + '</span></span></div>' +
 		'<div><button class="ev-back ev-fade" id="ev-back" type="button">' + esc(S.buttons.goBackLabel) + '</button></div>' +
 		'</section></div>' +
+		'<div class="ev-flyers" id="ev-flyers"></div>' +
 		'<div class="ev-vw" id="ev-vw" aria-hidden="true">' +
 		'<div class="ev-vw-track" id="ev-vw-track"></div>' +
 		'<p class="ev-vw-label" id="ev-vw-label"></p>' +
@@ -145,6 +147,7 @@
 	var flapEl = $('ev-flap');
 	var closedEl = envEl.querySelector('.ev-closed');
 	var cardsEl = $('ev-cards');
+	var cardsTop = $('ev-cards-top');
 	var tapBtn = $('ev-tap');
 	var hintEl = $('ev-hint');
 	var closeBtn = $('ev-close');
@@ -458,13 +461,31 @@
 	/* ----- the opening / closing animation (GSAP): one timeline, played forward to open, backwards to close ----- */
 	var D = S.anim;
 	var tl = null;
-	var cardPose = function (k, nv, g, ch) {
-		// k = 0 is the front card. Only nv cards show as a stack, the rest wait behind the last one.
+	var cardW = 0; // px, set in buildTimeline
+	var tLiftEnd = 0;
+	var ctl = null;
+	var cardPoses = function (k, nv, w, sc, ch, tgt, from) {
+		// k = 0 is the front card. Only nv cards are shown as a stack, the others wait behind the last one.
 		var kk = Math.min(k, nv - 1);
-		var peek = L.peekMax - (nv - 1 - kk) * L.peekStep; // how much of the card height is above the envelope (max 30%)
-		var tilt = [0, -1.8, 1.8, -0.9][kk] || 0;
-		var dx = [0, -0.012, 0.012, -0.006][kk] || 0;
-		return { y: -peek * ch, rot: tilt, x: dx * g.w };
+		// resting place: a straight stack inside the pocket, nothing above the envelope while the flap is closed
+		var y0 = (ENV.holeBottom * L.restDepth + 2) * sc;
+		var rest = { y: y0, x: 0, rot: 0, s: 1 };
+		// after the flap is open the whole stack lifts a little (at most 30% of a card shows above the envelope)
+		var lift = { y: y0 - ch * 0.15 - kk * 0.035 * ch };
+		// stepping out: straight up until the card has fully left the pocket
+		var out = rest.y - ch * 1.03 - kk * 0.02 * ch;
+		// the stack forms in front of the envelope, right where the swipe row will be; the back cards only show as a line behind the first card
+		var s = tgt.w / (ch / cardRatio);
+		var pile = { y: tgt.cy - from.cy - kk * 0.02 * tgt.h, x: tgt.cx - from.cx, rot: 0, s: s, out: out };
+		return { rest: rest, lift: lift, pile: pile, kk: kk };
+	};
+	var firstSlot = function () {
+		var hold = !vwOpen;
+		if (hold) vw.classList.add('vw-hold');
+		track.scrollLeft = 0;
+		var r = track.children[0].getBoundingClientRect();
+		if (hold) vw.classList.remove('vw-hold');
+		return { cx: r.left + r.width / 2, cy: r.top + r.height / 2, w: r.width, h: r.height };
 	};
 	function buildTimeline() {
 		if (typeof gsap === 'undefined') return;
@@ -477,10 +498,9 @@
 		var nv = Math.max(1, Math.min(n, L.maxVisible));
 		var w = envEl.offsetWidth || 300;
 		var sc = w / ENV.w;
-		var g = { w: w, sc: sc };
 		var cw = (L.cardWidth / 100) * w;
 		var ch = cw * cardRatio;
-		var startY = (ENV.holeBottom + 14) * sc; // card tops wait below the pocket, out of sight
+		cardW = cw;
 		var tf0 = D.lift + D.cross; // when the flap starts
 		var persp = w * D.perspective;
 
@@ -488,22 +508,26 @@
 		gsap.set(stackEl, { opacity: 0 });
 		gsap.set(closedEl, { opacity: 1 });
 		gsap.set(flapEl, { rotationX: 0, scale: 1, zIndex: 4, transformOrigin: '50% 0%', transformPerspective: persp });
+		var tgt = firstSlot();
 		cards.forEach(function (c, k) {
-			var p = cardPose(k, nv, g, ch);
+			cardsEl.appendChild(c.el);
+			gsap.set(c.el, { xPercent: -50, x: 0, y: 0, rotation: 0, scale: 1, opacity: 1, visibility: 'visible', zIndex: 100 - k, width: cw, transformOrigin: '50% 50%' });
+			var r0 = c.el.getBoundingClientRect(); // card at y 0: its centre
+			var p = cardPoses(k, nv, w, sc, ch, tgt, { cx: r0.left + r0.width / 2, cy: r0.top + r0.height / 2 });
 			c.pose = p;
-			gsap.set(c.el, { xPercent: -50, x: p.x, y: startY, rotation: 0, opacity: 1, zIndex: 100 - k, width: cw, transformOrigin: '50% 50%' });
+			gsap.set(c.el, { x: p.rest.x, y: p.rest.y, rotation: p.rest.rot });
 		});
 
 		tl = gsap.timeline({
 			paused: true,
 			onComplete: function () {
-				state = 'open';
-				cardsEl.style.pointerEvents = 'auto';
-				stage.classList.add('hint2-on');
-				closeBtn.classList.add('show');
+				toRow();
 			},
 			onReverseComplete: function () {
 				if (state !== 'closing') return;
+				cards.forEach(function (c) {
+					cardsEl.appendChild(c.el);
+				});
 				stage.classList.remove('is-open', 'peek-on');
 				stage.classList.add('was-opened');
 				hintEl.classList.add('show');
@@ -515,24 +539,40 @@
 		// 2. cross-fade from the closed picture to the layered one
 		tl.to(stackEl, { opacity: 1, duration: D.cross, ease: 'none' }, D.lift);
 		tl.set(closedEl, { opacity: 0 }, tf0);
-		// 3. only the flap turns over; halfway it slips behind the cards
+		// 3. only the flap turns over; halfway it slips behind the cards (which rest in the pocket)
 		tl.to(flapEl, { rotationX: -180, duration: D.flap, ease: 'power2.inOut' }, tf0);
 		tl.to(flapEl, { scale: 0.98, duration: D.flap / 2, ease: 'sine.inOut' }, tf0);
 		tl.to(flapEl, { scale: 1, duration: D.flap / 2, ease: 'sine.inOut' }, tf0 + D.flap / 2);
 		tl.set(flapEl, { zIndex: 1 }, tf0 + D.flap / 2);
-		// 4. the cards slide up out of the pocket, back cards first
-		var step = Math.min(D.cardStagger, D.cardStaggerTotal / Math.max(1, nv));
-		cards.forEach(function (c, k) {
-			var kk = Math.min(k, nv - 1);
-			var d = (nv - 1 - kk) * step;
-			tl.to(c.el, { y: c.pose.y, rotation: c.pose.rot, duration: D.cards, ease: 'power2.out' }, tf0 + D.cardsAfter + d);
+		// 4. when the flap is open, the whole stack lifts a little together
+		var tLift = tf0 + D.flap * 0.7;
+		tLiftEnd = tLift + 0.55;
+		cards.forEach(function (c) {
+			tl.to(c.el, { y: c.pose.lift.y, duration: 0.55, ease: 'power2.out' }, tLift);
 		});
-		tl.to(liftEl, { scale: 1, y: 0, duration: D.settle, ease: 'power1.inOut' }, tf0 + D.flap);
+		// 5. then the first card steps out and stops in front; the others follow one by one and line up behind it
+		var step = D.cardStagger;
+		var tc = tf0 + D.flap + 0.1;
+		var up = D.cards * 0.55;
+		cards.forEach(function (c) {
+			var d = c.pose.kk * step;
+			tl.to(c.el, { y: c.pose.pile.out, duration: up, ease: 'power2.out' }, tc + d);
+			tl.call(
+				function () {
+					cardsTop.appendChild(c.el);
+				},
+				null,
+				tc + d + up
+			);
+			tl.to(c.el, { y: c.pose.pile.y, x: c.pose.pile.x, scale: c.pose.pile.s, duration: D.cards * 0.75, ease: 'power2.inOut' }, tc + d + up);
+		});
+		// the envelope settles back before the first card steps out
+		tl.to(liftEl, { scale: 1, y: 0, duration: 1.0, ease: 'power1.inOut' }, tf0 + D.flap * 0.35);
 	}
 
 	var openAll = function () {
 		if (state !== 'idle') return;
-		if (!tl) buildTimeline();
+		buildTimeline();
 		if (!tl) return;
 		state = 'opening';
 		hintEl.classList.remove('show');
@@ -564,45 +604,144 @@
 		i = Math.max(0, Math.min(n - 1, i));
 		track.scrollTo({ left: i * slideW(), behavior: smooth ? 'smooth' : 'auto' });
 	};
-	var openViewer = function (i) {
-		if (vwOpen || state !== 'open') return;
+	/* ----- the cards leave the envelope as a pile and arrange themselves into the row (and back again) ----- */
+	var flyersEl = $('ev-flyers');
+	var flyTl = null;
+	var centreOf = function (r) {
+		return { cx: r.left + r.width / 2, cy: r.top + r.height / 2 };
+	};
+	var makeFlyer = function (c, k, cx, cy, scale, rot) {
+		var im = document.createElement('img');
+		im.className = 'ev-fly';
+		im.src = c.url;
+		im.alt = '';
+		im.draggable = false;
+		im.style.width = cardW + 'px';
+		im.style.left = cx - cardW / 2 + 'px';
+		im.style.top = cy - (cardW * cardRatio) / 2 + 'px';
+		im.style.zIndex = String(100 - k);
+		flyersEl.appendChild(im);
+		gsap.set(im, { scale: scale, rotation: rot, x: 0, y: 0, transformOrigin: '50% 50%' });
+		return { el: im, cx: cx, cy: cy };
+	};
+	var clearFlyers = function () {
+		flyersEl.innerHTML = '';
+		flyersEl.style.clipPath = '';
+	};
+	var clipFlyers = function () {
+		var r = track.getBoundingClientRect();
+		flyersEl.style.clipPath = 'inset(0 ' + Math.max(0, window.innerWidth - r.right) + 'px 0 ' + Math.max(0, r.left) + 'px)';
+	};
+	var slotRects = function () {
+		return Array.prototype.map.call(track.children, function (s) {
+			var r = s.getBoundingClientRect();
+			var c = centreOf(r);
+			return { cx: c.cx, cy: c.cy, s: r.width / cardW };
+		});
+	};
+	var fly = function (flyers, targets, done) {
+		if (flyTl) flyTl.kill();
+		flyTl = gsap.timeline({ onComplete: done });
+		flyers.forEach(function (f, i) {
+			var t = targets[i];
+			flyTl.to(f.el, { x: t.cx - f.cx, y: t.cy - f.cy, scale: t.s, rotation: t.rot || 0, duration: D.row, ease: 'power3.inOut' }, i * D.rowStagger);
+		});
+	};
+
+	// open: pile > row
+	function toRow() {
+		if (typeof gsap === 'undefined') return;
+		state = 'arranging';
 		vwOpen = true;
 		lockScroll(true);
 		vw.style.setProperty('--vw-in', TM.viewerIn + 'ms');
 		vw.style.setProperty('--vw-out', TM.viewerOut + 'ms');
-		// start the reading view from where the cards sit on the screen
-		var r = (cards[0] ? cards[0].el : cardsEl).getBoundingClientRect();
-		vw.style.setProperty('--vw-ox', r.left + r.width / 2 + 'px');
-		vw.style.setProperty('--vw-oy', r.top + r.height * 0.5 + 'px');
-		vw.classList.add('on');
+		vw.classList.add('vw-hold');
 		stage.classList.add('vw-on');
 		vw.setAttribute('aria-hidden', 'false');
-		goTo(i, false);
+		goTo(0, false);
 		markDots();
-		requestAnimationFrame(markDots);
-	};
-	var hideViewer = function () {
-		if (!vwOpen) return Promise.resolve();
-		closeZoom();
-		vwOpen = false;
-		vw.classList.remove('on');
-		stage.classList.remove('vw-on');
-		vw.setAttribute('aria-hidden', 'true');
-		return wait(TM.viewerOut + 60).then(function () {
-			lockScroll(false);
+		var piles = cards.map(function (c) {
+			return centreOf(c.el.getBoundingClientRect());
 		});
-	};
+		vw.classList.add('on');
+		var slots = slotRects();
+		clipFlyers();
+		var flyers = cards.map(function (c, k) {
+			return makeFlyer(c, k, piles[k].cx, piles[k].cy, c.pose.pile.s, c.pose.pile.rot);
+		});
+		cards.forEach(function (c) {
+			c.el.style.visibility = 'hidden';
+		});
+		fly(flyers, slots, function () {
+			clearFlyers();
+			vw.classList.remove('vw-hold');
+			state = 'open';
+			closeBtn.classList.add('show');
+		});
+	}
+	// close: row > pile
+	function fromRow() {
+		var slots = slotRects();
+		clipFlyers();
+		var flyers = cards.map(function (c, k) {
+			return makeFlyer(c, k, slots[k].cx, slots[k].cy, slots[k].s, 0);
+		});
+		vw.classList.add('vw-hold');
+		vw.classList.remove('on');
+		var targets = cards.map(function (c) {
+			var p = centreOf(c.el.getBoundingClientRect());
+			return { cx: p.cx, cy: p.cy, s: c.pose.pile.s, rot: c.pose.pile.rot };
+		});
+		fly(flyers, targets, function () {
+			clearFlyers();
+			cards.forEach(function (c) {
+				c.el.style.visibility = 'visible';
+			});
+			vw.classList.remove('vw-hold');
+			vw.setAttribute('aria-hidden', 'true');
+			stage.classList.remove('vw-on');
+			vwOpen = false;
+			lockScroll(false);
+			closeCards();
+		});
+	}
+
+	// close, part 2: the stack lifts above the envelope together, then the cards go back in one by one (first card first)
+	function closeCards() {
+		if (ctl) ctl.kill();
+		var step = D.cardStagger;
+		ctl = gsap.timeline({
+			onComplete: function () {
+				tl.time(tLiftEnd, true);
+				tl.timeScale(D.closeSpeed).reverse();
+			},
+		});
+		cards.forEach(function (c) {
+			ctl.to(c.el, { y: c.pose.pile.out, x: 0, scale: 1, rotation: 0, duration: 0.8, ease: 'power2.inOut' }, 0);
+		});
+		ctl.call(
+			function () {
+				cards.forEach(function (c) {
+					cardsEl.appendChild(c.el);
+				});
+			},
+			null,
+			0.8
+		);
+		cards.forEach(function (c) {
+			ctl.to(c.el, { y: c.pose.lift.y, duration: 0.85, ease: 'power2.inOut' }, 0.8 + c.pose.kk * step);
+		});
+	}
 
 	var closeAll = function () {
 		if (state !== 'open') return;
 		state = 'closing';
 		closeBtn.classList.remove('show');
-		stage.classList.remove('hint2-on');
-		cardsEl.style.pointerEvents = 'none';
-		hideViewer().then(function () {
-			tl.timeScale(D.closeSpeed).reverse();
-		});
+		closeZoom();
+		fromRow();
 	};
+
 
 	var goBack = function () {
 		window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -660,7 +799,7 @@
 		goTo(i, true);
 	});
 	track.addEventListener('click', function (e) {
-		if (vwDrag.was) return;
+		if (vwDrag.was || state !== 'open') return;
 		var slide = e.target.closest('.ev-vw-slide');
 		if (!slide) return;
 		var idx = Array.prototype.indexOf.call(track.children, slide);
@@ -685,7 +824,7 @@
 		zIndex = Math.max(0, Math.min(cards.length - 1, Math.round(zoomTrack.scrollLeft / zslideW())));
 	});
 	function openZoom(i) {
-		if (!cards[i]) return;
+		if (!cards[i] || state !== 'open') return;
 		zoomEl.classList.add('on');
 		zoomEl.setAttribute('aria-hidden', 'false');
 		zoomOpen = true;
@@ -710,11 +849,6 @@
 
 	/* ---------- events ---------- */
 	tapBtn.addEventListener('click', openAll);
-	cardsEl.addEventListener('click', function (e) {
-		if (state !== 'open') return;
-		var t = e.target.closest('.ev-card');
-		openViewer(t ? Number(t.dataset.i) : 0);
-	});
 	closeBtn.addEventListener('click', closeAll);
 	backBtn.addEventListener('click', goBack);
 	$('ev-peek').addEventListener('click', function () {
@@ -732,7 +866,7 @@
 		raf = requestAnimationFrame(markDots);
 	});
 	document.addEventListener('keydown', function (e) {
-		if (!vwOpen) return;
+		if (!vwOpen || state !== 'open') return;
 		if (zoomOpen) {
 			if (e.key === 'ArrowLeft') zGoTo(zIndex - 1, true);
 			if (e.key === 'ArrowRight') zGoTo(zIndex + 1, true);
@@ -752,6 +886,10 @@
 			else if (state === 'open') {
 				buildTimeline();
 				tl.progress(1, true);
+				cards.forEach(function (c) {
+					cardsTop.appendChild(c.el);
+					c.el.style.visibility = 'hidden';
+				});
 			}
 		}, 150);
 	});
