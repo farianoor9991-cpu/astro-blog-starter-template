@@ -60,11 +60,13 @@ export const hayaEnvelope = {
 		trayWidth: 100, // tray width (% of column)
 		trayBottom: 21, // gap under the tray (% of screen height)
 		envelopeWidth: 66, // envelope width (% of column)
-		envelopeLift: 0.1, // how far the envelope sits above the tray bottom (x column width)
-		cardWidth: 62, // card width (% of envelope width)
+		envelopeLift: 0.145, // how far the envelope sits above the tray bottom (x column width)
+		cardWidth: 74, // card width (% of envelope width)
 		maxVisible: 4, // at most this many cards show as a stack (2 to 4 look best)
-		peekMax: 0.3, // how much of a card may stick out above the envelope (0.3 = 30% of the card height)
-		peekStep: 0.03, // each card behind sticks out a little more than the one in front
+		restDepth: 0.02, // where the cards rest inside the envelope (0 = tops show a lot, 1 = hidden)
+		pileScale: 0.86, // size of the pile of cards once it is out of the envelope
+		pileGap: 0.03, // how far above the envelope the pile floats (x card height)
+		pileStep: 0.035, // each card behind sits a little higher in the pile
 	},
 
 	// Opening and closing animation. All times in seconds.
@@ -73,11 +75,13 @@ export const hayaEnvelope = {
 		cross: 0.35, // closed picture melts into the layered one
 		flap: 1.9, // the flap turning over
 		perspective: 1.3, // depth of the turn (x envelope width). Smaller = stronger 3D
-		cardsAfter: 0.9, // cards start rising this long after the flap starts turning
-		cards: 1.5, // each card's rise
-		cardStagger: 0.22, // gap between cards rising
-		cardStaggerTotal: 0.9,
+		cardsAfter: 1.2, // cards start coming out this long after the flap starts turning
+		cards: 1.3, // each card's rise out of the envelope
+		cardStagger: 0.3, // gap between cards coming out
+		cardStaggerTotal: 1.2,
 		settle: 0.6,
+		row: 1.0, // the pile spreading into the row of cards (and back)
+		rowStagger: 0.07,
 		openSpeed: 1, // 1 = as written, 0.8 = slower
 		closeSpeed: 1,
 	},
