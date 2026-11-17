@@ -138,7 +138,7 @@ body {
 	user-select: none;
 	-webkit-user-drag: none;
 }
-.ev-fb { transform: rotateX(180deg) translateX(-0.32%) scaleX(1.0234); }
+.ev-fb { transform: rotateX(180deg) translateX(-0.3%) scaleX(1.0185); }
 .ev-tap {
 	position: absolute;
 	inset: 0;
