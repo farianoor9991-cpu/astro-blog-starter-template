@@ -1,7 +1,7 @@
-/* InviteHeaven envelope invitation engine (version 2).
+/* InviteHeaven envelope invitation engine (version 3).
    Reads the settings and invitation details from <script id="env-config" type="application/json">,
-   draws the guest's cards and runs: welcome > ring of light > envelope opens > cards rise like a deck
-   > tap to read (swipe) > Close > cards sink back > envelope closes > footer.
+   draws the guest's cards and runs: welcome > ring of light > flap turns over (GSAP) > cards rise like a deck
+   > tap to read (swipe, full screen) > Close > the same animation backwards > footer.
    You normally never edit this file. Change looks and timings in src/data/haya-envelope.ts. */
 (function () {
 	'use strict';
@@ -78,7 +78,15 @@
 	setv('--ev-ring-rgb', S.ring.color);
 	setv('--ev-peek', TM.peek + 'ms');
 
+
 	/* ---------- markup ---------- */
+	var ENV = S.envelope; // picture sizes in design pixels: w, h, flap {x, y, w, h}, holeBottom
+	var pc = function (v, tot) {
+		return ((v / tot) * 100).toFixed(4) + '%';
+	};
+	var img = function (cls, src) {
+		return '<img class="' + cls + '" src="' + esc(src) + '" alt="" draggable="false">';
+	};
 	root.innerHTML =
 		'<div class="ev-stage" id="ev-stage">' +
 		'<div class="ev-col">' +
@@ -86,16 +94,21 @@
 		'<p class="ev-hint2" id="ev-hint2">' + esc(S.hint.openText) + '</p>' +
 		'<div class="ev-tray ev-rise" style="--d:.12s"><img src="' + esc(S.images.tray) + '" alt="" draggable="false"></div>' +
 		'<div class="ev-envbox ev-rise" style="--d:.24s">' +
-		'<div class="ev-env" id="ev-env" data-st="closed">' +
-		'<img class="ev-img ev-b-slight" src="' + esc(S.images.slight) + '" alt="" draggable="false">' +
-		'<img class="ev-img ev-b-open" src="' + esc(S.images.open) + '" alt="" draggable="false">' +
+		'<div class="ev-env" id="ev-env">' +
+		'<div class="ev-lift" id="ev-lift">' +
+		img('ev-img ev-closed', S.images.closed) +
+		'<div class="ev-stack" id="ev-stack">' +
+		img('ev-img ev-body', S.images.body) +
 		'<div class="ev-cards" id="ev-cards"></div>' +
-		'<img class="ev-img ev-o-slight" src="' + esc(S.images.ovSlight) + '" alt="" draggable="false">' +
-		'<img class="ev-img ev-o-open" src="' + esc(S.images.ovOpen) + '" alt="" draggable="false">' +
-		'<img class="ev-img ev-closed" src="' + esc(S.images.closed) + '" alt="" draggable="false">' +
+		img('ev-img ev-front', S.images.front) +
+		'<div class="ev-flap" id="ev-flap" style="left:' + pc(ENV.flap.x, ENV.w) + ';top:' + pc(ENV.flap.y, ENV.h) + ';width:' + pc(ENV.flap.w, ENV.w) + ';height:' + pc(ENV.flap.h, ENV.h) + '">' +
+		img('ev-face ev-ff', S.images.flap) +
+		img('ev-face ev-fb', S.images.flapBack) +
+		'</div>' +
+		'</div>' +
 		'<div class="ev-ringwrap"><span class="ev-glow"></span><span class="ev-ring"></span></div>' +
 		'<button class="ev-tap" id="ev-tap" type="button" aria-label="Open the invitation"></button>' +
-		'</div></div>' +
+		'</div></div></div>' +
 		'<p class="ev-hint" id="ev-hint">' + esc(S.hint.text) + '</p>' +
 		'<button class="ev-music" id="ev-music" type="button" aria-label="Music on or off" hidden></button>' +
 		'</div>' +
@@ -114,7 +127,12 @@
 		'<button class="ev-arrow ev-prev" id="ev-prev" type="button" aria-label="Previous card">&#8249;</button>' +
 		'<button class="ev-arrow ev-next" id="ev-next" type="button" aria-label="Next card">&#8250;</button>' +
 		'</div>' +
-		'<div class="ev-zoom" id="ev-zoom" aria-hidden="true"><img alt="" draggable="false"></div>' +
+		'<div class="ev-zoom" id="ev-zoom" aria-hidden="true">' +
+		'<div class="ev-zoom-track" id="ev-zoom-track"></div>' +
+		'<button class="ev-zoom-x" id="ev-zoom-x" type="button" aria-label="Back to the cards"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>' +
+		'<button class="ev-arrow ev-zprev" id="ev-zprev" type="button" aria-label="Previous card">&#8249;</button>' +
+		'<button class="ev-arrow ev-znext" id="ev-znext" type="button" aria-label="Next card">&#8250;</button>' +
+		'</div>' +
 		'<button class="ev-close" id="ev-close" type="button">' + esc(S.buttons.closeLabel) + '</button>';
 
 	var $ = function (id) {
@@ -122,6 +140,10 @@
 	};
 	var stage = $('ev-stage');
 	var envEl = $('ev-env');
+	var liftEl = $('ev-lift');
+	var stackEl = $('ev-stack');
+	var flapEl = $('ev-flap');
+	var closedEl = envEl.querySelector('.ev-closed');
 	var cardsEl = $('ev-cards');
 	var tapBtn = $('ev-tap');
 	var hintEl = $('ev-hint');
@@ -131,7 +153,10 @@
 	var track = $('ev-vw-track');
 	var dotsEl = $('ev-dots');
 	var vwLabel = $('ev-vw-label');
+	var zoomEl = $('ev-zoom');
+	var zoomTrack = $('ev-zoom-track');
 	var ringWrap = envEl.querySelector('.ev-ringwrap');
+
 
 	/* ---------- drawing the cards ---------- */
 	var parseDate = function (v) {
@@ -286,6 +311,7 @@
 		return loadBg(lay.bg).then(function (img) {
 			var W = Math.min(img.naturalWidth, 900);
 			var H = Math.round((W * img.naturalHeight) / img.naturalWidth);
+			cardRatio = H / W;
 			var cv = document.createElement('canvas');
 			cv.width = W;
 			cv.height = H;
@@ -345,6 +371,7 @@
 	};
 
 	var cards = [];
+	var cardRatio = 16 / 9; // height / width of a card, read from the first card drawn
 	var fontsReady = Promise.all([
 		document.fonts.load('700 40px "Unna"'),
 		document.fonts.load('400 40px "Berkshire Swash"'),
@@ -372,51 +399,17 @@
 				slide.className = 'ev-vw-slide';
 				slide.innerHTML = '<img src="' + c.url + '" alt="' + esc(c.label) + '" draggable="false">';
 				track.appendChild(slide);
+				var zs = document.createElement('figure');
+				zs.className = 'ev-zoom-slide';
+				zs.innerHTML = '<img src="' + c.url + '" alt="' + esc(c.label) + '" draggable="false">';
+				zoomTrack.appendChild(zs);
 				var dot = document.createElement('i');
 				dotsEl.appendChild(dot);
 			});
-			sizeCards();
+			buildTimeline();
 		});
 	});
 
-	/* ---------- where each card sits ---------- */
-	var envSize = function () {
-		var r = envEl.getBoundingClientRect();
-		return { w: r.width, h: r.width * S.envelope.ratio };
-	};
-	// a card at (dx px from centre, top at yTop px), tilted
-	var tf = function (dx, yTop, rot, scale) {
-		return 'translate(calc(-50% + ' + dx.toFixed(1) + 'px), ' + yTop.toFixed(1) + 'px) rotate(' + rot.toFixed(2) + 'deg) scale(' + (scale || 1) + ')';
-	};
-	var spread = function (k) {
-		// 0 = top card; the others peek out left and right alternately
-		if (k === 0) return { amp: 0, dir: 0 };
-		return { amp: Math.ceil(k / 2), dir: k % 2 ? 1 : -1 };
-	};
-	var pose = function (k, kind) {
-		var e = envSize();
-		var sp = spread(k);
-		var deckY = L.deckTop * e.h;
-		if (kind === 'deck') {
-			return tf(sp.dir * sp.amp * (L.deckSpread / 100) * e.w, deckY + sp.amp * (L.deckDrop / 100) * e.h, sp.dir * sp.amp * L.deckTilt, 1);
-		}
-		if (kind === 'stack') return tf(0, deckY, 0, 1);
-		// 'inside': tucked into the envelope, only the tops can be seen under the flap
-		return tf(sp.dir * sp.amp * 0.004 * e.w, L.insideTop * e.h + sp.amp * 0.006 * e.h, 0, 1);
-	};
-	function sizeCards() {
-		cardsEl.style.setProperty('--ev-card-w', L.cardWidth + '%');
-		cardsEl.style.setProperty('--ev-card-x', L.cardCenterX + '%');
-		cards.forEach(function (c, i) {
-			c.el.style.zIndex = String(100 - i);
-		});
-	}
-	var placeAll = function (kind, instant) {
-		cards.forEach(function (c, k) {
-			if (instant) c.el.style.transition = 'none';
-			c.el.style.transform = pose(k, kind);
-		});
-	};
 
 	/* ---------- the experience ---------- */
 	var state = 'idle'; // idle > opening > open > closing
@@ -426,10 +419,6 @@
 	var lockScroll = function (on) {
 		document.documentElement.style.overflow = on ? 'hidden' : '';
 		document.body.style.overflow = on ? 'hidden' : '';
-	};
-	var setSt = function (st, ms) {
-		envEl.style.setProperty('--fade', ms + 'ms');
-		envEl.dataset.st = st;
 	};
 
 	var musicIcon = function (on) {
@@ -466,52 +455,94 @@
 		}, S.ring.duration + 200);
 	};
 
+	/* ----- the opening / closing animation (GSAP): one timeline, played forward to open, backwards to close ----- */
+	var D = S.anim;
+	var tl = null;
+	var cardPose = function (k, nv, g, ch) {
+		// k = 0 is the front card. Only nv cards show as a stack, the rest wait behind the last one.
+		var kk = Math.min(k, nv - 1);
+		var peek = L.peekMax - (nv - 1 - kk) * L.peekStep; // how much of the card height is above the envelope (max 30%)
+		var tilt = [0, -1.8, 1.8, -0.9][kk] || 0;
+		var dx = [0, -0.012, 0.012, -0.006][kk] || 0;
+		return { y: -peek * ch, rot: tilt, x: dx * g.w };
+	};
+	function buildTimeline() {
+		if (typeof gsap === 'undefined') return;
+		if (tl) {
+			tl.pause(0);
+			tl.kill();
+		}
+		var n = cards.length;
+		if (!n) return;
+		var nv = Math.max(1, Math.min(n, L.maxVisible));
+		var w = envEl.offsetWidth || 300;
+		var sc = w / ENV.w;
+		var g = { w: w, sc: sc };
+		var cw = (L.cardWidth / 100) * w;
+		var ch = cw * cardRatio;
+		var startY = (ENV.holeBottom + 14) * sc; // card tops wait below the pocket, out of sight
+		var tf0 = D.lift + D.cross; // when the flap starts
+		var persp = w * D.perspective;
+
+		gsap.set(liftEl, { scale: 1, y: 0 });
+		gsap.set(stackEl, { opacity: 0 });
+		gsap.set(closedEl, { opacity: 1 });
+		gsap.set(flapEl, { rotationX: 0, scale: 1, zIndex: 4, transformOrigin: '50% 0%', transformPerspective: persp });
+		cards.forEach(function (c, k) {
+			var p = cardPose(k, nv, g, ch);
+			c.pose = p;
+			gsap.set(c.el, { xPercent: -50, x: p.x, y: startY, rotation: 0, opacity: 1, zIndex: 100 - k, width: cw, transformOrigin: '50% 50%' });
+		});
+
+		tl = gsap.timeline({
+			paused: true,
+			onComplete: function () {
+				state = 'open';
+				cardsEl.style.pointerEvents = 'auto';
+				stage.classList.add('hint2-on');
+				closeBtn.classList.add('show');
+			},
+			onReverseComplete: function () {
+				if (state !== 'closing') return;
+				stage.classList.remove('is-open', 'peek-on');
+				stage.classList.add('was-opened');
+				hintEl.classList.add('show');
+				state = 'idle';
+			},
+		});
+		// 1. a small lift
+		tl.to(liftEl, { scale: 1.03, y: -6 * sc, duration: D.lift, ease: 'power1.out' }, 0);
+		// 2. cross-fade from the closed picture to the layered one
+		tl.to(stackEl, { opacity: 1, duration: D.cross, ease: 'none' }, D.lift);
+		tl.set(closedEl, { opacity: 0 }, tf0);
+		// 3. only the flap turns over; halfway it slips behind the cards
+		tl.to(flapEl, { rotationX: -180, duration: D.flap, ease: 'power2.inOut' }, tf0);
+		tl.to(flapEl, { scale: 0.98, duration: D.flap / 2, ease: 'sine.inOut' }, tf0);
+		tl.to(flapEl, { scale: 1, duration: D.flap / 2, ease: 'sine.inOut' }, tf0 + D.flap / 2);
+		tl.set(flapEl, { zIndex: 1 }, tf0 + D.flap / 2);
+		// 4. the cards slide up out of the pocket, back cards first
+		var step = Math.min(D.cardStagger, D.cardStaggerTotal / Math.max(1, nv));
+		cards.forEach(function (c, k) {
+			var kk = Math.min(k, nv - 1);
+			var d = (nv - 1 - kk) * step;
+			tl.to(c.el, { y: c.pose.y, rotation: c.pose.rot, duration: D.cards, ease: 'power2.out' }, tf0 + D.cardsAfter + d);
+		});
+		tl.to(liftEl, { scale: 1, y: 0, duration: D.settle, ease: 'power1.inOut' }, tf0 + D.flap);
+	}
+
 	var openAll = function () {
 		if (state !== 'idle') return;
+		if (!tl) buildTimeline();
+		if (!tl) return;
 		state = 'opening';
 		hintEl.classList.remove('show');
 		if (audio && audio.paused) audio.play().catch(function () {});
 		stage.classList.add('is-open');
-		cardsReady.then(function () {
-			// cards wait inside the envelope, hidden by the closed picture
-			cards.forEach(function (c) {
-				c.el.style.transition = 'none';
-				c.el.style.opacity = '1';
-			});
-			placeAll('inside', true);
-			void cardsEl.offsetWidth;
-			fireRing();
-			wait(TM.titleFadeDelay).then(function () {
-				stage.classList.add('title-out');
-			});
-			wait(TM.peekDelay).then(function () {
-				stage.classList.add('peek-on');
-			});
-			wait(TM.toSlightDelay)
-				.then(function () {
-					setSt('slight', TM.toSlight); // the flap lifts, the tops of the cards appear
-					return wait(TM.toSlight + TM.slightPause);
-				})
-				.then(function () {
-					setSt('open', TM.toOpen); // the flap opens fully
-					return wait(TM.toOpen * 0.55);
-				})
-				.then(function () {
-					var n = cards.length;
-					var step = Math.min(TM.cardStagger, TM.cardStaggerTotal / Math.max(1, n));
-					cards.forEach(function (c, k) {
-						var d = (n - 1 - k) * step; // back cards first, the top card last
-						c.el.style.transition = 'transform ' + TM.cardRise + 'ms cubic-bezier(.25,.7,.25,1) ' + d + 'ms';
-					});
-					placeAll('deck', false);
-					stage.classList.add('hint2-on');
-					closeBtn.classList.add('show');
-					return wait(TM.cardRise + n * step + 150);
-				})
-				.then(function () {
-					state = 'open';
-				});
+		fireRing();
+		wait(TM.peekDelay).then(function () {
+			if (state !== 'idle') stage.classList.add('peek-on');
 		});
+		tl.timeScale(D.openSpeed).play(0);
 	};
 
 	/* ----- the reading view ----- */
@@ -539,10 +570,10 @@
 		lockScroll(true);
 		vw.style.setProperty('--vw-in', TM.viewerIn + 'ms');
 		vw.style.setProperty('--vw-out', TM.viewerOut + 'ms');
-		// start the reading view from where the deck sits on the screen
-		var r = cardsEl.getBoundingClientRect();
+		// start the reading view from where the cards sit on the screen
+		var r = (cards[0] ? cards[0].el : cardsEl).getBoundingClientRect();
 		vw.style.setProperty('--vw-ox', r.left + r.width / 2 + 'px');
-		vw.style.setProperty('--vw-oy', r.top + r.height * 0.3 + 'px');
+		vw.style.setProperty('--vw-oy', r.top + r.height * 0.5 + 'px');
 		vw.classList.add('on');
 		stage.classList.add('vw-on');
 		vw.setAttribute('aria-hidden', 'false');
@@ -552,6 +583,7 @@
 	};
 	var hideViewer = function () {
 		if (!vwOpen) return Promise.resolve();
+		closeZoom();
 		vwOpen = false;
 		vw.classList.remove('on');
 		stage.classList.remove('vw-on');
@@ -566,46 +598,10 @@
 		state = 'closing';
 		closeBtn.classList.remove('show');
 		stage.classList.remove('hint2-on');
-		var n = cards.length;
-		hideViewer()
-			.then(function () {
-				// 1. the cards tidy into one neat stack
-				cards.forEach(function (c) {
-					c.el.style.transition = 'transform ' + TM.tidy + 'ms cubic-bezier(.4,0,.2,1)';
-				});
-				placeAll('stack', false);
-				return wait(TM.tidy + 80);
-			})
-			.then(function () {
-				// 2. the stack slides down into the envelope, one card after another
-				var step = Math.min(TM.sinkStagger, TM.sinkStaggerTotal / Math.max(1, n));
-				cards.forEach(function (c, k) {
-					c.el.style.transition = 'transform ' + TM.sink + 'ms cubic-bezier(.45,0,.25,1) ' + k * step + 'ms';
-					c.el.style.transform = pose(k, 'inside');
-				});
-				return wait(TM.sink + n * step + 120);
-			})
-			.then(function () {
-				// 3. the flap lowers, then the envelope closes
-				setSt('slight', TM.closeToSlight);
-				return wait(TM.closeToSlight + TM.slightPause);
-			})
-			.then(function () {
-				setSt('closed', TM.closeToClosed);
-				stage.classList.remove('peek-on');
-				stage.classList.remove('title-out');
-				return wait(TM.closeToClosed + 100);
-			})
-			.then(function () {
-				cards.forEach(function (c) {
-					c.el.style.transition = 'none';
-					c.el.style.opacity = '0';
-				});
-				stage.classList.remove('is-open');
-				stage.classList.add('was-opened');
-				hintEl.classList.add('show');
-				state = 'idle';
-			});
+		cardsEl.style.pointerEvents = 'none';
+		hideViewer().then(function () {
+			tl.timeScale(D.closeSpeed).reverse();
+		});
 	};
 
 	var goBack = function () {
@@ -628,57 +624,88 @@
 		});
 	};
 
-	/* ----- full-screen card (tap a card in the reading view) ----- */
-	var zoomEl = $('ev-zoom');
-	var zoomImg = zoomEl.querySelector('img');
-	var zoomOpen = false;
-	var openZoom = function (i) {
-		if (!cards[i]) return;
-		zoomImg.src = cards[i].url;
-		zoomEl.classList.add('on');
-		zoomEl.setAttribute('aria-hidden', 'false');
-		zoomOpen = true;
+	/* ----- swipe / drag helper (a finger swipes natively; the mouse drags) ----- */
+	var makeDrag = function (tr, slideWidth, snapTo) {
+		var st = { drag: null, was: false };
+		tr.addEventListener('pointerdown', function (e) {
+			if (e.pointerType !== 'mouse' || e.button !== 0) return;
+			st.drag = { x: e.clientX, s: tr.scrollLeft, dx: 0, moved: false, from: Math.round(tr.scrollLeft / slideWidth()) };
+			tr.style.scrollSnapType = 'none';
+			tr.classList.add('grab');
+		});
+		window.addEventListener('pointermove', function (e) {
+			if (!st.drag) return;
+			var dx = e.clientX - st.drag.x;
+			st.drag.dx = dx;
+			if (Math.abs(dx) > 5) st.drag.moved = true;
+			tr.scrollLeft = st.drag.s - dx;
+		});
+		window.addEventListener('pointerup', function () {
+			if (!st.drag) return;
+			var d = st.drag;
+			st.was = d.moved;
+			st.drag = null;
+			tr.classList.remove('grab');
+			tr.style.scrollSnapType = '';
+			// a short drag is enough to move to the next or previous card
+			var to = d.from + (d.dx < -40 ? 1 : d.dx > 40 ? -1 : 0);
+			snapTo(to);
+			setTimeout(function () {
+				st.was = false;
+			}, 50);
+		});
+		return st;
 	};
-	var closeZoom = function () {
-		zoomEl.classList.remove('on');
-		zoomEl.setAttribute('aria-hidden', 'true');
-		zoomOpen = false;
-	};
-	zoomEl.addEventListener('click', closeZoom);
-
-	/* ----- mouse drag to swipe on a laptop (phones swipe with the finger) ----- */
-	var drag = null;
-	var wasDrag = false;
-	track.addEventListener('pointerdown', function (e) {
-		if (e.pointerType !== 'mouse' || e.button !== 0) return;
-		drag = { x: e.clientX, s: track.scrollLeft, moved: false };
-		track.style.scrollSnapType = 'none';
-		track.classList.add('grab');
-	});
-	window.addEventListener('pointermove', function (e) {
-		if (!drag) return;
-		var dx = e.clientX - drag.x;
-		if (Math.abs(dx) > 5) drag.moved = true;
-		track.scrollLeft = drag.s - dx;
-	});
-	window.addEventListener('pointerup', function () {
-		if (!drag) return;
-		wasDrag = drag.moved;
-		drag = null;
-		track.classList.remove('grab');
-		track.style.scrollSnapType = '';
-		goTo(Math.round(track.scrollLeft / slideW()), true);
-		setTimeout(function () {
-			wasDrag = false;
-		}, 50);
+	var vwDrag = makeDrag(track, slideW, function (i) {
+		goTo(i, true);
 	});
 	track.addEventListener('click', function (e) {
-		if (wasDrag) return;
+		if (vwDrag.was) return;
 		var slide = e.target.closest('.ev-vw-slide');
 		if (!slide) return;
 		var idx = Array.prototype.indexOf.call(track.children, slide);
 		if (idx === vwIndex) openZoom(idx);
 		else goTo(idx, true);
+	});
+
+	/* ----- full-screen cards: swipe here too; the cross goes back to the row of cards ----- */
+	var zoomOpen = false;
+	var zIndex = 0;
+	var zslideW = function () {
+		return zoomTrack.clientWidth || 1;
+	};
+	var zGoTo = function (i, smooth) {
+		i = Math.max(0, Math.min(cards.length - 1, i));
+		zoomTrack.scrollTo({ left: i * zslideW(), behavior: smooth ? 'smooth' : 'auto' });
+	};
+	var zDrag = makeDrag(zoomTrack, zslideW, function (i) {
+		zGoTo(i, true);
+	});
+	zoomTrack.addEventListener('scroll', function () {
+		zIndex = Math.max(0, Math.min(cards.length - 1, Math.round(zoomTrack.scrollLeft / zslideW())));
+	});
+	function openZoom(i) {
+		if (!cards[i]) return;
+		zoomEl.classList.add('on');
+		zoomEl.setAttribute('aria-hidden', 'false');
+		zoomOpen = true;
+		zIndex = i;
+		zGoTo(i, false);
+	}
+	function closeZoom() {
+		if (!zoomOpen) return;
+		zoomEl.classList.remove('on');
+		zoomEl.setAttribute('aria-hidden', 'true');
+		zoomOpen = false;
+		goTo(zIndex, false); // the row of cards shows the card you were looking at
+		markDots();
+	}
+	$('ev-zoom-x').addEventListener('click', closeZoom);
+	$('ev-zprev').addEventListener('click', function () {
+		zGoTo(zIndex - 1, true);
+	});
+	$('ev-znext').addEventListener('click', function () {
+		zGoTo(zIndex + 1, true);
 	});
 
 	/* ---------- events ---------- */
@@ -706,20 +733,27 @@
 	});
 	document.addEventListener('keydown', function (e) {
 		if (!vwOpen) return;
+		if (zoomOpen) {
+			if (e.key === 'ArrowLeft') zGoTo(zIndex - 1, true);
+			if (e.key === 'ArrowRight') zGoTo(zIndex + 1, true);
+			if (e.key === 'Escape') closeZoom();
+			return;
+		}
 		if (e.key === 'ArrowLeft') goTo(vwIndex - 1, true);
 		if (e.key === 'ArrowRight') goTo(vwIndex + 1, true);
-		if (e.key === 'Escape') {
-			if (zoomOpen) closeZoom();
-			else closeAll();
-		}
+		if (e.key === 'Escape') closeAll();
 	});
+	var rsz = 0;
 	window.addEventListener('resize', function () {
-		if (state === 'open') {
-			cards.forEach(function (c) {
-				c.el.style.transition = 'none';
-			});
-			placeAll('deck', true);
-		}
+		clearTimeout(rsz);
+		rsz = setTimeout(function () {
+			if (!cards.length || typeof gsap === 'undefined') return;
+			if (state === 'idle') buildTimeline();
+			else if (state === 'open') {
+				buildTimeline();
+				tl.progress(1, true);
+			}
+		}, 150);
 	});
 
 	// the Close button hides while the footer is on screen
@@ -749,7 +783,7 @@
 	}
 
 	/* ---------- start ---------- */
-	var imgs = [S.images.tray, S.images.closed, S.images.slight, S.images.open, S.images.ovSlight, S.images.ovOpen];
+	var imgs = [S.images.tray, S.images.closed, S.images.body, S.images.front, S.images.flap, S.images.flapBack];
 	var imagesReady = Promise.all(
 		imgs.map(function (s) {
 			return loadOne(s).catch(function () {});
