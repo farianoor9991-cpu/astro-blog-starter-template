@@ -32,7 +32,7 @@ import PageLayout from '../layouts/PageLayout.astro';
 
 			<div class="cz-modal" id="cz-modal">
 				<div class="cz-sheet" role="dialog" aria-label="Card preview">
-					<div class="cz-sheet-h"><b>Preview</b><span><button class="lnk" type="button" data-act="full">Full screen</button> &nbsp; <button class="lnk" type="button" data-act="close">Close</button></span></div>
+					<div class="cz-sheet-h"><b>Preview</b><button class="lnk" type="button" data-act="close">Close</button></div>
 					<canvas data-preview></canvas>
 					<div class="ptabs" data-tabs></div>
 					<p class="wm-note">Preview only. Your final cards will not have the watermark.</p>
@@ -157,7 +157,7 @@ const save = () => {};
 		const hostCount = () => S.hosts.list.filter((h: D) => h.name.trim()).length;
 		/* ---------- personalized greetings (add-on) ---------- */
 		const GUEST_MAX = 50;
-		const GUEST_NAME_MAX = 40;
+		const GUEST_NAME_MAX = 50;
 		let gMore = false;
 		const gNames = (text: string): string[] =>
 			String(text || '')
@@ -575,7 +575,7 @@ const save = () => {};
 			const personal = (what: string) => `<div class="subw"><button type="button" class="opt sub${S.guests.on ? ' on' : ''}" data-act="gtoggle" aria-pressed="${S.guests.on}"><span class="cb"></span><span class="ot"><b>Add personalized greeting cards <span style="color:#b8793c;white-space:nowrap">(+Rs. 999)</span></b><small><span style="color:#1a1a1a;font-weight:500">With this add-on, you receive:</span><br>A. ${what}<br>B. A personal link for each guest you list (up to ${GUEST_MAX}). Their first card greets them by name: "Dear Shaheer Aslam".</small></span></button>`;
 			const gBox = (key: string, text: string, title: string) =>
 				S.guests.on
-					? `<div class="f"><label>${title}</label><textarea data-gst="${key}" rows="4" maxlength="3000" placeholder="Hamza Chachu&#10;Mr. Ali &amp; Family&#10;Meer Alam" autocomplete="off">${esc(text)}</textarea><p class="hint" data-gtotal>${gTotal} of ${GUEST_MAX} guests added</p><p class="hint">One name per line. We add "Dear" for you, so Shaheer Aslam becomes "Dear Shaheer Aslam".</p></div>`
+					? `<div class="f"><label>${title}</label><textarea data-gst="${key}" rows="4" maxlength="3000" placeholder="Hamza Chachu&#10;Mr. Ali &amp; Family&#10;Meer Alam" autocomplete="off">${esc(text)}</textarea><p class="hint" data-gtotal>${gTotal} of ${GUEST_MAX} guests added</p><p class="hint" data-gwarn style="color:#b3261e" hidden></p><p class="hint">One name per line. We add "Dear" for you, so Shaheer Aslam becomes "Dear Shaheer Aslam".</p></div>`
 					: '';
 					let out = '';
 			if (m !== 'many') out += '<div class="opts">' + opt('one', 'One link for everyone', 'All your cards in a single link.') + '</div>';
@@ -905,6 +905,14 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 					applyG(t.value);
 					total = allGuests().length;
 				}
+				const warn = t.closest('.f')?.querySelector('[data-gwarn]') as HTMLElement | null;
+				if (warn) {
+					const bad = gNames(t.value).find((n) => n.length > GUEST_NAME_MAX);
+					warn.hidden = !bad;
+					warn.textContent = bad ? `"${bad.slice(0, 20)}..." is ${bad.length} characters. Please keep each name within ${GUEST_NAME_MAX} characters.` : '';
+				}
+				const e4 = $('[data-err="4"]');
+				if (e4 && /characters/.test(e4.textContent || '') && !allGuests().some((g: D) => g.raw.length > GUEST_NAME_MAX)) e4.textContent = '';
 				document.querySelectorAll<HTMLElement>('[data-gtotal]').forEach((gt) => {
 					gt.textContent = `${total} of ${GUEST_MAX} guests added` + (total >= GUEST_MAX ? '. Limit reached, extra names are not added.' : '');
 					gt.style.color = total >= GUEST_MAX ? '#b3261e' : '';
@@ -1007,10 +1015,6 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 					if (!S.links.list.length) S.links.list.push({ id: uid(), label: '', cards: [] });
 					refreshBody(4);
 					save();
-					break;
-				case 'full':
-					modal.classList.toggle('full');
-					scheduleDraw();
 					break;
 				case 'gmore':
 					gMore = !gMore;
