@@ -23,7 +23,7 @@ const config = {
 			href="https://fonts.googleapis.com/css2?family=Berkshire+Swash&family=Unna:wght@400;700&family=Playfair+Display:wght@700&display=swap"
 			rel="stylesheet"
 		/>
-		<link rel="stylesheet" href="/envelope.css?v=7" />
+		<link rel="stylesheet" href="/envelope.css?v=9" />
 	</head>
 	<body>
 		<div id="env-root"></div>
@@ -39,12 +39,14 @@ const config = {
 					if (!d || !d.events || !d.events.length) return;
 					var el = document.getElementById('env-config');
 					var cfg = JSON.parse(el.textContent);
-					cfg.invitation = { couple: d.couple, events: d.events, hosts: d.hosts || [] };
+					var gi = new URLSearchParams(location.search).get('g');
+					var g = gi !== null && d.guests && d.guests.length ? d.guests[Math.min(Number(gi) || 0, d.guests.length - 1)] : null;
+					cfg.invitation = { couple: d.couple, events: g ? g.events : d.events, hosts: d.hosts || [], guest: g ? g.name : '' };
 					el.textContent = JSON.stringify(cfg);
 				} catch (e) {}
 			})();
 		</script>
 		<script is:inline src="/gsap.min.js"></script>
-		<script is:inline src="/envelope-engine.js?v=6"></script>
+		<script is:inline src="/envelope-engine.js?v=9"></script>
 	</body>
 </html>
