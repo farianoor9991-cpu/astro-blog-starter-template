@@ -47,6 +47,22 @@ const config = {
 			})();
 		</script>
 		<script is:inline src="/gsap.min.js"></script>
-		<script is:inline src="/envelope-engine.js?v=10"></script>
+		<script is:inline>
+			(function () {
+				try {
+					if (new URLSearchParams(location.search).get('preview') !== '1') return;
+					var w = Math.min(window.innerWidth, 430) / 3;
+					var h = w * 0.62;
+					var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="' + h * 2 + '">' +
+						[[w / 2, h * 0.5], [0, h * 1.5], [w, h * 1.5]].map(function (p) {
+							return '<text x="' + p[0] + '" y="' + p[1] + '" font-family="Arial,sans-serif" font-weight="700" font-size="' + w * 0.2 + '" text-anchor="middle" fill="rgba(255,255,255,0.5)" stroke="rgba(39,96,65,0.4)" stroke-width="1" transform="rotate(-28 ' + p[0] + ' ' + p[1] + ')">InviteHeaven</text>';
+						}).join('') + '</svg>';
+					var d = document.createElement('div');
+					d.style.cssText = 'position:fixed;inset:0;z-index:99999;pointer-events:none;background:url("data:image/svg+xml,' + encodeURIComponent(svg) + '") repeat;';
+					document.body.appendChild(d);
+				} catch (e) {}
+			})();
+		</script>
+		<script is:inline src="/envelope-engine.js?v=11"></script>
 	</body>
 </html>
