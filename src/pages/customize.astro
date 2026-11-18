@@ -608,9 +608,9 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 			save();
 			document.querySelectorAll<HTMLElement>('.st').forEach((el) => {
 				const on = Number(el.dataset.n) === n;
-				if (on) el.classList.add('open');
+				el.classList.toggle('open', on);
 				const h = el.querySelector('.st-h');
-if (h && on) h.setAttribute('aria-expanded', 'true');
+if (h) h.setAttribute('aria-expanded', String(on));
 });
 			refreshBody(n);
 			updateSummaries();
@@ -786,7 +786,7 @@ if (h && on) h.setAttribute('aria-expanded', 'true');
 			const b = (ev.target as HTMLElement).closest('button') as HTMLElement | null;
 			if (!b) return;
 			const d = b.dataset;
-			if (d.open) { 				if (b.classList.contains('st-h') && b.closest('.st')?.classList.contains('open')) { const st = b.closest('.st') as HTMLElement; st.classList.remove('open'); b.setAttribute('aria-expanded', 'false'); return; } 				return openStep(Number(d.open), true); 			}
+			if (d.open) { 				if (b.classList.contains('st-h') && S.open === Number(d.open)) return closeStep(); 				return openStep(Number(d.open), true); 			}
 			if (d.card) {
 				S.active = d.card;
 				save();
