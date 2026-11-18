@@ -60,6 +60,12 @@ body {
 	font: 400 var(--ev-title-size, 2.4rem) / 1.2 var(--ev-title-font, serif);
 	color: var(--ev-title-color, #b1232c);
 }
+.ev-greet {
+	display: block;
+	margin-top: 0.7rem;
+	font: italic 400 1.1rem / 1.35 var(--ev-hint-font, serif);
+	color: var(--ev-hint-color, #5a1016);
+}
 .ev-tray {
 	position: absolute;
 	left: 0;

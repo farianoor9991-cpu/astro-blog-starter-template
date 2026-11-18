@@ -90,7 +90,7 @@
 	root.innerHTML =
 		'<div class="ev-stage" id="ev-stage">' +
 		'<div class="ev-col">' +
-		'<h1 class="ev-title ev-rise">' + esc(S.welcome.text) + '</h1>' +
+		'<h1 class="ev-title ev-rise">' + esc(S.welcome.text) + (INV.guest ? '<span class="ev-greet">Dear ' + esc(INV.guest) + ',<br>you are cordially invited</span>' : '') + '</h1>' +
 		'<p class="ev-hint2" id="ev-hint2">' + esc(S.hint.openText) + '</p>' +
 		'<div class="ev-tray ev-rise" style="--d:.12s"><img src="' + esc(S.images.tray) + '" alt="" draggable="false"></div>' +
 		'<div class="ev-envbox ev-rise" style="--d:.24s">' +
