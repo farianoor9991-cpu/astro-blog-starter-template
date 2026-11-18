@@ -72,6 +72,7 @@ const KEY = 'ih-customize-v2:' + tpl.id;
 const MAX_HOSTS: number = tpl.maxHosts || 6;
 		const L: D = tpl.eventLayout;
 		const HL: D = tpl.hostsLayout;
+		const GL: D = tpl.guestLayout;
 		const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 		const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 		const STEPS = [
@@ -121,7 +122,7 @@ const MAX_HOSTS: number = tpl.maxHosts || 6;
 			couple: { brideName: '', brideParents: '', groomName: '', groomParents: '' },
 			events: {},
 			hosts: { want: null, list: [{ name: '', phone: '' }] },
-			links: { mode: 'one', list: [] },
+			links: { mode: '', list: [] },
 			guests: { on: false, one: '' },
 		});
 		let S: D = blank();
@@ -145,9 +146,9 @@ const save = () => {};
 		};
 		const tabs = (): string[] => {
 			const p = pkg();
-			return p;
+			return S.guests.on && S.links.mode ? ['guest'].concat(p) : p;
 		};
-		const label = (id: string) => (id === 'hosts' ? 'Reception Hosts' : evDef(id).label);
+		const label = (id: string) => (id === 'hosts' ? 'Reception Hosts' : id === 'guest' ? 'Greeting card' : evDef(id).label);
 		const ensureActive = () => {
     const t = tabs();
     if (!t.length) return;
@@ -363,7 +364,8 @@ const save = () => {};
 			tokens.set(canvas, tok);
 			await fontsReady;
 			const isHosts = id === 'hosts';
-			const lay: D = isHosts ? HL : L;
+			const isGuest = id === 'guest';
+			const lay: D = isHosts ? HL : isGuest ? GL : L;
 			const img = await loadBg(lay.bg);
 			if (tokens.get(canvas) !== tok) return;
 			const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
@@ -385,7 +387,10 @@ const save = () => {};
 			canvas.height = H;
 			ctx.imageSmoothingQuality = 'high';
 			ctx.drawImage(img, 0, 0, W, H);
-			if (isHosts) {
+			if (isGuest) {
+				const first = allGuests()[0];
+				put(ctx, 'Dear ' + (first ? first.name : 'Shaheer Aslam'), GL.field, W, H, !!first);
+			} else if (isHosts) {
 				const rows = hostRows();
 				const n = rows.length;
 				const gap = n <= 3 ? 0.0388 : n === 4 ? 0.0334 : n === 5 ? 0.02795 : 0.0256;
@@ -423,7 +428,7 @@ const save = () => {};
 			const g = document.getElementById('gal');
 			if (!g) return;
 			g.innerHTML = '';
-			pkg().forEach((id) => {
+			tabs().forEach((id) => {
 				const fig = document.createElement('figure');
 				fig.className = 'gal-i';
 				const c = document.createElement('canvas');
@@ -527,20 +532,20 @@ const save = () => {};
 			const opt = (mode: string, title: string, desc: string) =>
 				`<button type="button" class="opt${m === mode ? ' on' : ''}" data-mode="${mode}" aria-pressed="${m === mode}"><span class="cb"></span><span class="ot"><b>${title}</b><small>${desc}</small></span></button>`;
 			const gTotal = allGuests().length;
-			const personal = `<div class="subw"><button type="button" class="opt sub${S.guests.on ? ' on' : ''}" data-act="gtoggle" aria-pressed="${S.guests.on}"><span class="cb"></span><span class="ot"><b>Add personalized greeting cards <span style="color:#b8793c;white-space:nowrap">(+Rs. 999)</span></b><small>Each guest gets their own link. Their first card greets them by name: "Dear Mateen Mughal". You receive a list of all the links. Up to ${GUEST_MAX} guests.</small></span></button>`;
+			const personal = (what: string) => `<div class="subw"><button type="button" class="opt sub${S.guests.on ? ' on' : ''}" data-act="gtoggle" aria-pressed="${S.guests.on}"><span class="cb"></span><span class="ot"><b>Add personalized greeting cards <span style="color:#b8793c;white-space:nowrap">(+Rs. 999)</span></b><small><span style="color:#1a1a1a;font-weight:500">You will get 2 things:</span><br>A. ${what}<br>B. A personal link for each guest you list (up to ${GUEST_MAX}). Their first card greets them by name: "Dear Shaheer Aslam".</small></span></button>`;
 			const gBox = (key: string, text: string, title: string) =>
 				S.guests.on
-					? `<div class="f"><label>${title}</label><textarea data-gst="${key}" rows="4" placeholder="Mateen Mughal&#10;Ayesha Khan&#10;Raza and Sana" autocomplete="off">${esc(text)}</textarea><p class="hint">One full name per line, written exactly how you want it to appear. We add "Dear" for you, so Mateen Mughal becomes "Dear Mateen Mughal".</p></div>`
+					? `<div class="f"><label>${title}</label><textarea data-gst="${key}" rows="4" placeholder="Hamza Chachu&#10;Mr. Ali &amp; Family&#10;Mir Alam" autocomplete="off">${esc(text)}</textarea><p class="hint">One name per line. We add "Dear" for you, so Shaheer Aslam becomes "Dear Shaheer Aslam".</p></div>`
 					: '';
 			const counter = S.guests.on ? `<p class="hint" data-gtotal>${gTotal} of ${GUEST_MAX} guests added</p>` : '';
 			let out = '<div class="opts">' + opt('one', 'One link for everyone', 'All your cards in a single link.') + '</div>';
 			if (m === 'one') {
-				out += personal + gBox('one', S.guests.one, 'Guests who get their own personalized link') + counter + '</div>';
+				out += personal('One link with all your cards, for everyone.') + gBox('one', S.guests.one, 'Guests who get their own personalized link') + counter + '</div>';
 				out += `<p class="hint">Your link will show: ${cards.map((c) => esc(label(c))).join(', ')}.</p>`;
 			}
 			out += '<div class="opts">' + opt('many', 'Different links for different guests', 'For example, close family see all cards and friends see only some.') + '</div>';
 			if (m === 'many') {
-				out += personal + counter + '</div>';
+				out += personal('Separate links, each with the cards you chose for that group.') + counter + '</div>';
 				out +=
 					S.links.list
 						.map(
@@ -702,6 +707,7 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 					});
 				}
 			}
+			if (n === 4 && !S.links.mode) er.push('Please choose one option: one link for everyone, or different links for different groups.');
 			if (n === 4 && S.guests.on) {
 				const gs = allGuests();
 				if (!gs.length) er.push('Please add at least one guest name, or turn off personalized greetings.');
@@ -764,7 +770,7 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 				S.events[e.id] = { on: true, date: e.sample.date, time: e.sample.time, venue: tpl.sampleVenue };
 			});
 			S.hosts = { want: true, list: tpl.sampleHosts.map((h: D) => ({ name: h.name, phone: String(h.phone).replace(/x/gi, '1') })) };
-			S.links = { mode: 'one', list: [] };
+			S.links = { mode: '', list: [] };
 			S.done = {};
 			S.active = pkg()[0];
 			save();
@@ -790,7 +796,8 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 			try {
 				localStorage.setItem('ih-haya-preview', JSON.stringify(data));
 			} catch (e) {}
-			window.open('/demo-haya?preview=1' + (gi !== undefined && !isNaN(gi) ? '&g=' + gi : ''), '_blank');
+			const gIdx = gi !== undefined && !isNaN(gi) ? gi : gs.length ? 0 : undefined;
+			window.open('/demo-haya?preview=1' + (gIdx !== undefined ? '&g=' + gIdx : ''), '_blank');
 		};
 		const finish = () => {
 			S.done[5] = true;
@@ -945,6 +952,8 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 				case 'gtoggle':
 					S.guests.on = !S.guests.on;
 					refreshBody(4);
+					renderTabs();
+					scheduleDraw();
 					updateSummaries();
 					break;
 				case 'gpreview':
