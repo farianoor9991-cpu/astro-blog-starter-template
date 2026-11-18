@@ -228,6 +228,61 @@
 		ctx.textBaseline = 'middle';
 		ctx.fillText(t, f.x * W, f.y * H);
 	};
+	var putGuest = function (ctx, t, f, W, H) {
+		var full = f.size * W;
+		var max = f.maxW * W;
+		var setF = function (sz) {
+			ctx.font = f.weight + ' ' + sz + 'px "' + f.font + '", serif';
+		};
+		var size = full;
+		var lines = [t];
+		setF(size);
+		if (ctx.measureText(t).width > max) {
+			var sc = max / ctx.measureText(t).width;
+			if (sc >= 0.78) size = full * sc;
+			else {
+				size = full * 0.8;
+				setF(size);
+				lines = wrapWords(ctx, t, max);
+				if (lines.length > 2) lines = [lines[0], lines.slice(1).join(' ')];
+				var widest = Math.max.apply(null, lines.map(function (l) { return ctx.measureText(l).width; }));
+				if (widest > max) size = Math.max(size * (max / widest), full * 0.5);
+			}
+		}
+		setF(size);
+		ctx.fillStyle = T.color;
+		ctx.textAlign = 'center';
+		ctx.textBaseline = 'middle';
+		var lh = size * 1.18;
+		var bottom = f.y * H + (full - size) / 2;
+		lines.forEach(function (l, i) {
+			ctx.fillText(l, f.x * W, bottom - (lines.length - 1 - i) * lh);
+		});
+	};
+	var watermark = function (ctx, W, H) {
+		ctx.save();
+		ctx.translate(W / 2, H / 2);
+		ctx.rotate(-Math.PI / 6);
+		var size = W * 0.032;
+		ctx.font = '700 ' + size + 'px "Playfair Display", Georgia, serif';
+		ctx.textAlign = 'center';
+		ctx.textBaseline = 'middle';
+		ctx.lineWidth = size * 0.07;
+		ctx.strokeStyle = 'rgba(39,96,65,0.34)';
+		ctx.fillStyle = 'rgba(255,255,255,0.5)';
+		var stepX = W * 0.31;
+		var stepY = W * 0.13;
+		var row = 0;
+		for (var y = -H; y <= H; y += stepY) {
+			var off = row % 2 ? stepX / 2 : 0;
+			for (var x = -W * 1.2; x <= W * 1.2; x += stepX) {
+				ctx.strokeText('InviteHeaven', x + off, y);
+				ctx.fillText('InviteHeaven', x + off, y);
+			}
+			row++;
+		}
+		ctx.restore();
+	};
 	var wrapWords = function (ctx, str, maxPx) {
 		var words = str.split(/\s+/);
 		var lines = [];
@@ -323,7 +378,7 @@
 			ctx.imageSmoothingQuality = 'high';
 			ctx.drawImage(img, 0, 0, W, H);
 			if (isGuest) {
-				put(ctx, 'Dear ' + tc(INV.guest), T.guestLayout.field, W, H);
+				putGuest(ctx, 'Dear ' + tc(INV.guest), T.guestLayout.field, W, H);
 			} else if (isHosts) {
 				var rows = INV.hosts
 					.filter(function (h) {
@@ -348,6 +403,7 @@
 				});
 				drawVenue(ctx, tx.venue, T.eventLayout.fields.venue, W, H);
 			}
+			if (cfg.watermark) watermark(ctx, W, H);
 			return new Promise(function (res) {
 				cv.toBlob(
 					function (b) {
