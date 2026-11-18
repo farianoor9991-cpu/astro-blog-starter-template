@@ -600,8 +600,8 @@ const save = () => {};
 		};
 
 		const closeStep = () => { 			S.open = 0; 			save(); 			document.querySelectorAll<HTMLElement>('.st').forEach((el) => { 				el.classList.remove('open'); 				const h = el.querySelector('.st-h'); 				if (h) h.setAttribute('aria-expanded', 'false'); 			}); 			updateProgress(); 		}; 		const openStep = (n: number, scroll = false) => {
-S.open = n; 
-const anchor = $(.st[data-n="${n}"]); 
+S.open = n;
+const anchor = document.querySelector('.st[data-n="' + n + '"]') as HTMLElement | null;
 const topBefore = anchor ? anchor.getBoundingClientRect().top : 0;
 if (n === 3 && S.hosts.want) S.active = 'hosts';
 			else if (S.active === 'hosts' && n !== 3 && n !== 5) S.active = tabs()[0];
