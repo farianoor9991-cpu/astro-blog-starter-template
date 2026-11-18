@@ -90,7 +90,7 @@
 	root.innerHTML =
 		'<div class="ev-stage" id="ev-stage">' +
 		'<div class="ev-col">' +
-		'<h1 class="ev-title ev-rise">' + esc(S.welcome.text) + (INV.guest ? '<span class="ev-greet">Dear ' + esc(INV.guest) + ',<br>you are cordially invited</span>' : '') + '</h1>' +
+		'<h1 class="ev-title ev-rise">' + esc(S.welcome.text) + '</h1>' +
 		'<p class="ev-hint2" id="ev-hint2">' + esc(S.hint.openText) + '</p>' +
 		'<div class="ev-tray ev-rise" style="--d:.12s"><img src="' + esc(S.images.tray) + '" alt="" draggable="false"></div>' +
 		'<div class="ev-envbox ev-rise" style="--d:.24s">' +
@@ -310,7 +310,8 @@
 	};
 	var drawCard = function (id) {
 		var isHosts = id === 'hosts';
-		var lay = isHosts ? T.hostsLayout : T.eventLayout;
+		var isGuest = id === 'guest';
+		var lay = isHosts ? T.hostsLayout : isGuest ? T.guestLayout : T.eventLayout;
 		return loadBg(lay.bg).then(function (img) {
 			var W = Math.min(img.naturalWidth, 900);
 			var H = Math.round((W * img.naturalHeight) / img.naturalWidth);
@@ -321,7 +322,9 @@
 			var ctx = cv.getContext('2d');
 			ctx.imageSmoothingQuality = 'high';
 			ctx.drawImage(img, 0, 0, W, H);
-			if (isHosts) {
+			if (isGuest) {
+				put(ctx, 'Dear ' + tc(INV.guest), T.guestLayout.field, W, H);
+			} else if (isHosts) {
 				var rows = INV.hosts
 					.filter(function (h) {
 						return String(h.name || '').trim();
@@ -369,8 +372,9 @@
 			return e.id;
 		});
 	if (INV.hosts && INV.hosts.length) order.push('hosts');
+	if (INV.guest) order.unshift('guest'); // personalized greeting card always comes first
 	var labelOf = function (id) {
-		return id === 'hosts' ? 'Reception Hosts' : evDef(id).label;
+		return id === 'hosts' ? 'Reception Hosts' : id === 'guest' ? 'Greeting' : evDef(id).label;
 	};
 
 	var cards = [];
