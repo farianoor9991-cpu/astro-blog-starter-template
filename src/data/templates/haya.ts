@@ -45,6 +45,11 @@ export const haya = {
 			venue: { x: 0.511, y: 0.765, size: 0.0298, maxW: 0.6, lh: 0.0241, font: 'Unna', weight: 700 },
 		},
 	},
+	// The greeting card: the blank card already has the fixed greeting, only "Dear <Name>" is added.
+	guestLayout: {
+		bg: ['/haya-guest-bg.jpg'],
+		field: { x: 0.522, y: 0.4156, size: 0.0517, maxW: 0.62, font: 'Berkshire Swash', weight: 400 },
+	},
 	hostsLayout: {
 		bg: ['/haya-hosts-bg-preview.jpg', '/haya-hosts-bg.png'],
 		field: { x: 0.511, centerY: 0.559, size: 0.0273, maxW: 0.66, font: 'Unna', weight: 700 },
