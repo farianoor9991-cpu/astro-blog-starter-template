@@ -161,11 +161,7 @@ const save = () => {};
 				.split(/[\n,]/)
 				.map((x) => x.trim())
 				.filter(Boolean);
-		const gDisplay = (raw: string): string => {
-			const n = tc(raw);
-			if (!n) return '';
-			return /family|&|\band\b/i.test(n) ? n : n + ' & Family';
-		};
+		const gDisplay = (raw: string): string => tc(raw);
 		const allGuests = (): D[] => {
 			if (!S.guests.on) return [];
 			const out: D[] = [];
@@ -525,21 +521,27 @@ const save = () => {};
 				return `<p class="hint">Please choose your events in Step 2 first.</p><div class="acts"><button class="btn-o" type="button" data-open="2">Go to Step 2</button></div>`;
 			}
 			syncLinks();
-			const m = S.links.mode; const evCards = cards.filter((c: string) => c !== 'hosts'); const hostNote = S.hosts.want ? '<p class="hint">Your Reception Hosts card is included in every link automatically.</p>' : '';
-			const opts = `
-				<div class="opts">
-					<button type="button" class="opt${m === 'one' ? ' on' : ''}" data-mode="one"><b>One link for everyone</b><small>All your cards in a single link.</small></button>
-					<button type="button" class="opt${m === 'many' ? ' on' : ''}" data-mode="many"><b>Different links for different guests</b><small>For example, close family see all cards and friends see only some.</small></button>
-				</div>`;
+			const m = S.links.mode;
+			const evCards = cards.filter((c: string) => c !== 'hosts');
+			const hostNote = S.hosts.want ? '<p class="hint">Your Reception Hosts card is included in every link automatically.</p>' : '';
+			const opt = (mode: string, title: string, desc: string) =>
+				`<button type="button" class="opt${m === mode ? ' on' : ''}" data-mode="${mode}" aria-pressed="${m === mode}"><span class="cb"></span><span class="ot"><b>${title}</b><small>${desc}</small></span></button>`;
+			const gTotal = allGuests().length;
+			const personal = `<div class="subw"><button type="button" class="opt sub${S.guests.on ? ' on' : ''}" data-act="gtoggle" aria-pressed="${S.guests.on}"><span class="cb"></span><span class="ot"><b>Add personalized greeting cards <span style="color:#b8793c;white-space:nowrap">(+Rs. 999)</span></b><small>Each guest gets their own link. Their first card greets them by name: "Dear Mateen Mughal". You receive a list of all the links. Up to ${GUEST_MAX} guests.</small></span></button>`;
 			const gBox = (key: string, text: string, title: string) =>
 				S.guests.on
-					? `<div class="f"><label>${title}</label><textarea data-gst="${key}" rows="4" placeholder="Mateen&#10;Ayesha Khan&#10;Raza &amp; Sana" autocomplete="off">${esc(text)}</textarea><p class="hint">One name per line. We add "&amp; Family" for you, so Mateen becomes "Dear Mateen &amp; Family".</p></div>`
+					? `<div class="f"><label>${title}</label><textarea data-gst="${key}" rows="4" placeholder="Mateen Mughal&#10;Ayesha Khan&#10;Raza and Sana" autocomplete="off">${esc(text)}</textarea><p class="hint">One full name per line, written exactly how you want it to appear. We add "Dear" for you, so Mateen Mughal becomes "Dear Mateen Mughal".</p></div>`
 					: '';
-			let extra = '';
+			const counter = S.guests.on ? `<p class="hint" data-gtotal>${gTotal} of ${GUEST_MAX} guests added</p>` : '';
+			let out = '<div class="opts">' + opt('one', 'One link for everyone', 'All your cards in a single link.') + '</div>';
 			if (m === 'one') {
-				extra = `<p class="hint">Your link will show: ${cards.map((c) => esc(label(c))).join(', ')}.</p>${gBox('one', S.guests.one, 'Guests who get their own personalized link')}`;
-			} else {
-				extra =
+				out += personal + gBox('one', S.guests.one, 'Guests who get their own personalized link') + counter + '</div>';
+				out += `<p class="hint">Your link will show: ${cards.map((c) => esc(label(c))).join(', ')}.</p>`;
+			}
+			out += '<div class="opts">' + opt('many', 'Different links for different guests', 'For example, close family see all cards and friends see only some.') + '</div>';
+			if (m === 'many') {
+				out += personal + counter + '</div>';
+				out +=
 					S.links.list
 						.map(
 							(lk: D, i: number) => `
@@ -558,12 +560,7 @@ const save = () => {};
 						)
 						.join('') + hostNote + `<button type="button" class="btn-o" data-act="addlink">Add another link</button>`;
 			}
-			const gTotal = allGuests().length;
-			const addon = `
-				<div class="opts" style="margin-top:14px">
-					<button type="button" class="opt${S.guests.on ? ' on' : ''}" data-act="gtoggle" aria-pressed="${S.guests.on}"><b>Add personalized greetings <span style="color:#b8793c">(+Rs. 999)</span></b><small>Each close family gets their own link that opens with "Dear Mateen &amp; Family, you are cordially invited". You receive the full list of links, one per guest. Up to ${GUEST_MAX} guests.</small></button>
-				</div>${S.guests.on ? `<p class="hint" data-gtotal>${gTotal} of ${GUEST_MAX} guests added</p>` : ''}`;
-			return `${opts}${extra}${addon}<div class="err" data-err="4"></div><div class="acts"><button class="btn-g" type="button" data-act="next" data-n="4">Continue to Step 5</button></div>`;
+			return `${out}<div class="err" data-err="4"></div><div class="acts"><button class="btn-g" type="button" data-act="next" data-n="4">Continue to Step 5</button></div>`;
 		};
 
 		const body5 = (): string => {
@@ -595,7 +592,7 @@ const save = () => {};
 					`<p>${gs.length} personalized link${gs.length === 1 ? '' : 's'}. Tap a name to see exactly what that guest will open.</p>` +
 					gs
 						.map((g: D, i: number) => {
-							const evs = guestEvents(g).map((id: string) => esc(label(id)));
+							const evs = ['Greeting card'].concat(guestEvents(g).map((id: string) => esc(label(id))));
 							if (S.hosts.want) evs.push('Reception Hosts');
 							return `<p><button type="button" class="lnk" data-act="gpreview" data-gi="${i}">${esc(g.name)}</button> sees: ${evs.join(', ')}${g.link ? ' (' + esc(g.link.label || 'Link ' + g.linkNo) + ')' : ''}</p>`;
 						})
@@ -1329,6 +1326,9 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 		margin: 8px 0 12px;
 	}
 	.cz .opt {
+		display: flex;
+		align-items: flex-start;
+		gap: 10px;
 		text-align: left;
 		padding: 12px;
 		border-radius: 12px;
@@ -1352,6 +1352,47 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 	.cz .opt.on {
 		border-color: #d4a276;
 		box-shadow: inset 0 0 0 1px #d4a276;
+	}
+	.cz .cb {
+		flex: 0 0 20px;
+		width: 20px;
+		height: 20px;
+		margin-top: 1px;
+		box-sizing: border-box;
+		border: 1.5px solid rgba(26, 26, 26, 0.4);
+		border-radius: 5px;
+		background: #ffffff;
+		position: relative;
+	}
+	.cz .opt.on .cb {
+		background: #d4a276;
+		border-color: #d4a276;
+	}
+	.cz .opt.on .cb::after {
+		content: '';
+		position: absolute;
+		left: 5.5px;
+		top: 1.5px;
+		width: 5px;
+		height: 10px;
+		border: solid #ffffff;
+		border-width: 0 2px 2px 0;
+		transform: rotate(45deg);
+	}
+	.cz .opt .ot {
+		display: block;
+		min-width: 0;
+	}
+	.cz .subw {
+		margin: 0 0 12px 14px;
+		padding-left: 12px;
+		border-left: 2px solid rgba(212, 162, 118, 0.55);
+	}
+	.cz .subw .opt.sub {
+		width: 100%;
+		margin-bottom: 8px;
+		padding: 10px;
+		background: #ffffff;
 	}
 
 	/* Review */
