@@ -85,7 +85,7 @@ export const cleanGuests = (input: any, links: any[], existing?: any[]) => {
 		while (seen.has(id)) id = rid(6);
 		seen.add(id);
 		const linkId = ok.has(g?.linkId) ? g.linkId : links[0]?.id;
-		return { id, name: str(g?.name, 60), linkId };
+		return { id, name: str(g?.name, 35), linkId };
 	}).filter((g: any) => g.name);
 };
 

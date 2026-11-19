@@ -234,24 +234,41 @@
 		var setF = function (sz) {
 			ctx.font = f.weight + ' ' + sz + 'px "' + f.font + '", serif';
 		};
-		var size = full;
-		setF(size);
-		var w = ctx.measureText(t).width;
-		var sx = 1;
-		if (w > max) {
-			size = Math.max(full * (max / w), full * 0.45);
-			setF(size);
-			w = ctx.measureText(t).width;
-			if (w > max) sx = max / w;
-		}
 		ctx.fillStyle = T.color;
 		ctx.textAlign = 'center';
-		ctx.textBaseline = 'middle';
-		ctx.save();
-		ctx.translate(f.x * W, f.y * H);
-		ctx.scale(sx, 1);
-		ctx.fillText(t, 0, 0);
-		ctx.restore();
+		setF(full);
+		// Short name: one line at the fixed spot
+		if (ctx.measureText(t).width <= max) {
+			ctx.textBaseline = 'middle';
+			ctx.fillText(t, f.x * W, f.y * H);
+			return;
+		}
+		// Long name: two lines, the first line filled as far as it fits (like the sample card)
+		var lines = wrapWords(ctx, t, max);
+		if (lines.length > 2) lines = [lines[0], lines.slice(1).join(' ')];
+		var widest = function () {
+			return Math.max.apply(null, lines.map(function (l) { return ctx.measureText(l).width; }));
+		};
+		var sc = 1;
+		var sx = 1;
+		var wd = widest();
+		if (wd > max) {
+			sc = Math.max(max / wd, 0.5);
+			setF(full * sc);
+			wd = widest();
+			if (wd > max) sx = max / wd;
+		}
+		var gap = f.gap * W * sc;
+		var mid = f.wrapY * H + (f.gap * W) / 2;
+		var base = lines.length === 1 ? mid : mid - gap / 2;
+		ctx.textBaseline = 'alphabetic';
+		lines.forEach(function (l, i) {
+			ctx.save();
+			ctx.translate(f.x * W, base + i * gap);
+			ctx.scale(sx, 1);
+			ctx.fillText(l, 0, 0);
+			ctx.restore();
+		});
 	};
 	var watermark = function (ctx, W, H) {
 		ctx.save();
@@ -410,6 +427,9 @@
 		});
 	};
 
+	(INV.events || []).forEach(function (ev) {
+		if (ev.custom && !evDef(ev.id)) T.events.push({ id: ev.id, label: ev.label || ev.title, title: ev.title || ev.label });
+	});
 	var order = INV.events
 		.slice()
 		.sort(function (a, b) {

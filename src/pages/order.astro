@@ -138,7 +138,7 @@ import PageLayout from '../layouts/PageLayout.astro';
 						return '<option value="' + esc(l.id) + '"' + (l.id === g.linkId ? ' selected' : '') + '>' + esc(l.label) + '</option>';
 					}).join('') + '</select>';
 				}
-				var title = '<input class="lbl" data-gname="' + i + '" value="' + esc(g.name) + '" aria-label="Guest name" maxlength="60">' + sel;
+				var title = '<input class="lbl" data-gname="' + i + '" value="' + esc(g.name) + '" aria-label="Guest name" maxlength="35">' + sel;
 				if (g.id) {
 					var row = linkRow(title, '', guestLink(g), g.name, ' data-gi="' + i + '"');
 					h += row.replace(/<\/div><\/div>$/, '<button type="button" class="rm" data-grm="' + i + '">Remove</button></div></div>');
@@ -168,6 +168,16 @@ import PageLayout from '../layouts/PageLayout.astro';
 		function acPanel(key, title, body) {
 			var open = openAc[key];
 			return '<section class="ac' + (open ? ' open' : '') + '"><button type="button" class="ac-h" data-ac="' + key + '" aria-expanded="' + !!open + '"><span>' + title + '</span>' + CHEV + '</button><div class="ac-b">' + body + '</div></section>';
+		}
+		function eventsBody() {
+			var h = '<p class="hint">You can change the date, time and venue of each event.</p>';
+			O.events.forEach(function (e, i) {
+				h += '<div class="od-ev"><div class="od-ev-h"><b>' + esc(evLabel(e)) + '</b></div>';
+				h += '<div class="two"><div class="f"><label>Date</label><input type="date" data-e="' + i + '" data-k="date" value="' + esc(e.date) + '"></div>';
+				h += '<div class="f"><label>Time</label><input type="time" data-e="' + i + '" data-k="time" value="' + esc(e.time) + '"></div></div>';
+				h += '<div class="f"><label>Venue</label><input data-e="' + i + '" data-k="venue" value="' + esc(e.venue) + '" maxlength="140"></div></div>';
+			});
+			return h;
 		}
 		function hostsBody() {
 			var h = '';
@@ -215,9 +225,9 @@ import PageLayout from '../layouts/PageLayout.astro';
 			h += '<p class="od-warn">Please save this page\'s link. It is private, and anyone who has it can edit your invitation. <button type="button" class="lnk" data-copy="' + esc(location.href) + '">Copy this page link</button></p></div>';
 			h += '<div class="od-cols"><div class="od-main">' + groupsHtml() + guestsHtml() + '</div>';
 			h += '<aside class="od-side"><h3>Edit your invitation</h3>';
+			h += acPanel('events', 'Edit events', eventsBody());
 			h += acPanel('message', 'Edit WhatsApp message', messageBody());
 			if (hostsOn()) h += acPanel('hosts', 'Edit reception hosts', hostsBody());
-			h += acPanel('links', 'Edit share links', linksBody());
 			h += '</aside></div>';
 			root.innerHTML = h;
 			document.title = coupleTitle() + ' | Order ' + O.orderNo;
@@ -331,7 +341,8 @@ import PageLayout from '../layouts/PageLayout.astro';
 				shown = 10;
 				renderGuestList();
 				return;
-			} else if (d.h !== undefined) O.hosts[Number(d.h)][d.k] = t.value;
+			} else if (d.e !== undefined) O.events[Number(d.e)][d.k] = t.value;
+			else if (d.h !== undefined) O.hosts[Number(d.h)][d.k] = t.value;
 			else if (d.gname !== undefined) {
 				O.guests[Number(d.gname)].name = t.value;
 				var row = t.closest('.od-row');
@@ -448,6 +459,11 @@ import PageLayout from '../layouts/PageLayout.astro';
 				var names = nb.value.split(/[\n,]/).map(function (x) { return x.trim(); }).filter(Boolean);
 				if (!names.length) return;
 				var gsel = document.getElementById('od-newgroup');
+				var longName = names.filter(function (n) { return n.length > 35; })[0];
+				if (longName) {
+					alert('"' + longName.slice(0, 20) + '..." is too long. Please keep each name within 35 characters.');
+					return;
+				}
 				if (O.guests.length + names.length > 500) {
 					alert('You can add up to 500 guests.');
 					return;

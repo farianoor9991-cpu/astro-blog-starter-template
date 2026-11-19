@@ -41,7 +41,7 @@ const config = {
 					var cfg = JSON.parse(el.textContent);
 					var gi = new URLSearchParams(location.search).get('g');
 					var g = gi !== null && d.guests && d.guests.length ? d.guests[Math.min(Number(gi) || 0, d.guests.length - 1)] : null;
-					cfg.watermark = true;
+					cfg.watermark = !/[?&]nowm=1/.test(location.search);
 					cfg.invitation = { couple: d.couple, events: g ? g.events : d.events, hosts: d.hosts || [], guest: g ? g.name : '' };
 					el.textContent = JSON.stringify(cfg);
 				} catch (e) {}

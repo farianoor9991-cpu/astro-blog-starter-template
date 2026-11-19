@@ -156,8 +156,37 @@ const save = () => {};
 };
 		const hostCount = () => S.hosts.list.filter((h: D) => h.name.trim()).length;
 		/* ---------- personalized greetings (add-on) ---------- */
+		/* ---------- prices (change them here) ---------- */
+		const P_CARD = 1000; // each event card, the hosts card and the greeting card
+		const P_ENV = 1000; // the envelope
+		const P_ADDON = 1999; // personalized links add-on
+		const fmtRs = (n: number) => 'Rs. ' + n.toLocaleString('en-US');
+		const priceLines = (): { t: string; v: number }[] => {
+			const ev = selEvents().length;
+			const out: { t: string; v: number }[] = [];
+			if (!pkg().length) return out;
+			out.push({ t: 'Envelope', v: P_ENV });
+			if (ev) out.push({ t: `Event cards (${ev} x ${fmtRs(P_CARD)})`, v: ev * P_CARD });
+			if (S.hosts.want) out.push({ t: 'Reception hosts card', v: P_CARD });
+			if (S.guests.on && S.links.mode) {
+				out.push({ t: 'Greeting card', v: P_CARD });
+				out.push({ t: 'Personalized links add-on', v: P_ADDON });
+			}
+			return out;
+		};
+		const rawTotal = () => priceLines().reduce((a, l) => a + l.v, 0);
+		// Charm pricing: a total that ends in 000 is shown as 999 (Rs. 1 special offer)
+		const offer = () => (rawTotal() > 0 && rawTotal() % 1000 === 0 ? 1 : 0);
+		const totalPrice = () => rawTotal() - offer();
+		const updatePrice = () => {
+			const el = $('#cz-price');
+			if (!el) return;
+			const t = totalPrice();
+			el.textContent = t ? 'Total: ' + fmtRs(t) : 'Rs. 3,999 - Rs. 10,999+';
+		};
+		const TEST = /[?&]test=1/.test(location.search);
 		const GUEST_MAX = 50;
-		const GUEST_NAME_MAX = 50;
+		const GUEST_NAME_MAX = 35;
 		let gMore = false;
 		const gNames = (text: string): string[] =>
 			String(text || '')
@@ -287,25 +316,39 @@ const save = () => {};
 			const full = f.size * W;
 			const max = f.maxW * W;
 			const setF = (sz: number) => (ctx.font = `${f.weight} ${sz}px "${f.font}", serif`);
-			let size = full;
-			setF(size);
-			let w = ctx.measureText(t).width;
-			let sx = 1;
-			if (w > max) {
-				size = Math.max(full * (max / w), full * 0.45);
-				setF(size);
-				w = ctx.measureText(t).width;
-				if (w > max) sx = max / w;
-			}
 			ctx.globalAlpha = real ? 1 : 0.4;
 			ctx.fillStyle = tpl.color;
 			ctx.textAlign = 'center';
-			ctx.textBaseline = 'middle';
-			ctx.save();
-			ctx.translate(f.x * W, f.y * H);
-			ctx.scale(sx, 1);
-			ctx.fillText(t, 0, 0);
-			ctx.restore();
+			setF(full);
+			if (ctx.measureText(t).width <= max) {
+				ctx.textBaseline = 'middle';
+				ctx.fillText(t, f.x * W, f.y * H);
+				ctx.globalAlpha = 1;
+				return;
+			}
+			let lines = wrapWords(ctx, t, max);
+			if (lines.length > 2) lines = [lines[0], lines.slice(1).join(' ')];
+			const widest = () => Math.max(...lines.map((l) => ctx.measureText(l).width));
+			let sc = 1;
+			let sx = 1;
+			let wd = widest();
+			if (wd > max) {
+				sc = Math.max(max / wd, 0.5);
+				setF(full * sc);
+				wd = widest();
+				if (wd > max) sx = max / wd;
+			}
+			const gap = f.gap * W * sc;
+			const mid = f.wrapY * H + (f.gap * W) / 2;
+			const base = lines.length === 1 ? mid : mid - gap / 2;
+			ctx.textBaseline = 'alphabetic';
+			lines.forEach((l, i) => {
+				ctx.save();
+				ctx.translate(f.x * W, base + i * gap);
+				ctx.scale(sx, 1);
+				ctx.fillText(l, 0, 0);
+				ctx.restore();
+			});
 			ctx.globalAlpha = 1;
 		};
 
@@ -387,7 +430,7 @@ const save = () => {};
 			ctx.restore();
 		};
 
-		const drawCard = async (canvas: HTMLCanvasElement, id: string, maxW: number) => {
+		const drawCard = async (canvas: HTMLCanvasElement, id: string, maxW: number, guestName?: string) => {
 			const tok = ++tokenN;
 			tokens.set(canvas, tok);
 			await fontsReady;
@@ -416,8 +459,8 @@ const save = () => {};
 			ctx.imageSmoothingQuality = 'high';
 			ctx.drawImage(img, 0, 0, W, H);
 			if (isGuest) {
-				const first = allGuests()[0];
-				putGuest(ctx, 'Dear ' + (first ? first.name : 'Shaheer Aslam'), GL.field, W, H, !!first);
+				const nm = guestName !== undefined ? guestName : (allGuests()[0] || {}).name;
+				putGuest(ctx, 'Dear ' + (nm || 'Shaheer Aslam'), GL.field, W, H, !!nm);
 			} else if (isHosts) {
 				const rows = hostRows();
 				const n = rows.length;
@@ -454,27 +497,36 @@ const save = () => {};
 		};
 		const renderGallery = () => {
 			const g = document.getElementById('gal');
-			if (!g) return;
-			g.innerHTML = '';
-			tabs().forEach((id) => {
-				const fig = document.createElement('figure');
-				fig.className = 'gal-i';
-				const c = document.createElement('canvas');
-				const cap = document.createElement('figcaption');
-				cap.textContent = label(id);
-				fig.appendChild(c);
-				fig.appendChild(cap);
-				g.appendChild(fig);
-				drawCard(c, id, 420);
-				c.style.cursor = 'zoom-in';
-				c.addEventListener('click', () => {
-					S.active = id;
-					modal.classList.add('open', 'full');
-					document.body.style.overflow = 'hidden';
-					renderTabs();
-					scheduleDraw();
+			if (g) {
+				g.innerHTML = '';
+				tabs().filter((id) => id !== 'guest').forEach((id) => {
+					const fig = document.createElement('figure');
+					fig.className = 'gal-i';
+					const c = document.createElement('canvas');
+					const cap = document.createElement('figcaption');
+					cap.textContent = label(id);
+					fig.appendChild(c);
+					fig.appendChild(cap);
+					g.appendChild(fig);
+					drawCard(c, id, 420);
 				});
-			});
+			}
+			const gg = document.getElementById('gal-g');
+			if (gg) {
+				gg.innerHTML = '';
+				const list: string[] = allGuests().map((x: D) => x.name);
+				(list.length ? list : ['']).forEach((nm) => {
+					const fig = document.createElement('figure');
+					fig.className = 'gal-i';
+					const c = document.createElement('canvas');
+					const cap = document.createElement('figcaption');
+					cap.textContent = nm || 'Add guest names in Step 4';
+					fig.appendChild(c);
+					fig.appendChild(cap);
+					gg.appendChild(fig);
+					drawCard(c, 'guest', 300, nm || undefined);
+				});
+			}
 		};
 
 		/* ---------- step bodies ---------- */
@@ -492,7 +544,7 @@ const save = () => {};
 				<div class="acts" style="margin:0 0 10px"><button class="btn-o" type="button" data-act="sample">Fill with sample details</button></div><div class="acts"><button class="btn-g" type="button" data-act="next" data-n="1">Continue to Step 2</button></div>`;
 		};
 
-		const partsOf = (v: D): D => { 			if (v.p) return v.p; 			const d = parseDate(v.date); 			const t = /^(\d{2}):(\d{2})$/.exec(v.time || ''); 			return { 				day: d ? String(d.getDate()) : '', 				month: d ? String(d.getMonth() + 1) : '', 				year: d ? String(d.getFullYear()) : '', 				hour: t ? String(Number(t[1]) % 12 || 12) : '', 				minute: t ? t[2] : '', 				ampm: t ? (Number(t[1]) >= 12 ? 'PM' : 'AM') : '', 			}; 		};  		const setPart = (id: string, part: string, val: string) => { 			const v = S.events[id]; 			v.p = Object.assign(partsOf(v), { [part]: val }); 			const p = v.p; 			v.date = ''; 			if (p.day && p.month && p.year) { 				const iso = `${p.year}-${String(p.month).padStart(2, '0')}-${String(p.day).padStart(2, '0')}`; 				const d = parseDate(iso); 				if (d && d.getMonth() + 1 === Number(p.month)) v.date = iso; 			} 			v.time = ''; 			if (p.hour && p.minute && p.ampm) { 				const h = (Number(p.hour) % 12) + (p.ampm === 'PM' ? 12 : 0); 				v.time = `${String(h).padStart(2, '0')}:${p.minute}`; 			} 			S.active = id; 			const tag = $(`[data-day="${id}"]`); 			if (tag) tag.textContent = v.date ? DAYS[(parseDate(v.date) as Date).getDay()] : p.day && p.month && p.year ? 'Please check the date' : ''; 			renderTabs(); 		};  		const body2 = (): string => { 			const chips = tpl.events 				.map( 					(e: D) => 						`<button type="button" class="chip${S.events[e.id].on ? ' on' : ''}" data-ev-toggle="${e.id}" aria-pressed="${S.events[e.id].on}">${esc(e.label)}</button>` 				) 				.join(''); 			const sel = selEvents(); 			const yr = new Date().getFullYear(); 			const opt = (val: string, text: string, cur: string) => `<option value="${val}"${String(cur) === String(val) ? ' selected' : ''}>${text}</option>`; 			const mk = (id: string, part: string, ph: string, opts: string) => 				`<select data-ev="${id}" data-part="${part}" aria-label="${ph}"><option value="">${ph}</option>${opts}</select>`; 			const blocks = sel 				.map((e: D, i: number) => { 					const v = S.events[e.id]; 					const p = partsOf(v); 					const d = parseDate(v.date); 					const days = Array.from({ length: 31 }, (_, k) => opt(String(k + 1), String(k + 1), p.day)).join(''); 					const months = MONTHS.map((m, k) => opt(String(k + 1), m, p.month)).join(''); 					const years = Array.from({ length: 4 }, (_, k) => opt(String(yr + k), String(yr + k), p.year)).join(''); 					const hours = Array.from({ length: 12 }, (_, k) => opt(String(k + 1), String(k + 1), p.hour)).join(''); 					const mins = Array.from({ length: 12 }, (_, k) => opt(String(k * 5).padStart(2, '0'), String(k * 5).padStart(2, '0'), p.minute)).join(''); 					const aps = opt('AM', 'AM', p.ampm) + opt('PM', 'PM', p.ampm); 					return ` 					<div class="ev"> 						<div class="ev-h"><b>${esc(e.label)}</b><span class="tag" data-day="${e.id}">${d ? DAYS[d.getDay()] : ''}</span></div> 						<div class="f"><label>Date</label><div class="three">${mk(e.id, 'day', 'Day', days)}${mk(e.id, 'month', 'Month', months)}${mk(e.id, 'year', 'Year', years)}</div></div> 						<div class="f"><label>Time</label><div class="three">${mk(e.id, 'hour', 'Hour', hours)}${mk(e.id, 'minute', 'Min', mins)}${mk(e.id, 'ampm', 'AM/PM', aps)}</div></div> 						<div class="f"><label>Venue</label>${inp(`data-ev="${e.id}" data-k="venue"`, v.venue, tpl.sampleVenue)}</div> 						${i > 0 ? `<button type="button" class="lnk" data-act="samevenue" data-ev="${e.id}">Same venue as the event above</button>` : ''} 					</div>`; 				}) 				.join(''); 			return ` 				<p class="hint">Tap the events you want cards for.</p> 				<div class="chips">${chips}</div> 				${blocks || '<p class="hint">Choose at least one event to continue.</p>'} 				<div class="err" data-err="2"></div> 				<div class="acts"><button class="btn-g" type="button" data-act="next" data-n="2">Continue to Step 3</button></div>`; 		};  		const body2Old = (): string => {
+		const partsOf = (v: D): D => { 			if (v.p) return v.p; 			const d = parseDate(v.date); 			const t = /^(\d{2}):(\d{2})$/.exec(v.time || ''); 			return { 				day: d ? String(d.getDate()) : '', 				month: d ? String(d.getMonth() + 1) : '', 				year: d ? String(d.getFullYear()) : '', 				hour: t ? String(Number(t[1]) % 12 || 12) : '', 				minute: t ? t[2] : '', 				ampm: t ? (Number(t[1]) >= 12 ? 'PM' : 'AM') : '', 			}; 		};  		const setPart = (id: string, part: string, val: string) => { 			const v = S.events[id]; 			v.p = Object.assign(partsOf(v), { [part]: val }); 			const p = v.p; 			v.date = ''; 			if (p.day && p.month && p.year) { 				const iso = `${p.year}-${String(p.month).padStart(2, '0')}-${String(p.day).padStart(2, '0')}`; 				const d = parseDate(iso); 				if (d && d.getMonth() + 1 === Number(p.month)) v.date = iso; 			} 			v.time = ''; 			if (p.hour && p.minute && p.ampm) { 				const h = (Number(p.hour) % 12) + (p.ampm === 'PM' ? 12 : 0); 				v.time = `${String(h).padStart(2, '0')}:${p.minute}`; 			} 			S.active = id; 			const tag = $(`[data-day="${id}"]`); 			if (tag) tag.textContent = v.date ? DAYS[(parseDate(v.date) as Date).getDay()] : p.day && p.month && p.year ? 'Please check the date' : ''; 			renderTabs(); 		};  		const body2 = (): string => { 			const chips = tpl.events 				.map( 					(e: D) => 						`<button type="button" class="chip${S.events[e.id].on ? ' on' : ''}" data-ev-toggle="${e.id}" aria-pressed="${S.events[e.id].on}">${esc(e.label)}</button>` 				) 				.join(''); 			const sel = selEvents(); 			const yr = new Date().getFullYear(); 			const opt = (val: string, text: string, cur: string) => `<option value="${val}"${String(cur) === String(val) ? ' selected' : ''}>${text}</option>`; 			const mk = (id: string, part: string, ph: string, opts: string) => 				`<select data-ev="${id}" data-part="${part}" aria-label="${ph}"><option value="">${ph}</option>${opts}</select>`; 			const blocks = sel 				.map((e: D, i: number) => { 					const v = S.events[e.id]; 					const p = partsOf(v); 					const d = parseDate(v.date); 					const days = Array.from({ length: 31 }, (_, k) => opt(String(k + 1), String(k + 1), p.day)).join(''); 					const months = MONTHS.map((m, k) => opt(String(k + 1), m, p.month)).join(''); 					const years = Array.from({ length: 4 }, (_, k) => opt(String(yr + k), String(yr + k), p.year)).join(''); 					const hours = Array.from({ length: 12 }, (_, k) => opt(String(k + 1), String(k + 1), p.hour)).join(''); 					const mins = Array.from({ length: 12 }, (_, k) => opt(String(k * 5).padStart(2, '0'), String(k * 5).padStart(2, '0'), p.minute)).join(''); 					const aps = opt('AM', 'AM', p.ampm) + opt('PM', 'PM', p.ampm); 					return ` 					<div class="ev"> 						<div class="ev-h"><b>${esc(e.label)}</b><span class="tag" data-day="${e.id}">${d ? DAYS[d.getDay()] : ''}</span></div> 						<div class="f"><label>Date</label><div class="three">${mk(e.id, 'day', 'Day', days)}${mk(e.id, 'month', 'Month', months)}${mk(e.id, 'year', 'Year', years)}</div></div> 						<div class="f"><label>Time</label><div class="three">${mk(e.id, 'hour', 'Hour', hours)}${mk(e.id, 'minute', 'Min', mins)}${mk(e.id, 'ampm', 'AM/PM', aps)}</div></div> 						<div class="f"><label>Venue</label>${inp(`data-ev="${e.id}" data-k="venue"`, v.venue, tpl.sampleVenue)}</div> 						${i > 0 ? `<button type="button" class="lnk" data-act="samevenue" data-ev="${e.id}">Same venue as the event above</button>` : ''}${e.custom ? ` <button type="button" class="lnk" data-act="rmev" data-ev="${e.id}">Remove this event</button>` : ''} 					</div>`; 				}) 				.join(''); 			return ` 				<p class="hint">Tap the events you want cards for.</p> 				<div class="chips">${chips}<button type="button" class="chip" data-act="addev-open">+ Add event</button></div> ${S.addOpen ? '<div class="addev"><input data-addev maxlength="24" placeholder="Event name, e.g. Rukhsati" autocomplete="off"><button class="btn-o" type="button" data-act="addev">Add</button></div><p class="hint">The name appears on the card exactly as you write it.</p>' : ''} 				${blocks || '<p class="hint">Choose at least one event to continue.</p>'} 				<div class="err" data-err="2"></div> 				<div class="acts"><button class="btn-g" type="button" data-act="next" data-n="2">Continue to Step 3</button></div>`; 		};  		const body2Old = (): string => {
 			const chips = tpl.events
 				.map(
 					(e: D) =>
@@ -520,7 +572,8 @@ const save = () => {};
 				.join('');
 			return `
 				<p class="hint">Tap the events you want cards for.</p>
-				<div class="chips">${chips}</div>
+				<div class="chips">${chips}<button type="button" class="chip" data-act="addev-open">+ Add event</button></div>
+				${S.addOpen ? '<div class="addev"><input data-addev maxlength="24" placeholder="Event name, e.g. Rukhsati" autocomplete="off"><button class="btn-o" type="button" data-act="addev">Add</button></div><p class="hint">The name appears on the card exactly as you write it.</p>' : ''}
 				${blocks || '<p class="hint">Choose at least one event to continue.</p>'}
 				<div class="err" data-err="2"></div>
 				<div class="acts"><button class="btn-g" type="button" data-act="next" data-n="2">Continue to Step 3</button></div>`;
@@ -568,7 +621,7 @@ const save = () => {};
 			const opt = (mode: string, title: string, desc: string) =>
 				`<button type="button" class="opt${m === mode ? ' on' : ''}" data-mode="${mode}" aria-pressed="${m === mode}"><span class="cb"></span><span class="ot"><b>${title}</b><small>${desc}</small></span></button>`;
 			const gTotal = allGuests().length;
-			const personal = (what: string) => `<div class="subw"><button type="button" class="opt sub${S.guests.on ? ' on' : ''}" data-act="gtoggle" aria-pressed="${S.guests.on}"><span class="cb"></span><span class="ot"><b>Add personalized greeting cards <span style="color:#b8793c;white-space:nowrap">(+Rs. 999)</span></b><small><span style="color:#1a1a1a;font-weight:500">With this add-on, you receive:</span><br>A. ${what}<br>B. A personal link for each guest you list (up to ${GUEST_MAX}). Their first card greets them by name: "Dear Shaheer Aslam".</small></span></button>`;
+			const personal = (what: string) => `<div class="subw"><button type="button" class="opt sub${S.guests.on ? ' on' : ''}" data-act="gtoggle" aria-pressed="${S.guests.on}"><span class="cb"></span><span class="ot"><b>Add personalized greeting cards <span style="color:#b8793c;white-space:nowrap">(+${fmtRs(P_ADDON)})</span></b><small><span style="color:#1a1a1a;font-weight:500">With this add-on, you receive:</span><br>A. ${what}<br>B. A personal link for each guest you list (up to ${GUEST_MAX}). Their first card greets them by name: "Dear Shaheer Aslam".</small></span></button>`;
 			const gBox = (key: string, text: string, title: string) =>
 				S.guests.on
 					? `<div class="f"><label>${title}</label><textarea data-gst="${key}" rows="4" maxlength="3000" placeholder="Hamza Chachu&#10;Mr. Ali &amp; Family&#10;Meer Alam" autocomplete="off">${esc(text)}</textarea><p class="hint" data-gtotal>${gTotal} of ${GUEST_MAX} guests added</p><p class="hint" data-gwarn style="color:#b3261e" hidden></p><p class="hint">One name per line. We add "Dear" for you, so Shaheer Aslam becomes "Dear Shaheer Aslam".</p></div>`
@@ -650,11 +703,13 @@ const save = () => {};
 					${row('Invitation links', linkLines, 4)}
 					${S.guests.on ? row('Personalized greetings', guestLines, 4) : ''}
 				</div>
-				<p class="hint">Your cards, with the preview watermark:</p><button class="btn-o" type="button" data-act="preview">Preview your cards</button> <button class="btn-o" type="button" data-act="envelope">See it in the envelope</button>
-				<div class="gal" id="gal"></div>
+				<div class="rv-row"><div><b>Price</b>${priceLines().map((l) => `<p>${esc(l.t)}: ${fmtRs(l.v)}</p>`).join('')}${offer() ? '<p>Special offer: -Rs. 1</p>' : ''}<p><b>Total: ${fmtRs(totalPrice())}</b></p></div></div>
+				<p class="hint">Your cards, with the preview watermark:</p><button class="btn-o" type="button" data-act="preview">Preview your cards</button> <button class="btn-o" type="button" data-act="envelope">See it in the envelope</button>${TEST ? '<p class="hint"><b>Test mode:</b> the envelope opens without the watermark.</p>' : ''}
+				${S.guests.on && S.links.mode ? '<div class="gwin"><b>Greeting cards</b><small>One for each guest. Each guest\'s link opens with only their own greeting card.</small><div class="gal" id="gal-g"></div></div>' : ''}
+				<div class="gwin"><b>Event cards</b><small>Swipe to see all cards.</small><div class="gal" id="gal"></div></div>
 				<p class="hint">This is a preview. Your final cards will not have the watermark.</p>
 				<div class="acts"><button class="btn-g" type="button" data-act="finish">Looks good, continue</button></div>
-				<div class="ok" id="finish-note" hidden>The payment step is coming next, and your invitation link(s) will go live after payment.</div>`;
+				<div class="ok" id="finish-note" hidden></div>`;
 		};
 
 		const renderBody = (n: number): string => (n === 1 ? body1() : n === 2 ? body2() : n === 3 ? body3() : n === 4 ? body4() : body5());
@@ -662,10 +717,12 @@ const save = () => {};
 			const el = $(`[data-body="${n}"]`);
 			if (el) el.innerHTML = renderBody(n);
 			if (n === 5) renderGallery();
+			updatePrice();
 		};
 
 		/* ---------- summaries, progress, steps ---------- */
 		const updateSummaries = () => {
+			updatePrice();
 			const c = S.couple;
 			const evN = selEvents().length;
 			const sum: D = {
@@ -811,14 +868,15 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 				S.events[e.id] = { on: true, date: e.sample.date, time: e.sample.time, venue: tpl.sampleVenue };
 			});
 			S.hosts = { want: true, list: tpl.sampleHosts.map((h: D) => ({ name: h.name, phone: String(h.phone).replace(/x/gi, '1') })) };
-			S.links = { mode: '', list: [] };
+			S.links = { mode: 'one', list: [] };
+			S.guests = { on: true, one: 'Shaheer Aslam\nHamza Chachu\nMr. Ali & Family' };
 			S.done = {};
 			S.active = pkg()[0];
 			save();
 			openStep(1);
 		};
 		const openInEnvelope = (gi?: number) => {
-			const evData = (id: string) => ({ id, date: S.events[id].date, time: S.events[id].time, venue: String(S.events[id].venue).trim() });
+			const evData = (id: string) => ({ id, date: S.events[id].date, time: S.events[id].time, venue: String(S.events[id].venue).trim(), ...(evDef(id).custom ? { custom: true, label: evDef(id).label, title: evDef(id).title } : {}) });
 			const hostsOut = S.hosts.want ? S.hosts.list.filter((h: D) => h.name.trim()).map((h: D) => ({ name: tc(h.name), phone: h.phone })) : [];
 			const gs = allGuests();
 			const data = {
@@ -838,16 +896,58 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 				localStorage.setItem('ih-haya-preview', JSON.stringify(data));
 			} catch (e) {}
 			const gIdx = gi !== undefined && !isNaN(gi) ? gi : gs.length ? 0 : undefined;
-			window.open('/demo-haya?preview=1' + (gIdx !== undefined ? '&g=' + gIdx : ''), '_blank');
+			window.open('/demo-haya?preview=1' + (gIdx !== undefined ? '&g=' + gIdx : '') + (TEST ? '&nowm=1' : ''), '_blank');
 		};
-		const finish = () => {
+		let orderBusy = false;
+		let orderBtn = '';
+		const finish = async () => {
 			S.done[5] = true;
 			save();
 			const n = $('#finish-note');
-			if (n) {
-				n.hidden = false;
-				n.scrollIntoView({ behavior: 'smooth', block: 'center' });
+			if (!n) return;
+			n.hidden = false;
+			if (orderBtn) {
+				n.innerHTML = orderBtn;
+				return;
 			}
+			if (orderBusy) return;
+			orderBusy = true;
+			n.textContent = 'Creating your order...';
+			n.scrollIntoView({ behavior: 'smooth', block: 'center' });
+			try {
+				const gs = allGuests();
+				const mode = S.guests.on && !S.links.mode ? 'one' : S.links.mode || 'one';
+				const links = mode === 'many' ? S.links.list.map((lk: D) => ({ id: String(lk.id), label: lk.label || '', cards: lk.cards.filter((k: string) => k !== 'hosts') })) : [];
+				const payload = {
+					couple: {
+						brideName: tc(S.couple.brideName),
+						brideParents: tc(cleanParents(S.couple.brideParents)),
+						groomName: tc(S.couple.groomName),
+						groomParents: tc(cleanParents(S.couple.groomParents)),
+					},
+					events: selEvents().sort(byDate).map((e: D) => ({ id: e.id, date: S.events[e.id].date, time: S.events[e.id].time, venue: String(S.events[e.id].venue).trim(), ...(e.custom ? { custom: true, label: e.label, title: e.title } : {}) })),
+					hosts: S.hosts.want ? S.hosts.list.filter((h: D) => h.name.trim()).map((h: D) => ({ name: tc(h.name), phone: h.phone })) : [],
+					mode,
+					links,
+					guestsOn: S.guests.on && gs.length > 0,
+					guests: gs.map((g: D) => ({ name: g.name, linkId: g.link ? String(g.link.id) : 'all' })),
+				};
+				const r = await fetch('/api/order', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) });
+				if (!r.ok) throw new Error('x');
+				const o = await r.json();
+				const nm = (x: string) => tc(String(x).trim().split(/\s+/)[0] || '');
+				const title = `${nm(S.couple.brideName)} & ${nm(S.couple.groomName)}`;
+				try {
+					const list = JSON.parse(localStorage.getItem('ih-orders') || '[]');
+					list.unshift({ token: o.token, no: o.orderNo, title });
+					localStorage.setItem('ih-orders', JSON.stringify(list.slice(0, 20)));
+				} catch (e) {}
+				orderBtn = `<p><b>Your order is ready.</b> Open it to find your invitation links, ready-to-send WhatsApp messages, and to edit your details at any time.</p><p><a class="btn-g" style="display:inline-block;text-decoration:none" href="/order?t=${o.token}">${esc(title)} &middot; Order No. ${o.orderNo}</a></p><p class="hint">Please save this order link. It is private, and it is the only way to open your order again.</p>`;
+				n.innerHTML = orderBtn;
+			} catch (e) {
+				n.textContent = 'We could not create your order right now. Please try again in a moment.';
+			}
+			orderBusy = false;
 		};
 		const modal = $('#cz-modal') as HTMLElement;
 		const openModal = () => {
@@ -973,6 +1073,42 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 				case 'sample':
 					fillSample();
 					break;
+				case 'addev-open':
+					S.addOpen = !S.addOpen;
+					refreshBody(2);
+					(document.querySelector('[data-addev]') as HTMLInputElement | null)?.focus();
+					break;
+				case 'addev': {
+					const inpEl = document.querySelector('[data-addev]') as HTMLInputElement | null;
+					const nm = (inpEl ? inpEl.value : '').trim().replace(/\s+/g, ' ');
+					if (!nm) break;
+					const same = tpl.events.find((e: D) => e.label.toLowerCase() === nm.toLowerCase());
+					if (same) {
+						S.active = same.id;
+						S.events[same.id].on = true;
+					} else {
+						const nid = 'x' + Date.now().toString(36);
+						tpl.events.push({ id: nid, label: nm, title: nm, custom: true, sample: { date: '2026-12-20', time: '20:00' } });
+						S.events[nid] = { on: true, date: '', time: '', venue: '' };
+						S.active = nid;
+					}
+					S.addOpen = false;
+					refreshBody(2);
+					renderTabs();
+					updateSummaries();
+					break;
+				}
+				case 'rmev': {
+					const rid = d.ev as string;
+					tpl.events = tpl.events.filter((e: D) => e.id !== rid);
+					delete S.events[rid];
+					S.links.list.forEach((lk: D) => (lk.cards = lk.cards.filter((k: string) => k !== rid)));
+					ensureActive();
+					refreshBody(2);
+					renderTabs();
+					updateSummaries();
+					break;
+				}
 				case 'samevenue': {
 					const sel = selEvents();
 					const i = sel.findIndex((e: D) => e.id === d.ev);
@@ -1488,6 +1624,27 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 		font-size: 12px;
 		line-height: 1.6;
 		color: #5a5a5a;
+	}
+	.cz .gwin {
+		margin: 12px 0;
+		padding: 10px;
+		border: 1px solid #eadfc9;
+		border-radius: 12px;
+		background: #fffdf8;
+	}
+	.cz .gwin small {
+		display: block;
+		color: #5a5a5a;
+		font-size: 12px;
+	}
+	.cz .addev {
+		display: flex;
+		gap: 8px;
+		margin: 10px 0;
+	}
+	.cz .addev input {
+		flex: 1;
+		min-width: 0;
 	}
 	.cz .gal {
 		display: flex;

@@ -48,7 +48,7 @@ export const haya = {
 	// The greeting card: the blank card already has the fixed greeting, only "Dear <Name>" is added.
 	guestLayout: {
 		bg: ['/haya-guest-bg.jpg'],
-		field: { x: 0.522, y: 0.421, size: 0.0517, maxW: 0.62, font: 'Berkshire Swash', weight: 400 },
+		field: { x: 0.5135, y: 0.421, wrapY: 0.4182, gap: 0.0806, size: 0.058, maxW: 0.62, font: 'Berkshire Swash', weight: 400 },
 	},
 	hostsLayout: {
 		bg: ['/haya-hosts-bg-preview.jpg', '/haya-hosts-bg.png'],

@@ -83,15 +83,21 @@ export const PUT: APIRoute = async ({ request, url, locals }) => {
 	}
 	// Couple and events are fixed after purchase; only hosts (if that card was bought), groups, guests and message can change
 	const hostsOn = order.hostsOn ?? order.hosts.length > 0;
-	const base = clean({ couple: order.couple, events: order.events, hosts: hostsOn ? body.hosts : [] }, order);
+	// Events: same events as bought; only date, time and venue can change
+	const sent: any[] = Array.isArray(body.events) ? body.events : [];
+	const merged = order.events.map((e: any) => {
+		const x = sent.find((y: any) => y && y.id === e.id) || e;
+		return { ...e, date: x.date, time: x.time, venue: x.venue };
+	});
+	const base = clean({ couple: order.couple, events: merged, hosts: hostsOn ? body.hosts : [] }, order);
 	base.couple = order.couple;
-	base.events = order.events;
 	const links = cleanLinks(body.links, base.events);
 	const empty = links.find((l: any) => !l.cards.length);
 	if (empty) return json({ error: 'The group "' + empty.label + '" needs at least one event.' }, 400);
 	const guests = order.guestsOn ? cleanGuests(body.guests, links, order.guests) : [];
 	const next = {
 		...order,
+		events: base.events,
 		hosts: base.hosts,
 		hostsOn,
 		mode: links.length > 1 ? 'many' : 'one',
