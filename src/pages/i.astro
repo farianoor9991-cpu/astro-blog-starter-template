@@ -47,6 +47,7 @@ const config = {
 				}
 				fetch('/api/invite?' + q.toString().replace(/&?v=\d+/, ''), { cache: 'no-store' })
 					.then(function (r) {
+						if (r.status === 410) throw new Error('expired');
 						if (!r.ok) throw new Error('x');
 						return r.json();
 					})
@@ -56,10 +57,11 @@ const config = {
 						el.textContent = JSON.stringify(cfg);
 						document.title = d.couple.brideName.split(' ')[0] + ' & ' + d.couple.groomName.split(' ')[0] + ' | Invitation';
 						load('/gsap.min.js', function () {
-							load('/envelope-engine.js?v=13');
+							load('/envelope-engine.js?v=14');
 						});
 					})
-					.catch(function () {
+					.catch(function (e) {
+						if (e && e.message === 'expired') return fail('This invitation has expired. Invitation links stay live for 3 months. Please contact the couple.');
 						fail('This invitation link is not available. Please check the link you received.');
 					});
 			})();

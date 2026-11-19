@@ -8,7 +8,7 @@ import PageLayout from '../layouts/PageLayout.astro';
 	</div>
 	<div class="od-bar" id="od-bar" hidden>
 		<span id="od-status">All changes saved</span>
-		<button type="button" id="od-save">Save changes</button>
+		<button type="button" id="od-save">Save now</button>
 	</div>
 </PageLayout>
 
@@ -53,11 +53,25 @@ import PageLayout from '../layouts/PageLayout.astro';
 		function many() {
 			return O.links.length > 1;
 		}
+		function slug(s) {
+			return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 30);
+		}
+		function coupleSlug() {
+			return (slug(first(O.couple.brideName)) || 'bride') + '-' + (slug(first(O.couple.groomName)) || 'groom');
+		}
 		function guestLink(g) {
-			return location.origin + '/i?p=' + O.pid + '&g=' + g.id;
+			return location.origin + '/i?couple=' + coupleSlug() + '&guest=' + (slug(g.name) || 'guest') + '&p=' + O.pid + '&g=' + g.id;
 		}
 		function groupLink(l) {
-			return location.origin + '/i?p=' + O.pid + (many() ? '&l=' + l.id : '');
+			return location.origin + '/i?couple=' + coupleSlug() + '&p=' + O.pid + (many() ? '&l=' + l.id : '');
+		}
+		function expiry() {
+			var d = new Date(O.createdAt);
+			d.setUTCMonth(d.getUTCMonth() + 3);
+			return d;
+		}
+		function hostsOn() {
+			return O.hostsOn !== undefined ? !!O.hostsOn : O.hosts.length > 0;
 		}
 		function message(name, link) {
 			var t = O.template || DEFAULT_TEMPLATE;
@@ -70,10 +84,15 @@ import PageLayout from '../layouts/PageLayout.astro';
 		function waUrl(text) {
 			return 'https://wa.me/?text=' + encodeURIComponent(text);
 		}
+		var timer = null;
+		var saving = false;
+		var again = false;
 		function setDirty(v) {
 			dirty = v;
-			statusEl.textContent = v ? 'You have unsaved changes' : 'All changes saved';
+			statusEl.textContent = v ? 'Saving in a moment...' : 'All changes saved';
 			bar.classList.toggle('dirty', v);
+			clearTimeout(timer);
+			if (v) timer = setTimeout(function () { save(); }, 1200);
 		}
 		function uid() {
 			return 'g' + Math.random().toString(36).slice(2, 8);
@@ -137,7 +156,9 @@ import PageLayout from '../layouts/PageLayout.astro';
 			h += '<p class="hint">Each guest has their own link, and it opens with a greeting card carrying their name.</p>';
 			h += '<div class="od-tools"><input type="search" id="od-q" placeholder="Search guests" value="' + esc(query) + '" aria-label="Search guests">';
 			h += '<button type="button" class="btn-p" data-ac-open="addguests">+ Add guests</button></div>';
-			h += '<div class="od-add" id="od-addbox" hidden><label for="od-new">One name per line</label><textarea id="od-new" rows="4" placeholder="Hamza Chachu\nMr. Ali &amp; Family"></textarea>';
+			h += '<div class="od-add" id="od-addbox" hidden>';
+			if (many()) h += '<label for="od-newgroup">Which group are these guests in?</label><select id="od-newgroup">' + O.links.map(function (l) { return '<option value="' + esc(l.id) + '">' + esc(l.label) + '</option>'; }).join('') + '</select><div style="height:10px"></div>';
+			h += '<label for="od-new">One name per line</label><textarea id="od-new" rows="4" placeholder="Hamza Chachu\nMr. Ali &amp; Family"></textarea>';
 			h += '<button type="button" class="btn-p" id="od-addg">Add guests</button></div>';
 			h += '<div class="od-list" id="od-glist">' + guestsListHtml() + '</div></section>';
 			return h;
@@ -147,30 +168,6 @@ import PageLayout from '../layouts/PageLayout.astro';
 		function acPanel(key, title, body) {
 			var open = openAc[key];
 			return '<section class="ac' + (open ? ' open' : '') + '"><button type="button" class="ac-h" data-ac="' + key + '" aria-expanded="' + !!open + '"><span>' + title + '</span>' + CHEV + '</button><div class="ac-b">' + body + '</div></section>';
-		}
-		function coupleBody() {
-			return '<div class="f"><label>Bride\'s name</label><input data-c="brideName" value="' + esc(O.couple.brideName) + '" maxlength="60"></div>' +
-				'<div class="f"><label>Bride\'s parents</label><input data-c="brideParents" value="' + esc(O.couple.brideParents) + '" maxlength="80"></div>' +
-				'<div class="f"><label>Groom\'s name</label><input data-c="groomName" value="' + esc(O.couple.groomName) + '" maxlength="60"></div>' +
-				'<div class="f"><label>Groom\'s parents</label><input data-c="groomParents" value="' + esc(O.couple.groomParents) + '" maxlength="80"></div>';
-		}
-		function eventsBody() {
-			var h = '';
-			O.events.forEach(function (e, i) {
-				h += '<div class="od-ev"><div class="od-ev-h">';
-				h += e.custom ? '<input class="lbl" data-e="' + i + '" data-k="label" value="' + esc(e.label) + '" maxlength="24" aria-label="Event name">' : '<b>' + esc(evLabel(e)) + '</b>';
-				h += '<button type="button" class="rm" data-erm="' + i + '">Remove</button></div>';
-				h += '<div class="two"><div class="f"><label>Date</label><input type="date" data-e="' + i + '" data-k="date" value="' + esc(e.date) + '"></div>';
-				h += '<div class="f"><label>Time</label><input type="time" data-e="' + i + '" data-k="time" value="' + esc(e.time) + '"></div></div>';
-				h += '<div class="f"><label>Venue</label><input data-e="' + i + '" data-k="venue" value="' + esc(e.venue) + '" maxlength="140"></div></div>';
-			});
-			var have = {};
-			O.events.forEach(function (e) { have[e.id] = 1; });
-			var rest = Object.keys(LABELS).filter(function (k) { return !have[k]; });
-			h += '<div class="od-addev"><b>Add an event</b>';
-			if (rest.length) h += '<div class="chips">' + rest.map(function (k) { return '<button type="button" class="chip" data-addstd="' + k + '">+ ' + LABELS[k] + '</button>'; }).join('') + '</div>';
-			h += '<div class="od-inline"><input id="od-custom" placeholder="Or write your own event" maxlength="24"><button type="button" class="btn-s" id="od-addcustom">Add</button></div></div>';
-			return h;
 		}
 		function hostsBody() {
 			var h = '';
@@ -213,13 +210,13 @@ import PageLayout from '../layouts/PageLayout.astro';
 			var y = window.scrollY;
 			var h = '<div class="od-head"><span class="od-no">Order No. ' + esc(O.orderNo) + '</span><h1>' + esc(coupleTitle()) + '</h1>';
 			h += '<p>Everything for your invitation is here: your links, your WhatsApp messages and your card details.</p>';
+			var ex = expiry();
+			h += '<p class="od-exp">Your invitation links are live until <b>' + ex.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) + '</b>' + (Date.now() > ex.getTime() ? ' (expired)' : ' (3 months from your order)') + '. After this date they stop showing the invitation.</p>';
 			h += '<p class="od-warn">Please save this page\'s link. It is private, and anyone who has it can edit your invitation. <button type="button" class="lnk" data-copy="' + esc(location.href) + '">Copy this page link</button></p></div>';
 			h += '<div class="od-cols"><div class="od-main">' + groupsHtml() + guestsHtml() + '</div>';
 			h += '<aside class="od-side"><h3>Edit your invitation</h3>';
-			h += acPanel('couple', 'Edit couple details', coupleBody());
-			h += acPanel('events', 'Edit events', eventsBody());
-			h += acPanel('hosts', 'Edit reception hosts', hostsBody());
 			h += acPanel('message', 'Edit WhatsApp message', messageBody());
+			if (hostsOn()) h += acPanel('hosts', 'Edit reception hosts', hostsBody());
 			h += acPanel('links', 'Edit share links', linksBody());
 			h += '</aside></div>';
 			root.innerHTML = h;
@@ -236,37 +233,56 @@ import PageLayout from '../layouts/PageLayout.astro';
 			stateEl.style.display = text ? 'block' : 'none';
 		}
 		function problem() {
-			if (!O.events.length) return 'Please keep at least one event.';
-			if (!O.couple.brideName.trim() || !O.couple.groomName.trim()) return 'Please enter both names.';
+			for (var k = 0; k < O.guests.length; k++) if (!O.guests[k].name.trim()) return 'Please fill in every guest name (or remove the guest).';
 			for (var i = 0; i < O.links.length; i++) {
 				if (many() && !O.links[i].cards.length) return 'The group "' + O.links[i].label + '" needs at least one event.';
 			}
 			return '';
 		}
-		function save(done) {
+		function save(full) {
+			clearTimeout(timer);
 			var p = problem();
 			if (p) {
 				statusEl.textContent = p;
 				return;
 			}
+			if (saving) {
+				again = true;
+				return;
+			}
+			saving = true;
 			statusEl.textContent = 'Saving...';
+			var sent = JSON.stringify(O);
 			fetch('/api/order?t=' + encodeURIComponent(T), {
 				method: 'PUT',
 				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify(O),
+				body: sent,
 			})
 				.then(function (r) {
 					if (!r.ok) return r.json().then(function (j) { throw new Error(j.error || 'x'); });
 					return r.json();
 				})
 				.then(function (d) {
-					O = d;
-					render();
-					setDirty(false);
-					statusEl.textContent = 'Saved';
-					if (done) done();
+					saving = false;
+					var needs = full || O.guests.some(function (g) { return !g.id; });
+					if (needs && !again) {
+						O = d;
+						render();
+					} else if (d.guests && d.guests.length === O.guests.length) {
+						d.guests.forEach(function (g, i) { if (!O.guests[i].id) O.guests[i].id = g.id; });
+					}
+					if (again) {
+						again = false;
+						save();
+						return;
+					}
+					dirty = false;
+					bar.classList.remove('dirty');
+					statusEl.textContent = 'All changes saved';
 				})
 				.catch(function (e) {
+					saving = false;
+					again = false;
 					statusEl.textContent = e.message && e.message !== 'x' && e.message !== 'Failed to fetch' ? e.message : 'Could not save. Please check your internet and try again.';
 				});
 		}
@@ -282,6 +298,10 @@ import PageLayout from '../layouts/PageLayout.astro';
 				if (!g || !g.id) return;
 				name = g.name;
 				link = guestLink(g);
+				var cl = row.querySelector('[data-copy]:not([data-msg])');
+				if (cl) cl.dataset.copy = link;
+				var op = row.querySelector('a:not(.wa)');
+				if (op) op.href = link;
 			} else if (li !== undefined) {
 				link = groupLink(O.links[Number(li)]);
 			} else return;
@@ -311,9 +331,7 @@ import PageLayout from '../layouts/PageLayout.astro';
 				shown = 10;
 				renderGuestList();
 				return;
-			} else if (d.c) O.couple[d.c] = t.value;
-			else if (d.e !== undefined) O.events[Number(d.e)][d.k] = t.value;
-			else if (d.h !== undefined) O.hosts[Number(d.h)][d.k] = t.value;
+			} else if (d.h !== undefined) O.hosts[Number(d.h)][d.k] = t.value;
 			else if (d.gname !== undefined) {
 				O.guests[Number(d.gname)].name = t.value;
 				var row = t.closest('.od-row');
@@ -324,10 +342,6 @@ import PageLayout from '../layouts/PageLayout.astro';
 				return;
 			} else return;
 			setDirty(true);
-			if (d.c) {
-				document.title = coupleTitle() + ' | Order ' + O.orderNo;
-				refreshMessages();
-			}
 		});
 		root.addEventListener('change', function (ev) {
 			var t = ev.target;
@@ -399,32 +413,6 @@ import PageLayout from '../layouts/PageLayout.astro';
 				O.hosts.push({ name: '', phone: '' });
 				setDirty(true);
 				render();
-			} else if (d.erm !== undefined) {
-				var ei = Number(d.erm);
-				if (O.events.length < 2) {
-					alert('Please keep at least one event.');
-					return;
-				}
-				if (confirm('Remove ' + evLabel(O.events[ei]) + '? Its card will be removed from every link after you save.')) {
-					removeEventEverywhere(O.events[ei].id);
-					O.events.splice(ei, 1);
-					setDirty(true);
-					render();
-				}
-			} else if (d.addstd) {
-				O.events.push({ id: d.addstd, date: '', time: '', venue: '' });
-				O.links.forEach(function (l) { l.cards.push(d.addstd); });
-				setDirty(true);
-				render();
-			} else if (b.id === 'od-addcustom') {
-				var inp = document.getElementById('od-custom');
-				var nm = inp.value.trim().replace(/\s+/g, ' ');
-				if (!nm) return;
-				var id = 'x' + Date.now().toString(36);
-				O.events.push({ id: id, date: '', time: '', venue: '', custom: true, label: nm, title: nm });
-				O.links.forEach(function (l) { l.cards.push(id); });
-				setDirty(true);
-				render();
 			} else if (b.id === 'od-gnew') {
 				addGroup = { label: '', cards: [] };
 				render();
@@ -459,17 +447,18 @@ import PageLayout from '../layouts/PageLayout.astro';
 				var nb = document.getElementById('od-new');
 				var names = nb.value.split(/[\n,]/).map(function (x) { return x.trim(); }).filter(Boolean);
 				if (!names.length) return;
+				var gsel = document.getElementById('od-newgroup');
 				if (O.guests.length + names.length > 500) {
 					alert('You can add up to 500 guests.');
 					return;
 				}
 				names.forEach(function (n) {
-					O.guests.push({ id: '', name: tc(n), linkId: O.links[0].id });
+					O.guests.push({ id: '', name: tc(n), linkId: gsel && gsel.value ? gsel.value : O.links[0].id });
 				});
-				save();
+				save(true);
 			}
 		});
-		saveBtn.addEventListener('click', function () { save(); });
+		saveBtn.addEventListener('click', function () { save(true); });
 		window.addEventListener('beforeunload', function (e) {
 			if (dirty) {
 				e.preventDefault();
@@ -503,6 +492,7 @@ import PageLayout from '../layouts/PageLayout.astro';
 	.od-no { display: inline-block; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: #b8793c; font-weight: 600; }
 	.od h1 { font-family: 'Playfair Display', serif; font-size: clamp(2rem, 7vw, 2.8rem); color: #276041; margin: 6px 0 8px; }
 	.od-head p { margin: 0 0 10px; }
+.od-exp { font-size: 13.5px; color: #276041; margin: 0 0 10px; }
 	.od-warn { font-size: 13px; background: #fff8e8; border: 1px solid #eadfc9; border-radius: 10px; padding: 10px 12px; display: inline-block; max-width: 640px; }
 	.od-cols { display: grid; gap: 18px; grid-template-columns: 1fr; align-items: start; }
 	.od-sec { background: #fff; border: 1px solid #eadfc9; border-radius: 16px; padding: 18px 16px; margin-bottom: 18px; }
@@ -557,9 +547,9 @@ import PageLayout from '../layouts/PageLayout.astro';
 	.od-bar[hidden] { display: none; }
 	.od-bar button { background: #276041; color: #fff; border: 0; border-radius: 999px; padding: 11px 22px; font-weight: 600; font-size: 14px; cursor: pointer; font-family: inherit; }
 	@media (min-width: 900px) {
-		.od-cols { grid-template-columns: 320px 1fr; }
-		.od-side { grid-column: 1; grid-row: 1; position: sticky; top: 12px; }
-		.od-main { grid-column: 2; grid-row: 1; }
+		.od-cols { grid-template-columns: 1fr 320px; }
+		.od-side { grid-column: 2; grid-row: 1; position: sticky; top: 12px; }
+		.od-main { grid-column: 1; grid-row: 1; }
 		.od-row { grid-template-columns: 190px 1fr; align-items: start; }
 		.od-row .c-act { grid-column: 1 / -1; }
 	}

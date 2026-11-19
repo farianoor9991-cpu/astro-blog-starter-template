@@ -42,6 +42,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
 		...base,
 		mode: links.length > 1 ? 'many' : 'one',
 		links,
+		hostsOn: base.hosts.length > 0,
 		guestsOn: !!body.guestsOn,
 		guests,
 		template: DEFAULT_TEMPLATE,
@@ -80,18 +81,19 @@ export const PUT: APIRoute = async ({ request, url, locals }) => {
 	} catch (e) {
 		return json({ error: 'Invalid data' }, 400);
 	}
-	const base = clean(body, order);
-	if (!base.events.length) return json({ error: 'Please keep at least one event.' }, 400);
-	if (!base.couple.brideName || !base.couple.groomName) return json({ error: 'Please enter both names.' }, 400);
+	// Couple and events are fixed after purchase; only hosts (if that card was bought), groups, guests and message can change
+	const hostsOn = order.hostsOn ?? order.hosts.length > 0;
+	const base = clean({ couple: order.couple, events: order.events, hosts: hostsOn ? body.hosts : [] }, order);
+	base.couple = order.couple;
+	base.events = order.events;
 	const links = cleanLinks(body.links, base.events);
 	const empty = links.find((l: any) => !l.cards.length);
 	if (empty) return json({ error: 'The group "' + empty.label + '" needs at least one event.' }, 400);
 	const guests = order.guestsOn ? cleanGuests(body.guests, links, order.guests) : [];
 	const next = {
 		...order,
-		couple: base.couple,
-		events: base.events,
 		hosts: base.hosts,
+		hostsOn,
 		mode: links.length > 1 ? 'many' : 'one',
 		links,
 		guests,

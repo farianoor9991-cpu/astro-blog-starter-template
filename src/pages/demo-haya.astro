@@ -41,13 +41,13 @@ const config = {
 					var cfg = JSON.parse(el.textContent);
 					var gi = new URLSearchParams(location.search).get('g');
 					var g = gi !== null && d.guests && d.guests.length ? d.guests[Math.min(Number(gi) || 0, d.guests.length - 1)] : null;
-					cfg.watermark = !/[?&]nowm=1/.test(location.search);
+					cfg.watermark = true;
 					cfg.invitation = { couple: d.couple, events: g ? g.events : d.events, hosts: d.hosts || [], guest: g ? g.name : '' };
 					el.textContent = JSON.stringify(cfg);
 				} catch (e) {}
 			})();
 		</script>
 		<script is:inline src="/gsap.min.js"></script>
-		<script is:inline src="/envelope-engine.js?v=13"></script>
+		<script is:inline src="/envelope-engine.js?v=14"></script>
 	</body>
 </html>

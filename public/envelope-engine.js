@@ -235,29 +235,23 @@
 			ctx.font = f.weight + ' ' + sz + 'px "' + f.font + '", serif';
 		};
 		var size = full;
-		var lines = [t];
 		setF(size);
-		if (ctx.measureText(t).width > max) {
-			var sc = max / ctx.measureText(t).width;
-			if (sc >= 0.78) size = full * sc;
-			else {
-				size = full * 0.8;
-				setF(size);
-				lines = wrapWords(ctx, t, max);
-				if (lines.length > 2) lines = [lines[0], lines.slice(1).join(' ')];
-				var widest = Math.max.apply(null, lines.map(function (l) { return ctx.measureText(l).width; }));
-				if (widest > max) size = Math.max(size * (max / widest), full * 0.5);
-			}
+		var w = ctx.measureText(t).width;
+		var sx = 1;
+		if (w > max) {
+			size = Math.max(full * (max / w), full * 0.45);
+			setF(size);
+			w = ctx.measureText(t).width;
+			if (w > max) sx = max / w;
 		}
-		setF(size);
 		ctx.fillStyle = T.color;
 		ctx.textAlign = 'center';
 		ctx.textBaseline = 'middle';
-		var lh = size * 1.18;
-		var bottom = f.y * H + (full - size) / 2;
-		lines.forEach(function (l, i) {
-			ctx.fillText(l, f.x * W, bottom - (lines.length - 1 - i) * lh);
-		});
+		ctx.save();
+		ctx.translate(f.x * W, f.y * H);
+		ctx.scale(sx, 1);
+		ctx.fillText(t, 0, 0);
+		ctx.restore();
 	};
 	var watermark = function (ctx, W, H) {
 		ctx.save();
@@ -416,9 +410,6 @@
 		});
 	};
 
-	(INV.events || []).forEach(function (ev) {
-		if (ev.custom && !evDef(ev.id)) T.events.push({ id: ev.id, label: ev.label || ev.title, title: ev.title || ev.label });
-	});
 	var order = INV.events
 		.slice()
 		.sort(function (a, b) {

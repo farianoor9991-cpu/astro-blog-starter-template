@@ -101,3 +101,10 @@ export const json = (data: unknown, status = 200) =>
 		status,
 		headers: { 'content-type': 'application/json', 'cache-control': 'no-store' },
 	});
+
+// Invitation links stop working 3 months after the order was created
+export const expiresAt = (createdAt: string): number => {
+	const d = new Date(createdAt);
+	d.setUTCMonth(d.getUTCMonth() + 3);
+	return d.getTime();
+};

@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { eventsForLink, json } from '../../lib/orders';
+import { eventsForLink, expiresAt, json } from '../../lib/orders';
 
 export const prerender = false;
 
@@ -14,6 +14,8 @@ export const GET: APIRoute = async ({ url, locals }) => {
 	const raw = await kv.get('order:' + token);
 	if (!raw) return json({ error: 'Not found' }, 404);
 	const o = JSON.parse(raw);
+	// Links are live for 3 months from the day the order was created
+	if (Date.now() > expiresAt(o.createdAt)) return json({ error: 'expired' }, 410);
 	const gid = url.searchParams.get('g');
 	const lid = url.searchParams.get('l') || undefined;
 	let guest = null as any;
