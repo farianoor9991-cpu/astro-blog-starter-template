@@ -6,6 +6,7 @@ export interface Design {
 	occasion?: string; // Wedding, Mehndi, Walima, Birthday, Hajj/Umrah, Aqeeqah, Baby
 	link?: string; // websites: live demo URL | videos: video link or file
 	price?: string; // only if this one design has its own price
+	note?: string; // small line under the price
 }
 
 export interface DesignItem extends Design {
@@ -50,7 +51,7 @@ const SAMPLE = '/sample-design.jpg';
 ------------------------------------------------------------------- */
 
 const websites: Design[] = [
-	{ name: 'Haya', image: '/haya-cover.jpg', occasion: 'Wedding', link: '/demo-haya', price: 'From Rs. 2,999' },
+	{ name: 'Haya', image: '/haya-cover.jpg', occasion: 'Wedding', link: '/demo-haya', price: 'Rs. 3,999 - Rs. 10,999+', note: 'Starts with 1 event + upto 50 personalized guest invitations' },
 	{ name: 'Sample Website 02', image: SAMPLE, occasion: 'Wedding' },
 	{ name: 'Sample Website 03', image: SAMPLE, occasion: 'Mehndi' },
 	{ name: 'Sample Website 04', image: SAMPLE, occasion: 'Walima' },
@@ -96,6 +97,7 @@ const build = (type: DesignType, list: Design[]): DesignItem[] =>
 		type,
 		id: `${type}-${slug(d.name)}`,
 		price: d.price ?? categories[type].price,
+		note: d.note,
 	}));
 
 export const designs: Record<DesignType, DesignItem[]> = {
