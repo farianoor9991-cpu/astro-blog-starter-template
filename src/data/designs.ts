@@ -1,4 +1,4 @@
-export type DesignType = 'website' | 'video' | 'ecard';
+export type DesignType = 'website' | 'video' | 'ecard' | 'envelope';
 
 export interface Design {
 	name: string; // shown on the card, keep each name unique
@@ -17,6 +17,13 @@ export interface DesignItem extends Design {
 
 // Titles, tab names, prices and blurbs for the three categories
 export const categories = {
+	envelope: {
+		title: 'Interactive Envelope Invitations',
+		tab: 'Envelopes',
+		price: 'Rs. 3,999',
+		blurb:
+			'A beautiful envelope your guests open with a tap. Inside, your event cards slide out one by one, all in a single elegant link. ✉️',
+	},
 	website: {
 		title: 'Website Invitations',
 		tab: 'Websites',
@@ -41,7 +48,7 @@ export const categories = {
 } as const;
 
 // Order shown on the homepage and catalogue
-export const categoryOrder: DesignType[] = ['website', 'ecard']; // add 'video' back in the middle to show videos again
+export const categoryOrder: DesignType[] = ['envelope', 'website', 'ecard']; // add 'video' back in the middle to show videos again
 const SAMPLE = '/sample-design.jpg';
 
 /* ------------------------------------------------------------------
@@ -50,8 +57,11 @@ const SAMPLE = '/sample-design.jpg';
    To add a design: upload its image, then add one line at the top.
 ------------------------------------------------------------------- */
 
+const envelopes: Design[] = [
+	{ name: 'Haya', image: '/haya-cover.jpg', occasion: 'Wedding', link: '/products/haya', price: 'Rs. 3,999 - Rs. 10,999+', note: 'Starts with 1 event + upto 50 personalized guest invitations' },
+];
+
 const websites: Design[] = [
-	{ name: 'Haya', image: '/haya-cover.jpg', occasion: 'Wedding', link: '/demo-haya', price: 'Rs. 3,999 - Rs. 10,999+', note: 'Starts with 1 event + upto 50 personalized guest invitations' },
 	{ name: 'Sample Website 02', image: SAMPLE, occasion: 'Wedding' },
 	{ name: 'Sample Website 03', image: SAMPLE, occasion: 'Mehndi' },
 	{ name: 'Sample Website 04', image: SAMPLE, occasion: 'Walima' },
@@ -101,6 +111,7 @@ const build = (type: DesignType, list: Design[]): DesignItem[] =>
 	}));
 
 export const designs: Record<DesignType, DesignItem[]> = {
+	envelope: build('envelope', envelopes),
 	website: build('website', websites),
 	video: build('video', videos),
 	ecard: build('ecard', ecards),

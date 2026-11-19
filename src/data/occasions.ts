@@ -3,6 +3,17 @@ import type { DesignType } from './designs';
 // Occasion buttons for each product. A design's "occasion" in designs.ts must match one of these exactly.
 // To change the list for a product, edit only that product's list below.
 export const occasions: Record<DesignType, string[]> = {
+	envelope: [
+		'Wedding',
+		'Nikkah',
+		'Mayun',
+		'Mehndi',
+		'Baraat',
+		'Walima',
+		'Bridal Shower',
+		'Baat Pakki',
+		'Engagement',
+	],
 	website: [
 		'Wedding',
 		'Nikkah',
