@@ -1,0 +1,357 @@
+---
+import PageLayout from '../layouts/PageLayout.astro';
+---
+
+<PageLayout title="Your Order" description="Manage your invitation links." showReviews={false}>
+	<div class="od" id="od">
+		<p class="od-state" id="od-state">Loading your order...</p>
+	</div>
+	<div class="od-bar" id="od-bar" hidden>
+		<span id="od-status">All changes saved</span>
+		<button type="button" id="od-save">Save changes</button>
+	</div>
+</PageLayout>
+
+<script is:inline>
+	(function () {
+		var T = new URLSearchParams(location.search).get('t') || '';
+		var root = document.getElementById('od');
+		var stateEl = document.getElementById('od-state');
+		var bar = document.getElementById('od-bar');
+		var statusEl = document.getElementById('od-status');
+		var saveBtn = document.getElementById('od-save');
+		var O = null;
+		var dirty = false;
+		var LABELS = { nikkah: 'Nikkah', dholki: 'Dholki', qawaali: 'Qawali Night', mehndi: 'Mehndi', baraat: 'Baraat', walima: 'Walima' };
+		var DEFAULT_TEMPLATE =
+			'Assalam-o-Alaikum {name},\n\n{couple} warmly invite you to their celebration. We have prepared a personal invitation for you. Please tap the link below to open it:\n\n{link}\n\nWe would be honoured to have you with us.';
+
+		function esc(s) {
+			return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+				return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+			});
+		}
+		function first(n) {
+			return String(n || '').trim().split(/\s+/)[0] || '';
+		}
+		function tc(s) {
+			return String(s || '').toLowerCase().replace(/(^|[\s.\-'])([a-z])/g, function (m, a, b) {
+				return a + b.toUpperCase();
+			});
+		}
+		function coupleTitle() {
+			return tc(first(O.couple.brideName)) + ' & ' + tc(first(O.couple.groomName));
+		}
+		function evLabel(e) {
+			return e.label || LABELS[e.id] || e.id;
+		}
+		function guestLink(g) {
+			return location.origin + '/i?p=' + O.pid + '&g=' + g.id;
+		}
+		function groupLink(l) {
+			return location.origin + '/i?p=' + O.pid + (O.mode === 'many' ? '&l=' + l.id : '');
+		}
+		function message(name, link) {
+			var t = O.template || DEFAULT_TEMPLATE;
+			return t
+				.replace(/\{name\}/g, name)
+				.replace(/\{couple\}/g, coupleTitle())
+				.replace(/\{link\}/g, link)
+				.replace(/ +,/g, ',');
+		}
+		function waUrl(text) {
+			return 'https://wa.me/?text=' + encodeURIComponent(text);
+		}
+		function setDirty(v) {
+			dirty = v;
+			statusEl.textContent = v ? 'You have unsaved changes' : 'All changes saved';
+			bar.classList.toggle('dirty', v);
+		}
+
+		function linkRow(title, sub, link, name, idAttr) {
+			var msg = message(name, link);
+			return (
+				'<div class="od-row"' + idAttr + '>' +
+				'<div class="c-name">' + title + (sub ? '<small>' + esc(sub) + '</small>' : '') + '</div>' +
+				'<div class="c-link"><input type="text" readonly value="' + esc(link) + '" aria-label="Invitation link">' +
+				'<button type="button" class="btn-s" data-copy="' + esc(link) + '">Copy link</button></div>' +
+				'<div class="c-msg"><textarea readonly rows="9" aria-label="WhatsApp message">' + esc(msg) + '</textarea>' +
+				'<div class="c-act"><button type="button" class="btn-s" data-copy="' + esc(msg) + '">Copy message</button>' +
+				'<a class="btn-s wa" target="_blank" rel="noopener" href="' + esc(waUrl(msg)) + '">WhatsApp</a>' +
+				'<a class="btn-s" target="_blank" rel="noopener" href="' + esc(link) + '">Open</a></div></div>' +
+				'</div>'
+			);
+		}
+
+		function render() {
+			var h = '';
+			h += '<div class="od-head"><span class="od-no">Order No. ' + esc(O.orderNo) + '</span><h1>' + esc(coupleTitle()) + '</h1>';
+			h += '<p>Everything for your invitation is here: your links, your WhatsApp messages and your card details.</p>';
+			h += '<p class="od-warn">Please save this page\'s link. It is private, and anyone who has it can edit your invitation. <button type="button" class="lnk" data-copy="' + esc(location.href) + '">Copy this page link</button></p></div>';
+
+			// 1. message template
+			h += '<section class="od-sec"><h2>1. Your WhatsApp message</h2>';
+			h += '<p class="hint">Write the message once. A ready message is made for every link below. Use <b>{name}</b>, <b>{couple}</b> and <b>{link}</b> where they should appear.</p>';
+			h += '<textarea id="od-tpl" rows="7">' + esc(O.template || DEFAULT_TEMPLATE) + '</textarea>';
+			h += '<button type="button" class="lnk" id="od-reset">Use the default message</button></section>';
+
+			// 2. group links
+			h += '<section class="od-sec"><h2>2. ' + (O.mode === 'many' ? 'Group links' : 'Main invitation link') + '</h2>';
+			h += '<p class="hint">' + (O.mode === 'many' ? 'Send each link to the group it is meant for.' : 'This link has all your cards. Send it to everyone.') + '</p>';
+			h += '<div class="od-list">';
+			O.links.forEach(function (l, i) {
+				var cards = O.events.filter(function (e) { return O.mode !== 'many' || l.cards.indexOf(e.id) >= 0; }).map(evLabel);
+				var title = O.mode === 'many' ? '<input class="lbl" data-link="' + i + '" value="' + esc(l.label) + '" aria-label="Link name" maxlength="40">' : '<b>Everyone</b>';
+				h += linkRow(title, 'Cards: ' + (cards.concat(O.hosts.length ? ['Reception Hosts'] : [])).join(', '), groupLink(l), '', ' data-li="' + i + '"');
+			});
+			h += '</div></section>';
+
+			// 3. personalized guests
+			if (O.guestsOn) {
+				h += '<section class="od-sec"><h2>3. Personalized guest links <span class="cnt">' + O.guests.length + ' guest' + (O.guests.length === 1 ? '' : 's') + '</span></h2>';
+				h += '<p class="hint">Each guest has their own link. It opens with a greeting card carrying their name. You can edit a name, remove a guest or add more guests at any time.</p>';
+				h += '<div class="od-list">';
+				O.guests.forEach(function (g, i) {
+					var sel = '';
+					if (O.mode === 'many') {
+						sel = '<select data-glink="' + i + '" aria-label="Group">' + O.links.map(function (l) {
+							return '<option value="' + esc(l.id) + '"' + (l.id === g.linkId ? ' selected' : '') + '>' + esc(l.label) + '</option>';
+						}).join('') + '</select>';
+					}
+					var title = '<input class="lbl" data-gname="' + i + '" value="' + esc(g.name) + '" aria-label="Guest name" maxlength="60">' + sel;
+					if (g.id) h += linkRow(title, '', guestLink(g), g.name, ' data-gi="' + i + '"');
+					else h += '<div class="od-row"><div class="c-name">' + title + '</div><div class="c-link"><small>Save to create this link</small></div></div>';
+					// remove button
+					h = h.replace(/<\/div>$/, '<button type="button" class="rm" data-grm="' + i + '" aria-label="Remove guest">Remove</button></div>');
+				});
+				h += '</div>';
+				h += '<div class="od-add"><label for="od-new">Add more guests (one name per line)</label><textarea id="od-new" rows="4" placeholder="Hamza Chachu\nMr. Ali &amp; Family"></textarea>';
+				h += '<button type="button" class="btn-p" id="od-addg">Add guests</button></div></section>';
+			}
+
+			// 4. details
+			var n = O.guestsOn ? 4 : 3;
+			h += '<section class="od-sec"><h2>' + n + '. Edit your card details</h2><p class="hint">Changes appear on every invitation link. They can take up to a minute to show for your guests.</p>';
+			h += '<div class="od-grid">';
+			h += '<div class="f"><label>Bride\'s name</label><input data-c="brideName" value="' + esc(O.couple.brideName) + '" maxlength="60"></div>';
+			h += '<div class="f"><label>Bride\'s parents</label><input data-c="brideParents" value="' + esc(O.couple.brideParents) + '" maxlength="80"></div>';
+			h += '<div class="f"><label>Groom\'s name</label><input data-c="groomName" value="' + esc(O.couple.groomName) + '" maxlength="60"></div>';
+			h += '<div class="f"><label>Groom\'s parents</label><input data-c="groomParents" value="' + esc(O.couple.groomParents) + '" maxlength="80"></div></div>';
+			O.events.forEach(function (e, i) {
+				h += '<div class="od-ev"><b>' + esc(evLabel(e)) + '</b><div class="od-grid three">';
+				h += '<div class="f"><label>Date</label><input type="date" data-e="' + i + '" data-k="date" value="' + esc(e.date) + '"></div>';
+				h += '<div class="f"><label>Time</label><input type="time" data-e="' + i + '" data-k="time" value="' + esc(e.time) + '"></div>';
+				h += '<div class="f wide"><label>Venue</label><input data-e="' + i + '" data-k="venue" value="' + esc(e.venue) + '" maxlength="140"></div></div></div>';
+			});
+			h += '<div class="od-ev"><b>Reception hosts</b>';
+			O.hosts.forEach(function (x, i) {
+				h += '<div class="od-grid two"><div class="f"><label>Name</label><input data-h="' + i + '" data-k="name" value="' + esc(x.name) + '" maxlength="60"></div>';
+				h += '<div class="f"><label>Phone</label><input data-h="' + i + '" data-k="phone" value="' + esc(x.phone) + '" maxlength="25"></div>';
+				h += '<button type="button" class="rm" data-hrm="' + i + '">Remove</button></div>';
+			});
+			if (O.hosts.length < 6) h += '<button type="button" class="btn-s" id="od-addh">+ Add host</button>';
+			h += '</div></section>';
+
+			root.innerHTML = h;
+			document.title = coupleTitle() + ' | Order ' + O.orderNo;
+			fixRemoveButtons();
+		}
+		function fixRemoveButtons() {
+			/* guest rows already contain their remove buttons */
+		}
+
+		function setState(text) {
+			stateEl.textContent = text;
+			stateEl.style.display = text ? 'block' : 'none';
+		}
+		function save(done) {
+			statusEl.textContent = 'Saving...';
+			fetch('/api/order?t=' + encodeURIComponent(T), {
+				method: 'PUT',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify(O),
+			})
+				.then(function (r) { if (!r.ok) throw new Error('x'); return r.json(); })
+				.then(function (d) {
+					O = d;
+					render();
+					setDirty(false);
+					if (done) done();
+				})
+				.catch(function () {
+					statusEl.textContent = 'Could not save. Please check your internet and try again.';
+				});
+		}
+
+		root.addEventListener('input', function (ev) {
+			var t = ev.target;
+			var d = t.dataset;
+			if (t.id === 'od-tpl') {
+				O.template = t.value;
+				setDirty(true);
+				refreshMessages();
+				return;
+			}
+			if (d.c) O.couple[d.c] = t.value;
+			else if (d.e !== undefined) O.events[Number(d.e)][d.k] = t.value;
+			else if (d.h !== undefined) O.hosts[Number(d.h)][d.k] = t.value;
+			else if (d.gname !== undefined) {
+				O.guests[Number(d.gname)].name = t.value;
+				var row = t.closest('.od-row');
+				if (row) rowMessage(row);
+			} else if (d.link !== undefined) O.links[Number(d.link)].label = t.value;
+			else return;
+			setDirty(true);
+		});
+		function rowMessage(row) {
+			var gi = row.dataset.gi;
+			var li = row.dataset.li;
+			var name = '';
+			var link = '';
+			if (gi !== undefined) {
+				var g = O.guests[Number(gi)];
+				if (!g || !g.id) return;
+				name = g.name;
+				link = guestLink(g);
+			} else if (li !== undefined) {
+				link = groupLink(O.links[Number(li)]);
+			} else return;
+			var msg = message(name, link);
+			row.querySelector('.c-msg textarea').value = msg;
+			row.querySelector('.c-act [data-copy]').dataset.copy = msg;
+			row.querySelector('.wa').href = waUrl(msg);
+		}
+		function refreshMessages() {
+			root.querySelectorAll('.od-row').forEach(rowMessage);
+		}
+		root.addEventListener('change', function (ev) {
+			var t = ev.target;
+			if (t.dataset.glink !== undefined) {
+				O.guests[Number(t.dataset.glink)].linkId = t.value;
+				setDirty(true);
+			}
+		});
+		root.addEventListener('click', function (ev) {
+			var b = ev.target.closest('button');
+			if (!b) return;
+			if (b.dataset.copy !== undefined) {
+				var txt = b.dataset.copy;
+				var old = b.textContent;
+				var ok = function () {
+					b.textContent = 'Copied';
+					setTimeout(function () { b.textContent = old; }, 1400);
+				};
+				if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(ok);
+				else {
+					var ta = document.createElement('textarea');
+					ta.value = txt;
+					document.body.appendChild(ta);
+					ta.select();
+					document.execCommand('copy');
+					ta.remove();
+					ok();
+				}
+			} else if (b.id === 'od-reset') {
+				O.template = DEFAULT_TEMPLATE;
+				setDirty(true);
+				render();
+			} else if (b.dataset.grm !== undefined) {
+				var gi = Number(b.dataset.grm);
+				if (confirm('Remove ' + O.guests[gi].name + '? Their personal link will stop working after you save.')) {
+					O.guests.splice(gi, 1);
+					setDirty(true);
+					render();
+				}
+			} else if (b.dataset.hrm !== undefined) {
+				O.hosts.splice(Number(b.dataset.hrm), 1);
+				setDirty(true);
+				render();
+			} else if (b.id === 'od-addh') {
+				O.hosts.push({ name: '', phone: '' });
+				setDirty(true);
+				render();
+			} else if (b.id === 'od-addg') {
+				var box = document.getElementById('od-new');
+				var names = box.value.split(/[\n,]/).map(function (x) { return x.trim(); }).filter(Boolean);
+				if (!names.length) return;
+				if (O.guests.length + names.length > 500) {
+					alert('You can add up to 500 guests.');
+					return;
+				}
+				names.forEach(function (n) {
+					O.guests.push({ id: '', name: tc(n), linkId: O.links[0].id });
+				});
+				save();
+			}
+		});
+		saveBtn.addEventListener('click', function () { save(); });
+		window.addEventListener('beforeunload', function (e) {
+			if (dirty) {
+				e.preventDefault();
+				e.returnValue = '';
+			}
+		});
+
+		if (!/^[a-z0-9]{24}$/.test(T)) {
+			setState('This order link is not valid. Please open the link you were given after your order.');
+			return;
+		}
+		fetch('/api/order?t=' + encodeURIComponent(T), { cache: 'no-store' })
+			.then(function (r) { if (!r.ok) throw new Error('x'); return r.json(); })
+			.then(function (d) {
+				O = d;
+				setState('');
+				bar.hidden = false;
+				render();
+				setDirty(false);
+			})
+			.catch(function () {
+				setState('We could not find this order. Please check the link you were given.');
+			});
+	})();
+</script>
+
+<style is:global>
+	.od { max-width: 980px; margin: 0 auto; padding: 24px 16px 110px; color: #3d3d3d; }
+	.od-state { text-align: center; padding: 40px 0; }
+	.od-head { text-align: center; margin-bottom: 24px; }
+	.od-no { display: inline-block; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: #b8793c; font-weight: 600; }
+	.od h1 { font-family: 'Playfair Display', serif; font-size: clamp(2rem, 7vw, 2.8rem); color: #276041; margin: 6px 0 8px; }
+	.od-warn { font-size: 13px; background: #fff8e8; border: 1px solid #eadfc9; border-radius: 10px; padding: 10px 12px; display: inline-block; max-width: 640px; }
+	.od-sec { background: #fff; border: 1px solid #eadfc9; border-radius: 16px; padding: 18px 16px; margin-bottom: 18px; }
+	.od-sec h2 { font-family: 'Playfair Display', serif; font-size: 1.3rem; margin: 0 0 6px; color: #1a1a1a; }
+	.od .cnt { font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 500; color: #276041; background: #eef5ef; border-radius: 999px; padding: 3px 10px; margin-left: 6px; vertical-align: middle; }
+	.od .hint { font-size: 13.5px; color: #5a5a5a; margin: 0 0 10px; line-height: 1.55; }
+	.od textarea, .od input, .od select { width: 100%; box-sizing: border-box; border: 1px solid #d9c8a6; border-radius: 10px; padding: 10px 12px; font: inherit; font-size: 14px; background: #fff; color: #1a1a1a; }
+	.od textarea { resize: vertical; line-height: 1.5; }
+	.od-list { display: grid; gap: 12px; }
+	.od-row { display: grid; gap: 10px; border: 1px solid #f1e8d6; border-radius: 12px; padding: 12px; background: #fffdf8; position: relative; }
+	.c-name b { font-size: 15px; }
+	.c-name small { display: block; color: #6b6b6b; font-size: 12px; margin-top: 4px; }
+	.c-name .lbl { font-weight: 600; margin-bottom: 6px; }
+	.c-link { display: flex; gap: 8px; align-items: center; }
+	.c-link input { flex: 1; min-width: 0; font-size: 12.5px; color: #555; }
+	.c-act { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+	.btn-s, .btn-p { display: inline-block; border: 1.5px solid #276041; color: #276041; background: #fff; border-radius: 999px; padding: 8px 14px; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none; white-space: nowrap; font-family: inherit; }
+	.btn-p { background: #276041; color: #fff; padding: 11px 20px; font-size: 14px; }
+	.btn-s.wa { background: #25d366; border-color: #25d366; color: #fff; }
+	.od .lnk { background: none; border: 0; color: #276041; text-decoration: underline; cursor: pointer; font: inherit; font-size: 13px; padding: 0; }
+	.od .rm { background: none; border: 0; color: #b3261e; font-size: 12.5px; cursor: pointer; text-align: left; padding: 2px 0; font-family: inherit; }
+	.od-row .rm { justify-self: start; }
+	.od-add { margin-top: 14px; }
+	.od-add label, .od .f label { display: block; font-size: 12.5px; font-weight: 600; margin: 0 0 4px; }
+	.od-add .btn-p { margin-top: 8px; }
+	.od-grid { display: grid; gap: 10px; margin-bottom: 10px; }
+	.od-ev { border-top: 1px solid #f1e8d6; padding-top: 12px; margin-top: 12px; }
+	.od-ev > b { display: block; margin-bottom: 8px; color: #276041; }
+	.od-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; background: #fff; border-top: 1px solid #eadfc9; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 13px; }
+	.od-bar.dirty { background: #fff8e8; }
+	.od-bar[hidden] { display: none; }
+	.od-bar button { background: #276041; color: #fff; border: 0; border-radius: 999px; padding: 11px 22px; font-weight: 600; font-size: 14px; cursor: pointer; font-family: inherit; }
+	@media (min-width: 820px) {
+		.od-row { grid-template-columns: 200px 1fr 1.3fr; align-items: start; }
+		.od-grid { grid-template-columns: 1fr 1fr; }
+		.od-grid.three { grid-template-columns: 1fr 1fr 2fr; }
+		.od-grid.two { grid-template-columns: 1fr 1fr auto; align-items: end; }
+	}
+</style>
