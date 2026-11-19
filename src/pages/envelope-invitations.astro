@@ -1,0 +1,19 @@
+---
+import PageLayout from '../layouts/PageLayout.astro';
+import CatalogueView from '../components/CatalogueView.astro';
+
+const ticker = [
+	'✨ Interactive Envelope Invitations',
+	'✉️ Tap to Open, Swipe Through Your Cards',
+	'💍 Wedding · Nikkah · Mayun · Mehndi · Baraat · Walima · Baat Pakki · Engagement · Bridal Shower',
+	'📲 Customization Available',
+];
+---
+
+<PageLayout
+	title="Interactive Envelope Invitations"
+	description="Elegant interactive envelope invitations: your guests tap to open the envelope and swipe through your event cards."
+	ticker={ticker}
+>
+	<CatalogueView type="envelope" />
+</PageLayout>
