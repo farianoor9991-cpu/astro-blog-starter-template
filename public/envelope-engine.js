@@ -416,6 +416,9 @@
 		});
 	};
 
+	(INV.events || []).forEach(function (ev) {
+		if (ev.custom && !evDef(ev.id)) T.events.push({ id: ev.id, label: ev.label || ev.title, title: ev.title || ev.label });
+	});
 	var order = INV.events
 		.slice()
 		.sort(function (a, b) {
