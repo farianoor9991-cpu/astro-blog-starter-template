@@ -8,10 +8,11 @@ const isCards = section === 'ecards';
 const homeHref = isCards ? '/e-cards' : '/';
 const websitesOption = { label: 'Website Invitations', href: '/catalogue' };
 const cardsOption = { label: 'E-Cards', href: '/e-cards' };
+const envelopeOption = { label: 'Interactive Envelope Invitations', href: '/envelope-invitations' };
 const boardsOption = { label: 'Welcome Boards', href: '/welcome-boards' };
 // The product you are currently in is listed first
-const options = isCards ? [cardsOption, websitesOption, boardsOption] : [websitesOption, cardsOption, boardsOption];
-const inCatalogue = path === '/catalogue' || path === '/e-cards/catalogue' || path === '/welcome-boards';
+const options = isCards ? [cardsOption, envelopeOption, websitesOption, boardsOption] : [envelopeOption, websitesOption, cardsOption, boardsOption];
+const inCatalogue = path === '/catalogue' || path === '/e-cards/catalogue' || path === '/welcome-boards' || path === '/envelope-invitations';
 ---
 
 <header class="site-header">

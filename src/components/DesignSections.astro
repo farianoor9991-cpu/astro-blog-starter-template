@@ -44,7 +44,7 @@ const sections = categoryOrder
 											</svg>
 										</span>
 									)}
-									{sec.type === 'website' && <span class="d-live">LIVE</span>}
+									{(sec.type === 'website' || sec.type === 'envelope') && <span class="d-live">LIVE</span>}
 								</a>
 								<div class="d-body">
 									<p class="d-name">{card.name}</p>

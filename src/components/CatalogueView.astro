@@ -40,7 +40,7 @@ const occasions = occasionData[type];
 						aria-label={card.name}
 					>
 						<img src={card.image} alt={card.name} loading="lazy" />
-						{type === 'website' && <span class="d-live">LIVE</span>}
+						{(type === 'website' || type === 'envelope') && <span class="d-live">LIVE</span>}
 					</a>
 					<div class="d-body">
 						<p class="d-name">{card.name}</p>
