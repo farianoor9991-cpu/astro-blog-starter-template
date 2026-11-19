@@ -36,6 +36,7 @@ const items = designs[type].slice(0, limit);
 						<div class="d-body">
 							<p class="d-name">{card.name}</p>
 							<p class="d-price">{card.price}</p>
+							{card.note && <p class="d-note">{card.note}</p>}
 							<div class="d-btns">
 								<a class="d-btn d-outline" href={`/customize?design=${card.id}`}>Customize</a>
 								<a class="d-btn d-fill" href={`/checkout?design=${card.id}`}>Buy Now</a>
@@ -141,6 +142,12 @@ const items = designs[type].slice(0, limit);
 		font-size: 12px;
 		line-height: 1.4;
 		color: #5a5a5a;
+	}
+	.d-note {
+		margin: 2px 0 0;
+		font-size: 11px;
+		line-height: 1.35;
+		color: #6b6b6b;
 	}
 	.d-price {
 		margin: 0 0 10px;
