@@ -1,8 +1,8 @@
-// Haya: Website Invitation template.
+// Haya: Interactive Envelope Invitation template.
 // x, maxW and size are fractions of the card WIDTH. y and lh are fractions of the card HEIGHT.
 // To move a text: bigger y = lower, bigger x = further right. Bigger size = larger text.
 export const haya = {
-	id: 'website-haya',
+	id: 'envelope-haya',
 	name: 'Haya',
 	color: '#276041',
 	maxHosts: 6,
