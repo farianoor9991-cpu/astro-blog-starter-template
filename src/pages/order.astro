@@ -1,11 +1,19 @@
 ---
 import PageLayout from '../layouts/PageLayout.astro';
+import { haya } from '../data/templates/haya';
+import { hayaEnvelope } from '../data/haya-envelope';
+
+// Used only to draw the card preview (no envelope on this page)
+const previewConfig = { design: hayaEnvelope, template: haya, invitation: { couple: {}, events: [], hosts: [], guest: '' }, cardsOnly: true };
 ---
 
 <PageLayout title="Your Order" description="Manage your invitation links." showReviews={false}>
 	<div class="od" id="od">
 		<p class="od-state" id="od-state">Loading your order...</p>
 	</div>
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Berkshire+Swash&family=Unna:wght@400;700&display=swap" />
+	<div id="env-root" hidden></div>
+	<script is:inline id="env-config" type="application/json" set:html={JSON.stringify(previewConfig)} />
 	<div class="od-bar" id="od-bar" hidden>
 		<span id="od-status">All changes saved</span>
 		<button type="button" id="od-save">Save now</button>
@@ -22,7 +30,7 @@ import PageLayout from '../layouts/PageLayout.astro';
 		var saveBtn = document.getElementById('od-save');
 		var O = null;
 		var dirty = false;
-		var openAc = {};
+		var openAc = { preview: true };
 		var shown = 10;
 		var query = '';
 		var addGroup = null; // a group being created: { label, cards: [] }
@@ -93,6 +101,7 @@ import PageLayout from '../layouts/PageLayout.astro';
 			bar.classList.toggle('dirty', v);
 			clearTimeout(timer);
 			if (v) timer = setTimeout(function () { save(); }, 1200);
+			if (v) pvRefresh();
 		}
 		function uid() {
 			return 'g' + Math.random().toString(36).slice(2, 8);
@@ -138,7 +147,7 @@ import PageLayout from '../layouts/PageLayout.astro';
 						return '<option value="' + esc(l.id) + '"' + (l.id === g.linkId ? ' selected' : '') + '>' + esc(l.label) + '</option>';
 					}).join('') + '</select>';
 				}
-				var title = '<input class="lbl" data-gname="' + i + '" value="' + esc(g.name) + '" aria-label="Guest name" maxlength="35">' + sel;
+				var title = '<input class="lbl" data-gname="' + i + '" value="' + esc(g.name) + '" aria-label="Guest name" maxlength="45">' + sel;
 				if (g.id) {
 					var row = linkRow(title, '', guestLink(g), g.name, ' data-gi="' + i + '"');
 					h += row.replace(/<\/div><\/div>$/, '<button type="button" class="rm" data-grm="' + i + '">Remove</button></div></div>');
@@ -157,7 +166,7 @@ import PageLayout from '../layouts/PageLayout.astro';
 			h += '<div class="od-tools"><input type="search" id="od-q" placeholder="Search guests" value="' + esc(query) + '" aria-label="Search guests">';
 			h += '<button type="button" class="btn-p" data-ac-open="addguests">+ Add guests</button></div>';
 			h += '<div class="od-add" id="od-addbox" hidden>';
-			if (many()) h += '<label for="od-newgroup">Which group are these guests in?</label><select id="od-newgroup">' + O.links.map(function (l) { return '<option value="' + esc(l.id) + '">' + esc(l.label) + '</option>'; }).join('') + '</select><div style="height:10px"></div>';
+			if (many()) h += '<label for="od-newgroup">Which group are these guests in?</label><select id="od-newgroup"><option value="">Choose a group...</option>' + O.links.map(function (l) { return '<option value="' + esc(l.id) + '">' + esc(l.label) + '</option>'; }).join('') + '</select><div style="height:10px"></div>';
 			h += '<label for="od-new">One name per line</label><textarea id="od-new" rows="4" placeholder="Hamza Chachu\nMr. Ali &amp; Family"></textarea>';
 			h += '<button type="button" class="btn-p" id="od-addg">Add guests</button></div>';
 			h += '<div class="od-list" id="od-glist">' + guestsListHtml() + '</div></section>';
@@ -216,6 +225,85 @@ import PageLayout from '../layouts/PageLayout.astro';
 			return h;
 		}
 
+
+		/* ---------- card preview ---------- */
+		var pv = { sig: '', cards: null, timer: null, guestId: '', busy: false };
+		function pvInvitation() {
+			var g = null;
+			if (O.guestsOn && O.guests.length) {
+				g = O.guests.filter(function (x) { return x.id === pv.guestId; })[0] || O.guests[0];
+			}
+			var evs = O.events;
+			if (g && many()) {
+				var lk = O.links.filter(function (l) { return l.id === g.linkId; })[0];
+				if (lk) evs = O.events.filter(function (e) { return lk.cards.indexOf(e.id) >= 0; });
+			}
+			return {
+				couple: O.couple,
+				events: evs,
+				hosts: hostsOn() ? O.hosts.filter(function (h) { return String(h.name || '').trim(); }) : [],
+				guest: g && g.name.trim() ? g.name : '',
+				gid: g ? g.id : '',
+			};
+		}
+		function previewBody() {
+			var h = '<p class="hint">This is how the cards look. Swipe left or right to see every card.</p>';
+			if (O.guestsOn && O.guests.length > 1) {
+				h += '<label class="lab" for="od-pvguest">Show cards for</label><select id="od-pvguest">' + O.guests.map(function (g) {
+					return '<option value="' + esc(g.id) + '"' + (g.id === pv.guestId ? ' selected' : '') + '>' + esc(g.name) + '</option>';
+				}).join('') + '</select><div style="height:10px"></div>';
+			}
+			h += '<div class="pv" id="od-pv"><p class="hint">Loading preview...</p></div>';
+			return h;
+		}
+		function pvPaint() {
+			var box = document.getElementById('od-pv');
+			if (!box || !pv.cards) return;
+			if (!pv.cards.length) { box.innerHTML = '<p class="hint">No cards to show yet.</p>'; return; }
+			var h = '<div class="pv-wrap"><button type="button" class="pv-ar pv-l" data-pv="-1" aria-label="Previous card">&#8249;</button><div class="pv-track" id="od-pvt">';
+			pv.cards.forEach(function (c) {
+				h += '<figure class="pv-slide"><img src="' + c.url + '" alt="' + esc(c.label) + '" draggable="false"><figcaption>' + esc(c.label) + '</figcaption></figure>';
+			});
+			h += '</div><button type="button" class="pv-ar pv-r" data-pv="1" aria-label="Next card">&#8250;</button></div><div class="pv-dots" id="od-pvd">';
+			pv.cards.forEach(function (c, i) { h += '<i' + (i === 0 ? ' class="on"' : '') + '></i>'; });
+			h += '</div>';
+			box.innerHTML = h;
+			var tr = document.getElementById('od-pvt');
+			tr.addEventListener('scroll', function () {
+				var i = Math.round(tr.scrollLeft / tr.clientWidth);
+				var ds = document.querySelectorAll('#od-pvd i');
+				for (var k = 0; k < ds.length; k++) ds[k].className = k === i ? 'on' : '';
+			});
+		}
+		function pvEngine() {
+			return new Promise(function (res, rej) {
+				if (window.__ihCards) return res();
+				window.__ihCardsReady = res;
+				var sc = document.createElement('script');
+				sc.src = '/envelope-engine.js?v=15';
+				sc.onerror = rej;
+				document.head.appendChild(sc);
+			});
+		}
+		function pvRefresh() {
+			clearTimeout(pv.timer);
+			pv.timer = setTimeout(function () {
+				if (!document.getElementById('od-pv')) return;
+				var inv = pvInvitation();
+				var sig = JSON.stringify(inv);
+				if (sig === pv.sig && pv.cards) { pvPaint(); return; }
+				pv.sig = sig;
+				pvEngine().then(function () { return window.__ihCards(JSON.parse(sig)); }).then(function (list) {
+					if (pv.sig !== sig) return;
+					pv.cards = list;
+					pvPaint();
+				}).catch(function () {
+					var box = document.getElementById('od-pv');
+					if (box) box.innerHTML = '<p class="hint">The preview could not be loaded. Please refresh the page.</p>';
+				});
+			}, 600);
+		}
+
 		function render() {
 			var y = window.scrollY;
 			var h = '<div class="od-head"><span class="od-no">Order No. ' + esc(O.orderNo) + '</span><h1>' + esc(coupleTitle()) + '</h1>';
@@ -225,11 +313,13 @@ import PageLayout from '../layouts/PageLayout.astro';
 			h += '<p class="od-warn">Please save this page\'s link. It is private, and anyone who has it can edit your invitation. <button type="button" class="lnk" data-copy="' + esc(location.href) + '">Copy this page link</button></p></div>';
 			h += '<div class="od-cols"><div class="od-main">' + groupsHtml() + guestsHtml() + '</div>';
 			h += '<aside class="od-side"><h3>Edit your invitation</h3>';
-			h += acPanel('events', 'Edit events', eventsBody());
 			h += acPanel('message', 'Edit WhatsApp message', messageBody());
+			h += acPanel('events', 'Edit events', eventsBody());
 			if (hostsOn()) h += acPanel('hosts', 'Edit reception hosts', hostsBody());
+			h += acPanel('preview', 'Preview your cards', previewBody());
 			h += '</aside></div>';
 			root.innerHTML = h;
+			pvRefresh();
 			document.title = coupleTitle() + ' | Order ' + O.orderNo;
 			window.scrollTo(0, y);
 		}
@@ -357,7 +447,10 @@ import PageLayout from '../layouts/PageLayout.astro';
 		root.addEventListener('change', function (ev) {
 			var t = ev.target;
 			var d = t.dataset;
-			if (d.glink !== undefined) {
+			if (t.id === 'od-pvguest') {
+				pv.guestId = t.value;
+				pvRefresh();
+			} else if (d.glink !== undefined) {
 				O.guests[Number(d.glink)].linkId = t.value;
 				setDirty(true);
 			} else if (d.lcard !== undefined) {
@@ -374,6 +467,11 @@ import PageLayout from '../layouts/PageLayout.astro';
 			var b = ev.target.closest('button');
 			if (!b) return;
 			var d = b.dataset;
+			if (d.pv !== undefined) {
+				var tr = document.getElementById('od-pvt');
+				if (tr) tr.scrollBy({ left: Number(d.pv) * tr.clientWidth, behavior: 'smooth' });
+				return;
+			}
 			if (d.copy !== undefined) {
 				var txt = d.copy;
 				var old = b.textContent;
@@ -459,9 +557,14 @@ import PageLayout from '../layouts/PageLayout.astro';
 				var names = nb.value.split(/[\n,]/).map(function (x) { return x.trim(); }).filter(Boolean);
 				if (!names.length) return;
 				var gsel = document.getElementById('od-newgroup');
-				var longName = names.filter(function (n) { return n.length > 35; })[0];
+				if (gsel && !gsel.value) {
+					alert('Please choose which group these guests belong to.');
+					gsel.focus();
+					return;
+				}
+				var longName = names.filter(function (n) { return n.length > 45; })[0];
 				if (longName) {
-					alert('"' + longName.slice(0, 20) + '..." is too long. Please keep each name within 35 characters.');
+					alert('"' + longName.slice(0, 20) + '..." is too long. Please keep each name within 45 characters.');
 					return;
 				}
 				if (O.guests.length + names.length > 500) {
@@ -516,13 +619,25 @@ import PageLayout from '../layouts/PageLayout.astro';
 	.od .cnt { font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 500; color: #276041; background: #eef5ef; border-radius: 999px; padding: 3px 10px; margin-left: 6px; vertical-align: middle; }
 	.od .hint { font-size: 13.5px; color: #5a5a5a; margin: 0 0 12px; line-height: 1.55; }
 	.od textarea, .od input:not([type=checkbox]), .od select { width: 100%; box-sizing: border-box; border: 1px solid #d9c8a6; border-radius: 10px; padding: 10px 12px; font: inherit; font-size: 14px; background: #fff; color: #1a1a1a; }
-	.od textarea { resize: vertical; line-height: 1.5; }
+	.od textarea { resize: vertical; line-height: 1.5; min-height: 190px; }
+	.pv-wrap { position: relative; }
+	.pv-track { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+	.pv-track::-webkit-scrollbar { display: none; }
+	.pv-slide { flex: 0 0 100%; scroll-snap-align: center; margin: 0; text-align: center; }
+	.pv-slide img { display: block; margin: 0 auto; height: 400px; max-width: 100%; width: auto; object-fit: contain; border-radius: 10px; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18); -webkit-user-drag: none; }
+	.pv-slide figcaption { font-size: 13px; font-weight: 600; margin-top: 8px; color: #276041; }
+	.pv-ar { position: absolute; top: 170px; width: 34px; height: 34px; border-radius: 50%; border: 0; background: rgba(255, 255, 255, 0.92); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25); font-size: 22px; line-height: 1; cursor: pointer; color: #276041; z-index: 2; }
+	.pv-l { left: 2px; }
+	.pv-r { right: 2px; }
+	.pv-dots { display: flex; justify-content: center; gap: 6px; margin-top: 8px; }
+	.pv-dots i { width: 7px; height: 7px; border-radius: 50%; background: #d9c8a6; }
+	.pv-dots i.on { background: #276041; }
 	.od-list { display: grid; gap: 10px; }
 	.od-row { display: grid; gap: 10px; border: 1px solid #f1e8d6; border-radius: 12px; padding: 12px; background: #fffdf8; }
 	.c-name b { font-size: 15px; }
 	.c-name small { display: block; color: #6b6b6b; font-size: 12px; margin-top: 4px; line-height: 1.4; }
 	.c-name .lbl { font-weight: 600; margin-bottom: 6px; }
-	.msg { font-size: 12.5px; color: #555; line-height: 1.5; white-space: pre-line; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; background: #fff; border: 1px solid #f1e8d6; border-radius: 8px; padding: 8px 10px; }
+	.msg { font-size: 12.5px; color: #555; line-height: 1.5; white-space: pre-line; max-height: 150px; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; background: #fff; border: 1px solid #f1e8d6; border-radius: 8px; padding: 8px 10px; }
 	.c-act { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 	.btn-s, .btn-p { display: inline-block; border: 1.5px solid #276041; color: #276041; background: #fff; border-radius: 999px; padding: 8px 14px; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none; white-space: nowrap; font-family: inherit; }
 	.btn-p { background: #276041; color: #fff; padding: 10px 18px; font-size: 13.5px; }

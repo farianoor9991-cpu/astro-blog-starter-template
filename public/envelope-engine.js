@@ -36,7 +36,7 @@
 	};
 
 	/* ---------- settings as CSS variables ---------- */
-	document.body.style.background = S.background;
+	if (!cfg.cardsOnly) document.body.style.background = S.background;
 	var rs = root.style;
 	var setv = function (k, v) {
 		rs.setProperty(k, v);
@@ -446,6 +446,44 @@
 	var labelOf = function (id) {
 		return id === 'hosts' ? 'Reception Hosts' : id === 'guest' ? 'Greeting' : evDef(id).label;
 	};
+
+	// Cards-only mode (used by the order page preview): no envelope, just draws the cards on request
+	if (cfg.cardsOnly) {
+		var fontsOnly = Promise.all([
+			document.fonts.load('700 40px "Unna"'),
+			document.fonts.load('400 40px "Berkshire Swash"'),
+		]).catch(function () {});
+		window.__ihCards = function (inv) {
+			INV = inv;
+			(INV.events || []).forEach(function (ev) {
+				if (ev.custom && !evDef(ev.id)) T.events.push({ id: ev.id, label: ev.label || ev.title, title: ev.title || ev.label });
+			});
+			var ids = INV.events
+				.slice()
+				.sort(function (a, b) {
+					var da = a.date || '9999';
+					var db = b.date || '9999';
+					if (da !== db) return da < db ? -1 : 1;
+					return T.events.indexOf(evDef(a.id)) - T.events.indexOf(evDef(b.id));
+				})
+				.map(function (e) {
+					return e.id;
+				});
+			if (INV.hosts && INV.hosts.length) ids.push('hosts');
+			if (INV.guest) ids.unshift('guest');
+			return fontsOnly.then(function () {
+				return Promise.all(
+					ids.map(function (id) {
+						return drawCard(id).then(function (url) {
+							return { id: id, label: labelOf(id), url: url };
+						});
+					})
+				);
+			});
+		};
+		if (window.__ihCardsReady) window.__ihCardsReady();
+		return;
+	}
 
 	var cards = [];
 	var cardRatio = 16 / 9; // height / width of a card, read from the first card drawn
