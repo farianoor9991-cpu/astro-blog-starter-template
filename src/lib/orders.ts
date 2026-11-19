@@ -1,6 +1,7 @@
 // Shared helpers for orders. Orders are kept in Cloudflare KV (binding name: ORDERS).
 
 export const MAX_GUESTS = 500;
+export const STANDARD_EVENTS = ['nikkah', 'dholki', 'qawaali', 'mehndi', 'baraat', 'walima'];
 const MAX_EVENTS = 20;
 const MAX_HOSTS = 6;
 const MAX_LINKS = 10;
@@ -24,22 +25,30 @@ export const clean = (input: any, existing?: any) => {
 		groomName: str(input?.couple?.groomName, 60),
 		groomParents: str(input?.couple?.groomParents, 80),
 	};
+	const seenEv = new Set<string>();
 	const events = (Array.isArray(input?.events) ? input.events : []).slice(0, MAX_EVENTS).map((e: any) => {
 		const prev = existing?.events?.find((x: any) => x.id === e?.id);
+		const id = str(e?.id, 40);
 		const out: any = {
-			id: str(e?.id, 40),
+			id,
 			date: /^\d{4}-\d{2}-\d{2}$/.test(String(e?.date)) ? String(e.date) : '',
 			time: /^\d{2}:\d{2}$/.test(String(e?.time)) ? String(e.time) : '',
 			venue: str(e?.venue, 140),
 		};
-		const custom = prev ? prev.custom : e?.custom;
-		if (custom) {
+		const isCustom = prev ? !!prev.custom : !!e?.custom;
+		if (isCustom) {
+			const label = str(e?.label || e?.title, 24) || (prev ? prev.label : '');
+			if (!label) return null;
 			out.custom = true;
-			out.label = prev ? prev.label : str(e?.label, 24);
-			out.title = prev ? prev.title : str(e?.title || e?.label, 24);
-		}
+			out.label = label;
+			out.title = label;
+		} else if (STANDARD_EVENTS.indexOf(id) < 0) return null;
 		return out;
-	}).filter((e: any) => e.id);
+	}).filter((e: any) => {
+		if (!e || !e.id || seenEv.has(e.id)) return false;
+		seenEv.add(e.id);
+		return true;
+	});
 	const hosts = (Array.isArray(input?.hosts) ? input.hosts : [])
 		.slice(0, MAX_HOSTS)
 		.map((h: any) => ({ name: str(h?.name, 60), phone: str(h?.phone, 25) }))
@@ -47,15 +56,23 @@ export const clean = (input: any, existing?: any) => {
 	return { couple, events, hosts };
 };
 
-export const cleanLinks = (input: any, existing?: any[]) => {
-	const list = (Array.isArray(input) ? input : []).slice(0, MAX_LINKS).map((l: any, i: number) => {
-		const prev = existing?.find((x: any) => x.id === l?.id);
+export const cleanLinks = (input: any, events: any[]) => {
+	const valid = new Set(events.map((e) => e.id));
+	const used = new Set<string>();
+	let list = (Array.isArray(input) ? input : []).slice(0, MAX_LINKS).map((l: any, i: number) => {
+		let id = /^[a-z0-9]{1,20}$/.test(String(l?.id)) ? String(l.id) : rid(5);
+		while (used.has(id)) id = rid(5);
+		used.add(id);
 		return {
-			id: prev ? prev.id : str(l?.id, 20) || rid(5),
+			id,
 			label: str(l?.label, 40) || 'Link ' + (i + 1),
-			cards: prev ? prev.cards : (Array.isArray(l?.cards) ? l.cards : []).map((c: any) => str(c, 40)).filter(Boolean),
+			cards: (Array.isArray(l?.cards) ? l.cards : []).map((c: any) => str(c, 40)).filter((c: string) => valid.has(c)),
 		};
 	});
+	if (list.length <= 1) {
+		const only = list[0] || { id: 'all', label: 'All events' };
+		list = [{ id: only.id, label: only.label || 'All events', cards: events.map((e) => e.id) }];
+	}
 	return list;
 };
 

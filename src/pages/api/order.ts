@@ -19,13 +19,20 @@ export const POST: APIRoute = async ({ request, locals }) => {
 	}
 	const base = clean(body);
 	if (!base.events.length || !base.couple.brideName || !base.couple.groomName) return json({ error: 'Missing details' }, 400);
-	const mode = body.mode === 'many' ? 'many' : 'one';
-	let links = cleanLinks(body.links);
-	if (mode === 'one' || !links.length) links = [{ id: 'all', label: 'All events', cards: base.events.map((e: any) => e.id) }];
+	const wantMany = body.mode === 'many';
+	let links = cleanLinks(wantMany ? body.links : [], base.events);
 	const guests = body.guestsOn ? cleanGuests(body.guests, links) : [];
-	const n = Number((await kv.get('counter')) || 1000) + 1;
-	await kv.put('counter', String(n));
 	const token = rid(24);
+	// Order numbers: take the next free number and claim it, so two orders never share one
+	let n = Number((await kv.get('counter')) || 1000) + 1;
+	for (let tries = 0; tries < 50; tries++) {
+		if (!(await kv.get('no:' + n))) {
+			await kv.put('no:' + n, token);
+			if ((await kv.get('no:' + n)) === token) break;
+		}
+		n += 1 + Math.floor(Math.random() * 3);
+	}
+	await kv.put('counter', String(n));
 	const pid = rid(10);
 	const order = {
 		orderNo: n,
@@ -33,7 +40,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
 		pid,
 		createdAt: new Date().toISOString(),
 		...base,
-		mode,
+		mode: links.length > 1 ? 'many' : 'one',
 		links,
 		guestsOn: !!body.guestsOn,
 		guests,
@@ -74,20 +81,19 @@ export const PUT: APIRoute = async ({ request, url, locals }) => {
 		return json({ error: 'Invalid data' }, 400);
 	}
 	const base = clean(body, order);
-	// events cannot be added or removed here, only edited
-	const events = order.events.map((e: any) => {
-		const upd = base.events.find((x: any) => x.id === e.id);
-		return upd ? { ...e, date: upd.date, time: upd.time, venue: upd.venue } : e;
-	});
-	const links = cleanLinks(body.links, order.links);
-	const guests = order.guestsOn || (Array.isArray(body.guests) && body.guests.length) ? cleanGuests(body.guests, links, order.guests) : [];
+	if (!base.events.length) return json({ error: 'Please keep at least one event.' }, 400);
+	if (!base.couple.brideName || !base.couple.groomName) return json({ error: 'Please enter both names.' }, 400);
+	const links = cleanLinks(body.links, base.events);
+	const empty = links.find((l: any) => !l.cards.length);
+	if (empty) return json({ error: 'The group "' + empty.label + '" needs at least one event.' }, 400);
+	const guests = order.guestsOn ? cleanGuests(body.guests, links, order.guests) : [];
 	const next = {
 		...order,
 		couple: base.couple,
-		events,
+		events: base.events,
 		hosts: base.hosts,
-		links: order.mode === 'many' ? links : order.links,
-		guestsOn: order.guestsOn || guests.length > 0,
+		mode: links.length > 1 ? 'many' : 'one',
+		links,
 		guests,
 		template: typeof body.template === 'string' && body.template.trim() ? body.template.slice(0, 1500) : order.template,
 		updatedAt: new Date().toISOString(),
