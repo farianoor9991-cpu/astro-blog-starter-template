@@ -42,6 +42,8 @@
 		rs.setProperty(k, v);
 	};
 	setv('--ev-bg', S.background);
+	if (S.backgroundImage) setv('--ev-bgimg', 'url(' + S.backgroundImage + ')');
+	if (S.backgroundImageWide) setv('--ev-bgimg-w', 'url(' + S.backgroundImageWide + ')');
 	setv('--ev-foot-bg', S.footerBackground);
 	setv('--ev-max', S.stageMaxWidth + 'px');
 	setv('--ev-title-font', "'" + S.welcome.font + "', serif");
@@ -560,6 +562,163 @@
 		});
 	}
 
+	/* ----- golden ripple from the wax seal (whole screen) and slow gold confetti ----- */
+	var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+	var fxCanvas = function () {
+		var c = document.createElement('canvas');
+		c.className = 'ev-fx';
+		var dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+		c.width = Math.round(window.innerWidth * dpr);
+		c.height = Math.round(window.innerHeight * dpr);
+		var x = c.getContext('2d');
+		x.scale(dpr, dpr);
+		document.body.appendChild(c);
+		return { c: c, x: x, w: window.innerWidth, h: window.innerHeight };
+	};
+	var sealPoint = function () {
+		var r = closedEl.getBoundingClientRect();
+		return { x: r.left + (r.width * ENV.sealX) / 100, y: r.top + (r.height * ENV.sealY) / 100 };
+	};
+	var fireRipple = function () {
+		if (reduceMotion || !S.ripple || !S.ripple.enabled) return;
+		var f = fxCanvas();
+		var o = sealPoint();
+		var R = Math.max(Math.hypot(o.x, o.y), Math.hypot(f.w - o.x, o.y), Math.hypot(o.x, f.h - o.y), Math.hypot(f.w - o.x, f.h - o.y)) * 1.05;
+		var dur = S.ripple.duration || 1900;
+		var t0 = performance.now();
+		var ease = function (t) {
+			return 0.5 - 0.5 * Math.cos(Math.PI * t); // gentle start, gentle end
+		};
+		var smooth = function (a, b, v) {
+			var k = Math.max(0, Math.min(1, (v - a) / (b - a)));
+			return k * k * (3 - 2 * k);
+		};
+		var stop = function () {
+			if (f.c.parentNode) f.c.parentNode.removeChild(f.c);
+		};
+		var frame = function (now) {
+			var t = (now - t0) / dur;
+			if (t >= 1) return stop();
+			var x = f.x;
+			x.clearRect(0, 0, f.w, f.h);
+			x.globalCompositeOperation = 'screen';
+			var r = Math.max(2, R * ease(t));
+			var a = smooth(0, 0.1, t) * (1 - smooth(0.5, 1, t));
+			var edge = Math.max(2.2, R * 0.004);
+			// central glow at the start
+			if (t < 0.4) {
+				var cg = x.createRadialGradient(o.x, o.y, 0, o.x, o.y, 110);
+				var ca = 0.5 * (1 - smooth(0, 0.4, t));
+				cg.addColorStop(0, 'rgba(255,241,204,' + ca + ')');
+				cg.addColorStop(1, 'rgba(255,241,204,0)');
+				x.fillStyle = cg;
+				x.fillRect(o.x - 110, o.y - 110, 220, 220);
+			}
+			// trailing illumination: a soft warm wash just behind the moving edge
+			var back = Math.min(r, Math.max(90, R * 0.22));
+			var tg = x.createRadialGradient(o.x, o.y, Math.max(0, r - back), o.x, o.y, r);
+			tg.addColorStop(0, 'rgba(232,194,122,0)');
+			tg.addColorStop(0.7, 'rgba(232,194,122,' + 0.07 * a + ')');
+			tg.addColorStop(1, 'rgba(232,194,122,' + 0.16 * a + ')');
+			x.fillStyle = tg;
+			x.beginPath();
+			x.arc(o.x, o.y, r, 0, Math.PI * 2);
+			x.fill();
+			// outer glow, feathered into the background
+			var gw = Math.max(26, R * 0.07);
+			var og = x.createRadialGradient(o.x, o.y, r, o.x, o.y, r + gw);
+			og.addColorStop(0, 'rgba(212,162,118,' + 0.3 * a + ')');
+			og.addColorStop(0.4, 'rgba(212,162,118,' + 0.1 * a + ')');
+			og.addColorStop(1, 'rgba(212,162,118,0)');
+			x.fillStyle = og;
+			x.beginPath();
+			x.arc(o.x, o.y, r + gw, 0, Math.PI * 2);
+			x.fill();
+			// luminous leading edge: very thin and soft
+			var rg = x.createRadialGradient(o.x, o.y, Math.max(0, r - edge * 2.6), o.x, o.y, r + edge * 2.6);
+			rg.addColorStop(0, 'rgba(232,194,122,0)');
+			rg.addColorStop(0.5, 'rgba(232,194,122,' + 0.75 * a + ')');
+			rg.addColorStop(0.5, 'rgba(240,208,142,' + 0.8 * a + ')');
+			rg.addColorStop(1, 'rgba(232,194,122,0)');
+			x.fillStyle = rg;
+			x.beginPath();
+			x.arc(o.x, o.y, r + edge * 2.6, 0, Math.PI * 2);
+			x.fill();
+			requestAnimationFrame(frame);
+		};
+		requestAnimationFrame(frame);
+	};
+	var fireConfetti = function () {
+		var C = S.confetti;
+		if (reduceMotion || !C || !C.enabled) return;
+		var f = fxCanvas();
+		var small = f.w < 700;
+		var total = Math.round(C.count * (small ? 0.75 : 1.2));
+		var colors = ['#E8C27A', '#D4A276', '#C9A25E', '#E3C88F', '#FFF1CC', '#F6EBD0'];
+		var ps = [];
+		var t0 = performance.now();
+		var last = t0;
+		var spawned = 0;
+		var rnd = function (a, b) {
+			return a + Math.random() * (b - a);
+		};
+		var spawn = function () {
+			ps.push({
+				x: rnd(0, f.w),
+				y: rnd(-30, -6),
+				w: rnd(2, 4.6),
+				h: rnd(1.4, 2.8),
+				vy: rnd(26, 62),
+				drift: rnd(10, 26),
+				ph: rnd(0, 6.28),
+				sp: rnd(0.6, 1.3),
+				rot: rnd(0, 6.28),
+				vr: rnd(-1.6, 1.6),
+				al: rnd(0.35, 0.85),
+				col: colors[Math.floor(Math.random() * colors.length)],
+				round: Math.random() < 0.35,
+			});
+		};
+		var stop = function () {
+			if (f.c.parentNode) f.c.parentNode.removeChild(f.c);
+		};
+		var frame = function (now) {
+			var el = now - t0;
+			var dt = Math.min(0.05, (now - last) / 1000);
+			last = now;
+			if (el > C.totalMs) return stop();
+			// a gentle stream during the opening, then no new pieces
+			var want = el < C.spawnMs ? Math.floor((el / C.spawnMs) * total) : total;
+			while (spawned < want) {
+				spawn();
+				spawned++;
+			}
+			var fade = 1 - Math.max(0, Math.min(1, (el - (C.totalMs - 2400)) / 2400));
+			var x = f.x;
+			x.clearRect(0, 0, f.w, f.h);
+			ps.forEach(function (p) {
+				p.y += p.vy * dt;
+				p.ph += p.sp * dt;
+				p.x += Math.sin(p.ph) * p.drift * dt;
+				p.rot += p.vr * dt;
+				if (p.y > f.h + 10) return;
+				x.save();
+				x.globalAlpha = p.al * fade;
+				x.translate(p.x, p.y);
+				x.rotate(p.rot);
+				x.fillStyle = p.col;
+				if (p.round) {
+					x.beginPath();
+					x.ellipse(0, 0, p.w / 2, p.h / 2, 0, 0, Math.PI * 2);
+					x.fill();
+				} else x.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+				x.restore();
+			});
+			requestAnimationFrame(frame);
+		};
+		requestAnimationFrame(frame);
+	};
+
 	var fireRing = function () {
 		if (!S.ring.enabled) return;
 		ringWrap.classList.remove('fire');
@@ -691,6 +850,8 @@
 		if (audio && audio.paused) audio.play().catch(function () {});
 		stage.classList.add('is-open');
 		fireRing();
+		fireRipple();
+		fireConfetti();
 		wait(TM.peekDelay).then(function () {
 			if (state !== 'idle') stage.classList.add('peek-on');
 		});

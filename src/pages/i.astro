@@ -23,7 +23,7 @@ const config = {
 			href="https://fonts.googleapis.com/css2?family=Berkshire+Swash&family=Unna:wght@400;700&family=Playfair+Display:wght@700&display=swap"
 			rel="stylesheet"
 		/>
-		<link rel="stylesheet" href="/envelope.css?v=9" />
+		<link rel="stylesheet" href="/envelope.css?v=10" />
 	</head>
 	<body>
 		<div id="env-root"></div>
@@ -57,7 +57,7 @@ const config = {
 						el.textContent = JSON.stringify(cfg);
 						document.title = d.couple.brideName.split(' ')[0] + ' & ' + d.couple.groomName.split(' ')[0] + ' | Invitation';
 						load('/gsap.min.js', function () {
-							load('/envelope-engine.js?v=15');
+							load('/envelope-engine.js?v=16');
 						});
 					})
 					.catch(function (e) {

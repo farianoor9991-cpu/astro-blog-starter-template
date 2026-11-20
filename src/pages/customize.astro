@@ -15,6 +15,7 @@ import PageLayout from '../layouts/PageLayout.astro';
 			</header>
 
 			<div class="cz-grid">
+				<div class="gwin" id="cz-draftbox" hidden style="margin-bottom:12px"><b>You have a saved draft</b><small>Saved in this browser from last time. Do you want to continue with it?</small><div class="acts" style="margin-top:8px"><button class="btn-g" type="button" data-act="restore">Restore draft</button> <button class="btn-o" type="button" data-act="discard">Discard</button></div></div>
 				<div id="cz-steps"></div>
 				<aside class="cz-aside">
 					<div class="cz-aside-in">
@@ -27,6 +28,7 @@ import PageLayout from '../layouts/PageLayout.astro';
 
 			<div class="cz-bar">
 				<button class="btn-o" type="button" data-act="preview">Preview</button>
+				<button class="btn-o" type="button" data-act="draft" id="cz-draft">Save draft</button>
 				<span class="pr" id="cz-price"></span>
 			</div>
 
@@ -175,9 +177,8 @@ const save = () => {};
 			return out;
 		};
 		const rawTotal = () => priceLines().reduce((a, l) => a + l.v, 0);
-		// Charm pricing: a total that ends in 000 is shown as 999 (Rs. 1 special offer)
-		const offer = () => (rawTotal() > 0 && rawTotal() % 1000 === 0 ? 1 : 0);
-		const totalPrice = () => rawTotal() - offer();
+		// The total is always the real sum of the items (charm prices are only used in the catalogue labels)
+		const totalPrice = () => rawTotal();
 		const updatePrice = () => {
 			const el = $('#cz-price');
 			if (!el) return;
@@ -703,11 +704,13 @@ const save = () => {};
 					${row('Invitation links', linkLines, 4)}
 					${S.guests.on ? row('Personalized greetings', guestLines, 4) : ''}
 				</div>
-				<div class="rv-row"><div><b>Price</b>${priceLines().map((l) => `<p>${esc(l.t)}: ${fmtRs(l.v)}</p>`).join('')}${offer() ? '<p>Special offer: -Rs. 1</p>' : ''}<p><b>Total: ${fmtRs(totalPrice())}</b></p></div></div>
+				<div class="rv-row"><div><b>Price</b>${priceLines().map((l) => `<p>${esc(l.t)}: ${fmtRs(l.v)}</p>`).join('')}<p><b>Total: ${fmtRs(totalPrice())}</b></p></div></div>
 				<p class="hint">Your cards, with the preview watermark:</p><button class="btn-o" type="button" data-act="preview">Preview your cards</button> <button class="btn-o" type="button" data-act="envelope">See it in the envelope</button>${TEST ? '<p class="hint"><b>Test mode:</b> the envelope opens without the watermark.</p>' : ''}
 				${S.guests.on && S.links.mode ? '<div class="gwin"><b>Greeting cards</b><small>One for each guest. Each guest\'s link opens with only their own greeting card.</small><div class="gal" id="gal-g"></div></div>' : ''}
 				<div class="gwin"><b>Event cards</b><small>Swipe to see all cards.</small><div class="gal" id="gal"></div></div>
 				<p class="hint">This is a preview. Your final cards will not have the watermark.</p>
+				<div class="gwin"><b>Set your Edit PIN</b><small>Your order link can only be viewed. To edit your order later you will need this 4-digit PIN. Please do not share it.</small>
+				<div style="display:grid;gap:8px;max-width:260px;margin-top:8px"><input id="cz-pin" type="password" inputmode="numeric" autocomplete="off" maxlength="4" placeholder="4-digit PIN" value="${esc(pinA)}" style="padding:10px 12px;border:1px solid #d9c8a6;border-radius:10px;font:inherit"><input id="cz-pin2" type="password" inputmode="numeric" autocomplete="off" maxlength="4" placeholder="Repeat PIN" value="${esc(pinB)}" style="padding:10px 12px;border:1px solid #d9c8a6;border-radius:10px;font:inherit"></div><p class="hint" id="pin-err" style="color:#b3261e" hidden></p></div>
 				<div class="acts"><button class="btn-g" type="button" data-act="finish">Looks good, continue</button></div>
 				<div class="ok" id="finish-note" hidden></div>`;
 		};
@@ -898,9 +901,24 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 			const gIdx = gi !== undefined && !isNaN(gi) ? gi : gs.length ? 0 : undefined;
 			window.open('/demo-haya?preview=1' + (gIdx !== undefined ? '&g=' + gIdx : '') + (TEST ? '&nowm=1' : ''), '_blank');
 		};
+		let pinA = '';
+		let pinB = '';
 		let orderBusy = false;
 		let orderBtn = '';
 		const finish = async () => {
+			if (!orderBtn) {
+				const pe = $('#pin-err') as HTMLElement | null;
+				const bad = !/^\d{4}$/.test(pinA) ? 'Please set a 4-digit PIN (numbers only).' : pinA !== pinB ? 'The two PINs do not match.' : '';
+				if (bad) {
+					if (pe) {
+						pe.textContent = bad;
+						pe.hidden = false;
+						pe.scrollIntoView({ behavior: 'smooth', block: 'center' });
+					}
+					return;
+				}
+				if (pe) pe.hidden = true;
+			}
 			S.done[5] = true;
 			save();
 			const n = $('#finish-note');
@@ -919,6 +937,7 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 				const mode = S.guests.on && !S.links.mode ? 'one' : S.links.mode || 'one';
 				const links = mode === 'many' ? S.links.list.map((lk: D) => ({ id: String(lk.id), label: lk.label || '', cards: lk.cards.filter((k: string) => k !== 'hosts') })) : [];
 				const payload = {
+					pin: pinA,
 					couple: {
 						brideName: tc(S.couple.brideName),
 						brideParents: tc(cleanParents(S.couple.brideParents)),
@@ -942,7 +961,7 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 					list.unshift({ token: o.token, no: o.orderNo, title });
 					localStorage.setItem('ih-orders', JSON.stringify(list.slice(0, 20)));
 				} catch (e) {}
-				orderBtn = `<p><b>Your order is ready.</b> Open it to find your invitation links, ready-to-send WhatsApp messages, and to edit your details at any time.</p><p><a class="btn-g" style="display:inline-block;text-decoration:none" href="/order?t=${o.token}">${esc(title)} &middot; Order No. ${o.orderNo}</a></p><p class="hint">Please save this order link. It is private, and it is the only way to open your order again.</p>`;
+				orderBtn = `<p><b>Your order is ready.</b> Open it to find your invitation links, ready-to-send WhatsApp messages, and to edit your details at any time.</p><p><a class="btn-g" style="display:inline-block;text-decoration:none" href="/order?t=${o.token}">${esc(title)} &middot; Order No. ${o.orderNo}</a></p><p class="hint">Please save this order link and remember your PIN. The link only lets you view your order. You need the PIN to edit it.</p>`;
 				n.innerHTML = orderBtn;
 			} catch (e) {
 				n.textContent = 'We could not create your order right now. Please try again in a moment.';
@@ -1168,6 +1187,16 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 				case 'preview':
 					openModal();
 					break;
+				case 'draft':
+					saveDraft();
+					break;
+				case 'restore':
+					restoreDraft();
+					break;
+				case 'discard':
+					try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
+					($('#cz-draftbox') as HTMLElement).hidden = true;
+					break;
 				case 'close':
 					closeModal();
 					break;
@@ -1181,13 +1210,62 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 			if (e.key === 'Escape') closeModal(); 			if (modal.classList.contains('open')) { 				if (e.key === 'ArrowLeft') go(-1); 				if (e.key === 'ArrowRight') go(1); 			}
 		});
 
+		/* ---------- draft (saved in this browser only) ---------- */
+		const DRAFT_KEY = 'ih-haya-draft-v1';
+		let draftTimer: any = 0;
+		const saveDraft = () => {
+			const b = $('#cz-draft') as HTMLElement;
+			try {
+				localStorage.setItem(DRAFT_KEY, JSON.stringify({ S, custom: tpl.events.filter((e: D) => e.custom), at: Date.now() }));
+				b.textContent = 'Draft saved';
+			} catch (e) {
+				b.textContent = 'Could not save';
+			}
+			clearTimeout(draftTimer);
+			draftTimer = setTimeout(() => (b.textContent = 'Save draft'), 1800);
+		};
+		const buildSteps = () => {
+			($('#cz-steps') as HTMLElement).innerHTML = STEPS.map(
+				(s) =>
+					`<section class="st" data-n="${s.n}"><button class="st-h" type="button" data-open="${s.n}" aria-expanded="false"><span class="st-n">${s.n}</span><span class="st-t"><b>${s.title}</b><small data-sum="${s.n}">${s.sub}</small></span><svg class="chev" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button><div class="st-b" data-body="${s.n}"></div></section>`
+			).join('');
+		};
+		const restoreDraft = () => {
+			try {
+				const d = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null');
+				if (!d || !d.S) return;
+				(d.custom || []).forEach((e: D) => {
+					if (!tpl.events.some((x: D) => x.id === e.id)) tpl.events.push(e);
+				});
+				const fresh = blank();
+				tpl.events.forEach((e: D) => (fresh.events[e.id] = { on: false, date: '', time: '', venue: '' }));
+				S = Object.assign(fresh, d.S);
+				buildSteps();
+				ensureActive();
+				openStep(S.open || 1);
+				renderTabs();
+				scheduleDraw();
+				updateSummaries();
+				updatePrice();
+			} catch (e) {}
+			($('#cz-draftbox') as HTMLElement).hidden = true;
+		};
+
 		/* ---------- start ---------- */
 		($('#cz-name') as HTMLElement).textContent = tpl.name;
 		($('#cz-price') as HTMLElement).textContent = price;
-		($('#cz-steps') as HTMLElement).innerHTML = STEPS.map(
-			(s) =>
-				`<section class="st" data-n="${s.n}"><button class="st-h" type="button" data-open="${s.n}" aria-expanded="false"><span class="st-n">${s.n}</span><span class="st-t"><b>${s.title}</b><small data-sum="${s.n}">${s.sub}</small></span><svg class="chev" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button><div class="st-b" data-body="${s.n}"></div></section>`
-		).join('');
+		buildSteps();
+		try {
+			if (localStorage.getItem(DRAFT_KEY)) ($('#cz-draftbox') as HTMLElement).hidden = false;
+		} catch (e) {}
+		root.addEventListener('input', (e) => {
+			const t = e.target as HTMLInputElement;
+			if (t.id === 'cz-pin' || t.id === 'cz-pin2') {
+				t.value = t.value.replace(/\D/g, '').slice(0, 4);
+				if (t.id === 'cz-pin') pinA = t.value;
+				else pinB = t.value;
+			}
+		});
 		loadBg(L.bg);
 		loadBg(HL.bg);
 		openStep(S.open || 1);

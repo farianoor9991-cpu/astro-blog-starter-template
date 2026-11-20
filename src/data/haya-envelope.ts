@@ -2,7 +2,9 @@
 // Edit a value, commit, and the demo page updates. Sizes marked % are of the phone-width column unless stated.
 
 export const hayaEnvelope = {
-	background: '#fbf3e4', // page colour (cream)
+	background: '#fbf3e4', // page colour (cream), shown until the silk pictures load
+	backgroundImage: '/haya-bg.jpg', // silk background on phones (9:16)
+	backgroundImageWide: '/haya-bg-wd.jpg', // silk background on laptops (16:9)
 	footerBackground: '#1d4a30', // closing section and the strip that rises after the tap
 	stageMaxWidth: 430, // widest the invitation column gets on a laptop (px)
 
@@ -30,10 +32,10 @@ export const hayaEnvelope = {
 
 	images: {
 		tray: '/haya2-tray.webp',
-		closed: '/haya3-closed.webp', // the full closed envelope
+		closed: '/haya3-closed.webp?v=2', // the full closed envelope
 		body: '/haya3-body.webp', // the open envelope without its flap
 		front: '/haya3-front.webp', // the front of the pocket (cut-out where the cards show)
-		flap: '/haya3-flap.webp', // the flap, outside (with the wax seal)
+		flap: '/haya3-flap.webp?v=2', // the flap, outside (with the wax seal)
 		flapBack: '/haya3-flapback.webp', // the flap, inside (what you see once it is open)
 	},
 
@@ -51,7 +53,11 @@ export const hayaEnvelope = {
 	},
 
 	// The ring of light from the wax seal
-	ring: { enabled: true, color: '255, 236, 170', duration: 2000, scale: 7 },
+	ring: { enabled: false, color: '255, 236, 170', duration: 2000, scale: 7 },
+
+	// The golden ripple from the wax seal (runs across the whole screen) and the slow gold confetti
+	ripple: { enabled: true, duration: 1900 },
+	confetti: { enabled: true, count: 46, spawnMs: 2800, totalMs: 8000 },
 
 	// Optional background music. Put the file in the public folder and write its name, e.g. '/haya-music.mp3'. Empty = no music.
 	music: { src: '', volume: 0.6 },

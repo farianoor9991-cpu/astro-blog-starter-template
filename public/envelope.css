@@ -25,9 +25,13 @@ body {
 	height: 100vh;
 	height: 100svh;
 	min-height: 620px;
-	background: var(--ev-bg);
+	background: var(--ev-bg) var(--ev-bgimg, none) center / cover no-repeat;
 	overflow: hidden;
 }
+@media (min-width: 700px) and (orientation: landscape) {
+	.ev-stage { background-image: var(--ev-bgimg-w, var(--ev-bgimg, none)); }
+}
+.ev-fx { position: fixed; left: 0; top: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 30; }
 .ev-col {
 	position: relative;
 	width: var(--w);
