@@ -4,6 +4,7 @@ export interface Design {
 	name: string; // shown on the card, keep each name unique
 	image: string; // 9:16 thumbnail
 	occasion?: string; // Wedding, Mehndi, Walima, Birthday, Hajj/Umrah, Aqeeqah, Baby
+	demo?: string; // the LIVE badge opens this demo (falls back to link)
 	link?: string; // websites: live demo URL | videos: video link or file
 	price?: string; // only if this one design has its own price
 	note?: string; // small line under the price
@@ -58,7 +59,7 @@ const SAMPLE = '/sample-design.jpg';
 ------------------------------------------------------------------- */
 
 const envelopes: Design[] = [
-	{ name: 'Haya', image: '/haya-cover.jpg', occasion: 'Wedding', link: '/products/haya', price: 'Rs. 3,999 - Rs. 10,999+', note: 'Starts with 1 event + upto 50 personalized guest invitations' },
+	{ name: 'Haya', image: '/haya-cover.jpg', occasion: 'Wedding', link: '/products/haya', demo: '/demo-haya', price: 'Rs. 3,999 - Rs. 10,999+', note: 'Starts with 1 event + upto 50 personalized guest invitations' },
 ];
 
 const websites: Design[] = [

@@ -558,10 +558,10 @@ const save = () => {};
 			const c = S.couple;
 			const sm = tpl.sample;
 			return `
-				<div class="f"><label>Bride's name</label>${inp('data-couple="brideName"', c.brideName, sm.brideName)}</div>
-				<div class="f"><label>Bride's parents</label><div class="pre"><span>D/O Mr &amp; Mrs</span>${inp('data-couple="brideParents"', c.brideParents, sm.brideParents)}</div></div>
 				<div class="f"><label>Groom's name</label>${inp('data-couple="groomName"', c.groomName, sm.groomName)}</div>
-				<div class="f"><label>Groom's parents</label><div class="pre"><span>S/O Mr &amp; Mrs</span>${inp('data-couple="groomParents"', c.groomParents, sm.groomParents)}</div><p class="hint">Type only the names, like the examples. We add "D/O Mr &amp; Mrs" and "S/O Mr &amp; Mrs" for you.</p></div>
+				<div class="f"><label>Groom's parents</label><div class="pre"><span>S/O Mr &amp; Mrs</span>${inp('data-couple="groomParents"', c.groomParents, sm.groomParents)}</div></div>
+				<div class="f"><label>Bride's name</label>${inp('data-couple="brideName"', c.brideName, sm.brideName)}</div>
+				<div class="f"><label>Bride's parents</label><div class="pre"><span>D/O Mr &amp; Mrs</span>${inp('data-couple="brideParents"', c.brideParents, sm.brideParents)}</div><p class="hint">Type only the names, like the examples. We add "D/O Mr &amp; Mrs" and "S/O Mr &amp; Mrs" for you.</p></div>
 				<div class="err" data-err="1"></div>
 				<div class="acts" style="margin:0 0 10px"><button class="btn-o" type="button" data-act="sample">Fill with sample details</button></div><div class="acts"><button class="btn-g" type="button" data-act="next" data-n="1">Continue to Step 2</button></div>`;
 		};
@@ -644,38 +644,41 @@ const save = () => {};
 				`<button type="button" class="opt${m === mode ? ' on' : ''}" data-mode="${mode}" aria-pressed="${m === mode}"><span class="cb"></span><span class="ot"><b>${title}</b><small>${desc}</small></span></button>`;
 			const gTotal = allGuests().length;
 			const personal = (what: string) => `<div class="subw"><button type="button" class="opt sub${S.guests.on ? ' on' : ''}" data-act="gtoggle" aria-pressed="${S.guests.on}"><span class="cb"></span><span class="ot"><b>Add personalized greeting cards <span style="color:#b8793c;white-space:nowrap">(+${fmtRs(P_ADDON)})</span></b><small><span style="color:#1a1a1a;font-weight:500">With this add-on, you receive:</span><br>A. ${what}<br>B. A personal link for each guest you list (up to ${GUEST_MAX}). Their first card greets them by name: "Dear Shaheer Aslam".</small></span></button>`;
-			const gBox = (key: string, text: string, title: string) =>
+			const gBox = (key: string, text: string, title: string, sub?: string) =>
 				S.guests.on
-					? `<div class="f"><label>${title}</label><textarea data-gst="${key}" rows="4" maxlength="3000" placeholder="Hamza Chachu&#10;Mr. Ali &amp; Family&#10;Meer Alam" autocomplete="off">${esc(text)}</textarea><p class="hint" data-gtotal>${gTotal} of ${GUEST_MAX} guests added</p><p class="hint" data-gwarn style="color:#b3261e" hidden></p><p class="hint">One name per line. We add "Dear" for you, so Shaheer Aslam becomes "Dear Shaheer Aslam".</p></div>`
+					? `<div class="f"><label><b>${title}</b></label>${sub ? `<p class="hint" style="margin:0 0 6px">${sub}</p>` : ''}<textarea data-gst="${key}" rows="4" maxlength="3000" placeholder="Hamza Chachu&#10;Mr. Ali &amp; Family&#10;Meer Alam" autocomplete="off">${esc(text)}</textarea><p class="hint" data-gtotal>${gTotal} of ${GUEST_MAX} guests added</p><p class="hint" data-gwarn style="color:#b3261e" hidden></p><p class="hint">One name per line. We add "Dear" for you, so Shaheer Aslam becomes "Dear Shaheer Aslam".</p></div>`
 					: '';
-					let out = '';
-			if (m !== 'many') out += '<div class="opts">' + opt('one', 'One link for everyone', 'All your cards in a single link.') + '</div>';
+			const oneOpt = '<div class="opts">' + opt('one', 'One link for everyone', 'All your cards in a single link.') + '</div>';
+			const manyOpt = '<div class="opts">' + opt('many', 'Different links for different guests', 'For example, close family see all cards and friends see only a few chosen cards.') + '</div>';
+			let one = oneOpt;
+			let many = manyOpt;
 			if (m === 'one') {
-				out += personal('One link with all your cards, for everyone.') + gBox('one', S.guests.one, 'Guests who get their own personalized link') + '</div>';
-				out += `<p class="hint">Your link will show: ${cards.map((c) => esc(label(c))).join(', ')}.</p>`;
+				one = oneOpt + personal('One link with all your cards, for everyone.') + gBox('one', S.guests.one, 'Guests who get their own personalized link') + '</div>';
+				one += `<p class="hint">Your link will show: ${cards.map((c) => esc(label(c))).join(', ')}.</p>`;
 			}
-			if (m !== 'one') out += '<div class="opts">' + opt('many', 'Different links for different guests', 'For example, close family see all cards and friends see only a few chosen cards.') + '</div>';
 			if (m === 'many') {
-				out += personal('Separate links, each with the cards you chose for that group.') + '</div>';
-				out +=
+				many = manyOpt + personal('Separate links, each with the cards you chose for that group.') + '</div>';
+				many +=
 					S.links.list
 						.map(
 							(lk: D, i: number) => `
 						<div class="lk">
-							<div class="f"><label>Link ${i + 1} name</label><input data-lk="${lk.id}" data-k="label" value="${esc(lk.label)}" placeholder="e.g. ${['Nikkah &amp; Baraat only', 'Walima only', 'Close family', 'Friends'][i % 4]}" autocomplete="off"></div>
-							<p class="hint" style="margin:10px 0 4px;color:#1a1a1a"><b>Choose the events for Link ${i + 1}</b></p><div class="chips">${evCards
+							<div class="f"><label><b>Group ${i + 1} name</b></label><input data-lk="${lk.id}" data-k="label" value="${esc(lk.label)}" placeholder="e.g. ${['Nikkah &amp; Baraat only', 'Walima only', 'Close family', 'Friends'][i % 4]}" autocomplete="off"></div>
+							<p class="hint" style="margin:10px 0 2px;color:#1a1a1a"><b>Choose the events for Group ${i + 1}</b></p><p class="hint" style="margin:0 0 6px">Everyone in this group will receive these selected event cards only</p><div class="chips">${evCards
 								.map(
 									(c) =>
 										`<label class="chip ck${lk.cards.indexOf(c) >= 0 ? ' on' : ''}"><input type="checkbox" data-lk="${lk.id}" data-card-pick="${c}" ${lk.cards.indexOf(c) >= 0 ? 'checked' : ''}>${esc(label(c))}</label>`
 								)
 								.join('')}</div>
-							${gBox(lk.id, lk.guests || '', 'Guests for Link ' + (i + 1) + ' (each gets their own personalized link)')}
+							${gBox(lk.id, lk.guests || '', 'Guest names for Group ' + (i + 1), 'Each gets their own personalized link')}
 							<p class="hint" data-count="${lk.id}">${lk.cards.length} event${lk.cards.length === 1 ? '' : 's'} selected</p>
-							${S.links.list.length > 1 ? `<button type="button" class="lnk" data-act="rmlink" data-lk="${lk.id}">Remove this link</button>` : ''}
+							${S.links.list.length > 1 ? `<button type="button" class="lnk" data-act="rmlink" data-lk="${lk.id}">Remove this group</button>` : ''}
 						</div>`
 						)
-						.join('') + hostNote + `<button type="button" class="btn-o" data-act="addlink">Add another link</button>`;
+						.join('') + hostNote + `<button type="button" class="btn-o" data-act="addlink">Add another group</button>`;
 			}
+			// the option that is not chosen stays visible just above the Continue button
+			const out = m === 'many' ? many + one : one + many;
 			return `${out}<div class="err" data-err="4"></div><div class="acts"><button class="btn-g" type="button" data-act="next" data-n="4">Continue to Step 5</button></div>`;
 		};
 
@@ -698,7 +701,7 @@ const save = () => {};
 				linkLines = `<p>One link with ${cards.length} card${cards.length === 1 ? '' : 's'}</p>`;
 			} else {
 				linkLines =
-					`<p>${S.links.list.length} link${S.links.list.length === 1 ? '' : 's'}</p>` +
+					`<p>${S.links.list.length} group${S.links.list.length === 1 ? '' : 's'}</p>` +
 					S.links.list.map((lk: D) => `<p>${esc(lk.label || 'Untitled')}: ${lk.cards.map((k: string) => esc(label(k))).concat(S.hosts.want ? ['Reception Hosts'] : []).join(', ')}</p>`).join('');
 			}
 			let guestLines = '';
@@ -710,7 +713,7 @@ const save = () => {};
 						.map((g: D, i: number) => {
 							const evs = ['Greeting card'].concat(guestEvents(g).map((id: string) => esc(label(id))));
 							if (S.hosts.want) evs.push('Reception Hosts');
-							return `<p><button type="button" class="lnk" data-act="gpreview" data-gi="${i}">${esc(g.name)}</button> sees: ${evs.join(', ')}${g.link ? ' (' + esc(g.link.label || 'Link ' + g.linkNo) + ')' : ''}</p>`;
+							return `<p><button type="button" class="lnk" data-act="gpreview" data-gi="${i}">${esc(g.name)}</button> sees: ${evs.join(', ')}${g.link ? ' (' + esc(g.link.label || 'Group ' + g.linkNo) + ')' : ''}</p>`;
 						})
 						.join('') +
 					(gs.length > 10 ? `<p><button type="button" class="lnk" data-act="gmore">${gMore ? 'Show less' : '+' + (gs.length - 10) + ' more...'}</button></p>` : '');
@@ -730,7 +733,7 @@ const save = () => {};
 				${S.guests.on && S.links.mode ? '<div class="gwin"><b>Greeting cards</b><small>One for each guest. Each guest\'s link opens with only their own greeting card.</small><div class="gal" id="gal-g"></div></div>' : ''}
 				<div class="gwin"><b>Event cards</b><small>Swipe to see all cards.</small><div class="gal" id="gal"></div></div>
 				<p class="hint">This is a preview. Your final cards will not have the watermark.</p>
-				<div class="gwin"><b>Set your Edit PIN</b><small>Your order link can only be viewed. To edit your order later you will need this 4-digit PIN. Please do not share it.</small>
+				<div class="gwin"><b>Set your Edit PIN</b><small>You enter this PIN only once, here. This device will not ask for it again. If you open your order from another phone or computer, it asks for the PIN once. Please do not share it.</small>
 				<div style="display:grid;gap:8px;max-width:260px;margin-top:8px"><input id="cz-pin" type="password" inputmode="numeric" autocomplete="off" maxlength="4" placeholder="4-digit PIN" value="${esc(pinA)}" style="padding:10px 12px;border:1px solid #d9c8a6;border-radius:10px;font:inherit"><input id="cz-pin2" type="password" inputmode="numeric" autocomplete="off" maxlength="4" placeholder="Repeat PIN" value="${esc(pinB)}" style="padding:10px 12px;border:1px solid #d9c8a6;border-radius:10px;font:inherit"></div><p class="hint" id="pin-err" style="color:#b3261e" hidden></p></div>
 				<div class="acts"><button class="btn-g" type="button" data-act="finish">Looks good, continue</button></div>
 				<div class="ok" id="finish-note" hidden></div>`;
@@ -753,7 +756,7 @@ const save = () => {};
 				1: S.done[1] ? `${tc(c.brideName)} and ${tc(c.groomName)}` : STEPS[0].sub,
 				2: S.done[2] ? `${evN} event${evN === 1 ? '' : 's'} chosen` : STEPS[1].sub,
 				3: S.done[3] ? (S.hosts.want ? `${hostCount()} host${hostCount() === 1 ? '' : 's'} added` : 'Skipped') : STEPS[2].sub,
-				4: S.done[4] ? (S.links.mode === 'one' ? 'One link for everyone' : `${S.links.list.length} link${S.links.list.length === 1 ? '' : 's'}`) + (S.guests.on ? `, ${allGuests().length} personalized` : '') : STEPS[3].sub,
+				4: S.done[4] ? (S.links.mode === 'one' ? 'One link for everyone' : `${S.links.list.length} group${S.links.list.length === 1 ? '' : 's'}`) + (S.guests.on ? `, ${allGuests().length} personalized` : '') : STEPS[3].sub,
 				5: STEPS[4].sub,
 			};
 			STEPS.forEach((s) => {
@@ -842,10 +845,10 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 			}
 			if (n === 4 && S.links.mode === 'many') {
 				syncLinks();
-				if (!S.links.list.length) er.push('Please add at least one link.');
+				if (!S.links.list.length) er.push('Please add at least one group.');
 				S.links.list.forEach((lk: D, i: number) => {
-					if (!lk.label.trim()) er.push(`Link ${i + 1}: please give it a name.`);
-					if (!lk.cards.length) er.push(`Link ${i + 1}: please choose at least one event.`);
+					if (!lk.label.trim()) er.push(`Group ${i + 1}: please give it a name.`);
+					if (!lk.cards.length) er.push(`Group ${i + 1}: please choose at least one event.`);
 				});
 			}
 			return er;
@@ -991,7 +994,7 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 					localStorage.setItem('ih-orders', JSON.stringify(list.slice(0, 20)));
 					localStorage.setItem('ih-pin-' + o.token, pinA); // remembered on this browser: no PIN prompt on the order page here
 				} catch (e) {}
-				orderBtn = `<p><b>Your order is ready.</b> Open it to find your invitation links, ready-to-send WhatsApp messages, and to edit your details at any time.</p><p><a class="btn-g" style="display:inline-block;text-decoration:none" href="/order?t=${o.token}">${esc(title)} &middot; Order No. ${o.orderNo}</a></p><p class="hint">Please save this order link and remember your PIN. The link only lets you view your order. You need the PIN to edit it.</p>`;
+				orderBtn = `<p><b>Your order is ready.</b> Open it to find your invitation links, ready-to-send WhatsApp messages, and to edit your details at any time.</p><p><a class="btn-g" style="display:inline-block;text-decoration:none" href="/order?t=${o.token}">${esc(title)} &middot; Order No. ${o.orderNo}</a></p><p class="hint">Please save this order link and remember your PIN. On another phone or computer you will need the PIN to edit your order.</p>`;
 				n.innerHTML = orderBtn;
 			} catch (e) {
 				n.textContent = 'We could not create your order right now. Please try again in a moment.';

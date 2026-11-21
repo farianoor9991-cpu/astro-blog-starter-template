@@ -40,7 +40,7 @@ const occasions = occasionData[type];
 						aria-label={card.name}
 					>
 						<img src={card.image} alt={card.name} loading="lazy" />
-						{(type === 'website' || type === 'envelope') && <span class="d-live">LIVE</span>}
+						{(type === 'website' || type === 'envelope') && <span class="d-live" role="link" tabindex="0" title="View live demo" data-demo={card.demo || card.link} onclick="event.preventDefault();event.stopPropagation();var u=this.dataset.demo;if(u)window.open(u,'_blank','noopener')" onkeydown="if(event.key==='Enter'){event.preventDefault();event.stopPropagation();var u=this.dataset.demo;if(u)window.open(u,'_blank','noopener')}">LIVE</span>}
 					</a>
 					<div class="d-body">
 						<p class="d-name">{card.name}</p>
@@ -226,6 +226,7 @@ const occasions = occasionData[type];
 		border-radius: 0;
 	}
 	.d-live {
+		cursor: pointer;
 		position: absolute;
 		top: 10px;
 		right: 10px;

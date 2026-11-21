@@ -8,7 +8,7 @@ export const hayaEnvelope = {
 	footerBackground: '#1d4a30', // closing section and the strip that rises after the tap
 	stageMaxWidth: 430, // widest the invitation column gets on a laptop (px)
 
-	welcome: { text: 'We\u2019re Honoured To Have You \u2665\uFE0F', font: 'Berkshire Swash', color: '#276041', size: 'clamp(1.7rem, 7.6vw, 2.3rem)', gap: 14 },
+	welcome: { text: 'We\u2019re Honoured To Have You!', font: 'Berkshire Swash', color: '#276041', size: 'clamp(1.7rem, 7.6vw, 2.3rem)', gap: 14 },
 	hint: { text: 'Tap the envelope to open', openText: 'Tap the cards to read', font: 'Unna', color: '#5a1016', size: '1.1rem' },
 
 	footer: {
