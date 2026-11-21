@@ -94,7 +94,7 @@
 		'<div class="ev-col">' +
 		'<h1 class="ev-title ev-rise">' + esc(S.welcome.text) + '</h1>' +
 		'<p class="ev-hint2" id="ev-hint2">' + esc(S.hint.openText) + '</p>' +
-		'<div class="ev-tray ev-rise" style="--d:.12s"><img src="' + esc(S.images.tray) + '" alt="" draggable="false"></div>' +
+		(S.images.tray ? '<div class="ev-tray ev-rise" style="--d:.12s"><img src="' + esc(S.images.tray) + '" alt="" draggable="false"></div>' : '') +
 		'<div class="ev-envbox ev-rise" style="--d:.24s">' +
 		'<div class="ev-env" id="ev-env">' +
 		'<div class="ev-lift" id="ev-lift">' +
@@ -115,14 +115,8 @@
 		'<p class="ev-hint" id="ev-hint">' + esc(S.hint.text) + '</p>' +
 		'<button class="ev-music" id="ev-music" type="button" aria-label="Music on or off" hidden></button>' +
 		'</div>' +
-		'<button class="ev-peek" id="ev-peek" type="button" aria-label="Scroll down"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>' +
 		'</div>' +
-		'<div class="ev-footwrap" id="ev-footwrap"><section class="ev-foot">' +
-		'<h2 class="ev-foot-h ev-fade">' + esc(S.footer.heading) + '</h2>' +
-		'<p class="ev-foot-m ev-fade">' + esc(S.footer.message) + '</p>' +
-		'<div class="ev-brandbox ev-fade"><span class="ev-by">' + esc(S.footer.createdBy) + '</span><span class="ev-brand">' + esc(S.footer.brandStart) + '<span>' + esc(S.footer.brandEnd) + '</span></span></div>' +
-		'<div><button class="ev-back ev-fade" id="ev-back" type="button">' + esc(S.buttons.goBackLabel) + '</button></div>' +
-		'</section></div>' +
+		'<div class="ev-footwrap" id="ev-footwrap"><a class="ev-credit" href="' + esc(S.footer.brandUrl || '/') + '"><span class="ev-by">' + esc(S.footer.createdBy) + '</span> <span class="ev-brand">' + esc(S.footer.brandStart) + '<span>' + esc(S.footer.brandEnd) + '</span></span></a></div>' +
 		'<div class="ev-flyers" id="ev-flyers"></div>' +
 		'<div class="ev-vw" id="ev-vw" aria-hidden="true">' +
 		'<div class="ev-vw-track" id="ev-vw-track"></div>' +
@@ -154,6 +148,45 @@
 	var hintEl = $('ev-hint');
 	var closeBtn = $('ev-close');
 	var backBtn = $('ev-back');
+
+	/* The tray is part of the silk background picture. Work out where it is on screen and put the envelope exactly in the middle of it. */
+	var trayLive = null;
+	var fitTray = function () {
+		var T = S.trayInBg;
+		if (!T || cfg.cardsOnly) return;
+		var st = stage.getBoundingClientRect();
+		var W = st.width, H = st.height;
+		var wide = window.matchMedia('(min-width: 700px) and (orientation: landscape)').matches;
+		var g = T.port;
+		if (wide) {
+			// laptop: the tray is its own picture; the invitation is laid out like on a phone, in the middle of the screen
+			var Lp = T.lap;
+			var colL = Math.min(W, H * Lp.colByH);
+			var trW = colL * Lp.trayByCol, trH = trW * Lp.ratio;
+			var cyL = H * Lp.cy;
+			var envHL = (L.envelopeWidth / 100) * colL * S.envelope.ratio;
+			rs.setProperty('--ev-max', Math.round(colL) + 'px');
+			rs.setProperty('--ev-tray-w', Math.round(trW) + 'px');
+			rs.setProperty('--ev-trayimg-b', Math.round(H - (cyL + trH / 2)) + 'px');
+			rs.setProperty('--ev-tray-b', Math.round(H - (cyL + envHL / 2) - colL * L.envelopeLift) + 'px');
+			trayLive = { cx: W / 2, cy: cyL, rx: (trW / 2) * 0.96, ry: (trH / 2) * 0.96 };
+			return;
+		}
+		rs.setProperty('--ev-tray-w', L.trayWidth + '%');
+		var Wv = W;
+		var sc = Math.max(Wv / g.iw, H / g.ih); // background-size: cover
+		var ox = (W - Wv) / 2 + (Wv - g.iw * sc) / 2, oy = (H - g.ih * sc) / 2;
+		var tw = g.w * g.iw * sc, th = g.h * g.ih * sc;
+		var cx = ox + g.cx * g.iw * sc, cy = oy + g.cy * g.ih * sc;
+		var colW = Math.min(Wv, tw); // the invitation column
+		var envW = (L.envelopeWidth / 100) * colW;
+		var envH = envW * S.envelope.ratio;
+		var bottom = H - (cy + envH / 2); // envelope bottom edge, measured from the bottom of the screen
+		rs.setProperty('--ev-max', Math.round(colW) + 'px');
+		rs.setProperty('--ev-tray-b', Math.round(bottom - colW * L.envelopeLift) + 'px');
+		trayLive = { cx: cx, cy: cy, rx: Math.min(tw / 2, Wv / 2 - 6) * 0.97, ry: Math.min(th / 2, H / 2 - 6) * 0.97 };
+	};
+	fitTray();
 	var vw = $('ev-vw');
 	var track = $('ev-vw-track');
 	var dotsEl = $('ev-dots');
@@ -562,11 +595,33 @@
 		});
 	}
 
-	/* ----- golden ripple from the wax seal (whole screen) and slow gold confetti ----- */
+	/* ----- magic effects: confetti on arrival, luminous rings from the wax seal, fairy dust while the cards come out ----- */
 	var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+	var tick = function (fn) {
+		// one animation loop per effect, driven by the GSAP ticker (falls back to requestAnimationFrame)
+		if (typeof gsap !== 'undefined' && gsap.ticker) {
+			gsap.ticker.add(fn);
+			return function () {
+				gsap.ticker.remove(fn);
+			};
+		}
+		var on = true;
+		var last = performance.now();
+		var loop = function (now) {
+			if (!on) return;
+			fn(now / 1000, (now - last) * 1000);
+			last = now;
+			requestAnimationFrame(loop);
+		};
+		requestAnimationFrame(loop);
+		return function () {
+			on = false;
+		};
+	};
 	var fxCanvas = function () {
 		var c = document.createElement('canvas');
 		c.className = 'ev-fx';
+		c.setAttribute('aria-hidden', 'true');
 		var dpr = Math.min(window.devicePixelRatio || 1, 1.5);
 		c.width = Math.round(window.innerWidth * dpr);
 		c.height = Math.round(window.innerHeight * dpr);
@@ -575,148 +630,350 @@
 		document.body.appendChild(c);
 		return { c: c, x: x, w: window.innerWidth, h: window.innerHeight };
 	};
+	var rnd = function (a, b) {
+		return a + Math.random() * (b - a);
+	};
+	var smooth = function (a, b, v) {
+		var k = Math.max(0, Math.min(1, (v - a) / (b - a)));
+		return k * k * (3 - 2 * k);
+	};
 	var sealPoint = function () {
 		var r = closedEl.getBoundingClientRect();
 		return { x: r.left + (r.width * ENV.sealX) / 100, y: r.top + (r.height * ENV.sealY) / 100 };
 	};
-	var fireRipple = function () {
-		if (reduceMotion || !S.ripple || !S.ripple.enabled) return;
-		var f = fxCanvas();
-		var o = sealPoint();
-		var R = Math.max(Math.hypot(o.x, o.y), Math.hypot(f.w - o.x, o.y), Math.hypot(o.x, f.h - o.y), Math.hypot(f.w - o.x, f.h - o.y)) * 1.05;
-		var dur = S.ripple.duration || 1900;
-		var t0 = performance.now();
-		var ease = function (t) {
-			return 0.5 - 0.5 * Math.cos(Math.PI * t); // gentle start, gentle end
-		};
-		var smooth = function (a, b, v) {
-			var k = Math.max(0, Math.min(1, (v - a) / (b - a)));
-			return k * k * (3 - 2 * k);
-		};
-		var stop = function () {
-			if (f.c.parentNode) f.c.parentNode.removeChild(f.c);
-		};
-		var frame = function (now) {
-			var t = (now - t0) / dur;
-			if (t >= 1) return stop();
-			var x = f.x;
-			x.clearRect(0, 0, f.w, f.h);
-			x.globalCompositeOperation = 'screen';
-			var r = Math.max(2, R * ease(t));
-			var a = smooth(0, 0.1, t) * (1 - smooth(0.5, 1, t));
-			var edge = Math.max(2.2, R * 0.004);
-			// central glow at the start
-			if (t < 0.4) {
-				var cg = x.createRadialGradient(o.x, o.y, 0, o.x, o.y, 110);
-				var ca = 0.5 * (1 - smooth(0, 0.4, t));
-				cg.addColorStop(0, 'rgba(255,241,204,' + ca + ')');
-				cg.addColorStop(1, 'rgba(255,241,204,0)');
-				x.fillStyle = cg;
-				x.fillRect(o.x - 110, o.y - 110, 220, 220);
-			}
-			// trailing illumination: a soft warm wash just behind the moving edge
-			var back = Math.min(r, Math.max(90, R * 0.22));
-			var tg = x.createRadialGradient(o.x, o.y, Math.max(0, r - back), o.x, o.y, r);
-			tg.addColorStop(0, 'rgba(232,194,122,0)');
-			tg.addColorStop(0.7, 'rgba(232,194,122,' + 0.07 * a + ')');
-			tg.addColorStop(1, 'rgba(232,194,122,' + 0.16 * a + ')');
-			x.fillStyle = tg;
-			x.beginPath();
-			x.arc(o.x, o.y, r, 0, Math.PI * 2);
-			x.fill();
-			// outer glow, feathered into the background
-			var gw = Math.max(26, R * 0.07);
-			var og = x.createRadialGradient(o.x, o.y, r, o.x, o.y, r + gw);
-			og.addColorStop(0, 'rgba(212,162,118,' + 0.3 * a + ')');
-			og.addColorStop(0.4, 'rgba(212,162,118,' + 0.1 * a + ')');
-			og.addColorStop(1, 'rgba(212,162,118,0)');
-			x.fillStyle = og;
-			x.beginPath();
-			x.arc(o.x, o.y, r + gw, 0, Math.PI * 2);
-			x.fill();
-			// luminous leading edge: very thin and soft
-			var rg = x.createRadialGradient(o.x, o.y, Math.max(0, r - edge * 2.6), o.x, o.y, r + edge * 2.6);
-			rg.addColorStop(0, 'rgba(232,194,122,0)');
-			rg.addColorStop(0.5, 'rgba(232,194,122,' + 0.75 * a + ')');
-			rg.addColorStop(0.5, 'rgba(240,208,142,' + 0.8 * a + ')');
-			rg.addColorStop(1, 'rgba(232,194,122,0)');
-			x.fillStyle = rg;
-			x.beginPath();
-			x.arc(o.x, o.y, r + edge * 2.6, 0, Math.PI * 2);
-			x.fill();
-			requestAnimationFrame(frame);
-		};
-		requestAnimationFrame(frame);
+	// a soft round glow, drawn once and re-used by every sparkle
+	var glowSprite = (function () {
+		var c = document.createElement('canvas');
+		c.width = c.height = 64;
+		var x = c.getContext('2d');
+		var g = x.createRadialGradient(32, 32, 0, 32, 32, 32);
+		g.addColorStop(0, 'rgba(252,249,241,1)');
+		g.addColorStop(0.18, 'rgba(240,215,160,0.85)');
+		g.addColorStop(0.45, 'rgba(212,162,118,0.28)');
+		g.addColorStop(1, 'rgba(212,162,118,0)');
+		x.fillStyle = g;
+		x.fillRect(0, 0, 64, 64);
+		return c;
+	})();
+	var drawStar = function (x, px, py, r, rot) {
+		// four-point glint
+		x.save();
+		x.translate(px, py);
+		x.rotate(rot);
+		x.beginPath();
+		x.moveTo(0, -r);
+		x.quadraticCurveTo(r * 0.13, -r * 0.13, r, 0);
+		x.quadraticCurveTo(r * 0.13, r * 0.13, 0, r);
+		x.quadraticCurveTo(-r * 0.13, r * 0.13, -r, 0);
+		x.quadraticCurveTo(-r * 0.13, -r * 0.13, 0, -r);
+		x.closePath();
+		x.fill();
+		x.restore();
 	};
+
+	/* --- 1. confetti: starts as soon as the page opens (once) --- */
+	var confettiDone = false;
 	var fireConfetti = function () {
 		var C = S.confetti;
-		if (reduceMotion || !C || !C.enabled) return;
+		if (confettiDone || reduceMotion || !C || !C.enabled) return;
+		confettiDone = true;
 		var f = fxCanvas();
 		var small = f.w < 700;
-		var total = Math.round(C.count * (small ? 0.75 : 1.2));
-		var colors = ['#E8C27A', '#D4A276', '#C9A25E', '#E3C88F', '#FFF1CC', '#F6EBD0'];
+		var total = Math.round(C.count * (small ? 0.8 : 1.25));
+		var kinds = [
+			{ col: '#D4A276', foil: true },
+			{ col: '#C9A25E', foil: true },
+			{ col: '#D8C7A7', foil: false },
+			{ col: '#FCF9F1', foil: false, paper: true },
+			{ col: '#E3C88F', foil: true },
+		];
 		var ps = [];
-		var t0 = performance.now();
-		var last = t0;
+		var t0 = null;
 		var spawned = 0;
-		var rnd = function (a, b) {
-			return a + Math.random() * (b - a);
-		};
 		var spawn = function () {
+			var k = kinds[Math.floor(Math.random() * kinds.length)];
 			ps.push({
-				x: rnd(0, f.w),
-				y: rnd(-30, -6),
-				w: rnd(2, 4.6),
-				h: rnd(1.4, 2.8),
-				vy: rnd(26, 62),
-				drift: rnd(10, 26),
+				x: rnd(-10, f.w + 10),
+				y: rnd(-40, -8),
+				w: k.paper ? rnd(7, 11) : rnd(6, 11),
+				h: k.paper ? rnd(4, 6.5) : rnd(3.4, 6),
+				vy: rnd(60, 120),
+				drift: rnd(14, 38),
 				ph: rnd(0, 6.28),
-				sp: rnd(0.6, 1.3),
+				sp: rnd(0.7, 1.6),
 				rot: rnd(0, 6.28),
-				vr: rnd(-1.6, 1.6),
-				al: rnd(0.35, 0.85),
-				col: colors[Math.floor(Math.random() * colors.length)],
-				round: Math.random() < 0.35,
+				vr: rnd(-2.2, 2.2),
+				flip: rnd(1.5, 4),
+				al: rnd(0.75, 1),
+				k: k,
 			});
 		};
-		var stop = function () {
+		var stop = null;
+		var finish = function () {
+			if (stop) stop();
 			if (f.c.parentNode) f.c.parentNode.removeChild(f.c);
 		};
-		var frame = function (now) {
+		stop = tick(function (time, dt) {
+			var now = performance.now();
+			if (t0 === null) t0 = now;
 			var el = now - t0;
-			var dt = Math.min(0.05, (now - last) / 1000);
-			last = now;
-			if (el > C.totalMs) return stop();
-			// a gentle stream during the opening, then no new pieces
-			var want = el < C.spawnMs ? Math.floor((el / C.spawnMs) * total) : total;
+			var d = Math.min(0.05, (dt || 16) / 1000);
+			// graceful emission: a lively start, then fewer and fewer pieces
+			var share = 1 - Math.pow(1 - Math.min(1, el / C.spawnMs), 1.8);
+			var want = Math.floor(total * share);
 			while (spawned < want) {
 				spawn();
 				spawned++;
 			}
-			var fade = 1 - Math.max(0, Math.min(1, (el - (C.totalMs - 2400)) / 2400));
 			var x = f.x;
 			x.clearRect(0, 0, f.w, f.h);
-			ps.forEach(function (p) {
-				p.y += p.vy * dt;
-				p.ph += p.sp * dt;
-				p.x += Math.sin(p.ph) * p.drift * dt;
-				p.rot += p.vr * dt;
-				if (p.y > f.h + 10) return;
+			var alive = 0;
+			for (var i = 0; i < ps.length; i++) {
+				var p = ps[i];
+				if (p.y > f.h + 14) continue;
+				alive++;
+				p.y += p.vy * d;
+				p.ph += p.sp * d;
+				p.x += Math.sin(p.ph) * p.drift * d;
+				p.rot += p.vr * d;
+				var sy = Math.abs(Math.cos(p.rot * p.flip * 0.5)) * 0.85 + 0.15; // paper turning over
 				x.save();
-				x.globalAlpha = p.al * fade;
+				x.globalAlpha = p.al * (p.y < 40 ? Math.max(0, p.y + 40) / 80 : 1);
 				x.translate(p.x, p.y);
 				x.rotate(p.rot);
-				x.fillStyle = p.col;
-				if (p.round) {
-					x.beginPath();
-					x.ellipse(0, 0, p.w / 2, p.h / 2, 0, 0, Math.PI * 2);
-					x.fill();
-				} else x.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+				x.scale(1, sy);
+				if (p.k.paper) {
+					x.shadowColor = 'rgba(120,88,46,0.45)';
+					x.shadowBlur = 2.5;
+				}
+				x.fillStyle = p.k.col;
+				x.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+				if (p.k.foil) {
+					// a thin bright edge makes the piece look like gold foil
+					x.fillStyle = 'rgba(255,244,214,' + 0.55 * sy + ')';
+					x.fillRect(-p.w / 2, -p.h / 2, p.w, p.h * 0.32);
+				}
 				x.restore();
-			});
-			requestAnimationFrame(frame);
+			}
+			if (spawned >= total && alive === 0) finish();
+		});
+	};
+
+	/* --- 2. luminous rings from the centre of the wax seal --- */
+	var fireRipple = function () {
+		var Rp = S.ripple;
+		if (reduceMotion || !Rp || !Rp.enabled) return;
+		var f = fxCanvas();
+		var o = sealPoint();
+		// the ring stops at the edge of the tray (an oval), nothing beyond it
+		var TL = trayLive || (function () { var e = envEl.getBoundingClientRect(); return { cx: o.x, cy: o.y, rx: e.width * 0.7, ry: e.height * 0.9 }; })();
+		var R = TL.rx;
+		var yk = TL.ry / TL.rx;
+		var dur = Rp.duration;
+		var t0 = null;
+		var rings = [
+			{ d: 0, k: 1, ang: rnd(0, 6.28), dots: [] },
+		];
+		rings.forEach(function (rg) {
+			// shimmering specks on a few stretches of each ring
+			var arcs = 2 + Math.floor(Math.random() * 2);
+			for (var a = 0; a < arcs; a++) {
+				var c0 = rnd(0, 6.28);
+				var span = rnd(0.5, 1.1);
+				var n = 5 + Math.floor(Math.random() * 4);
+				for (var i = 0; i < n; i++) rg.dots.push({ a: c0 + rnd(-span, span) / 2, o: rnd(-9, 9), s: rnd(0.9, 2.2), ph: rnd(0, 6.28), sp: rnd(5, 11) });
+			}
+		});
+		var stop = null;
+		var finish = function () {
+			if (stop) stop();
+			if (f.c.parentNode) f.c.parentNode.removeChild(f.c);
 		};
-		requestAnimationFrame(frame);
+		stop = tick(function () {
+			var now = performance.now();
+			if (t0 === null) t0 = now;
+			var t = (now - t0) / dur;
+			if (t >= 1) return finish();
+			var x = f.x;
+			x.clearRect(0, 0, f.w, f.h);
+			x.globalCompositeOperation = 'screen';
+			// the glow at the seal swells for a moment, then fades gently
+			var cg = smooth(0, 0.16, t) * (1 - smooth(0.16, 0.6, t));
+			if (cg > 0.002) {
+				var cr = 70 + 90 * smooth(0, 0.3, t);
+				var g = x.createRadialGradient(o.x, o.y, 0, o.x, o.y, cr);
+				g.addColorStop(0, 'rgba(252,249,241,' + 0.62 * cg + ')');
+				g.addColorStop(0.35, 'rgba(232,194,122,' + 0.34 * cg + ')');
+				g.addColorStop(1, 'rgba(212,162,118,0)');
+				x.fillStyle = g;
+				x.fillRect(o.x - cr, o.y - cr, cr * 2, cr * 2);
+			}
+			rings.forEach(function (rg) {
+				var u = (t - rg.d) / (1 - rg.d);
+				if (u <= 0) return;
+				var e = 1 - Math.pow(1 - u, 1.9); // quick start, long soft finish
+				// the ring starts at the seal and ends as the outline of the tray, reaching all its sides and corners
+				var oo = { x: o.x + (TL.cx - o.x) * e, y: o.y + (TL.cy - o.y) * e };
+				x.setTransform(1, 0, 0, yk, 0, oo.y * (1 - yk));
+				var r = 14 + (R - 14) * e;
+				var a = rg.k * smooth(0, 0.08, u) * Math.pow(1 - smooth(0.5, 1, u), 1.2);
+				if (a < 0.004) return;
+				var wd = 10 + r * 0.045; // rings grow softer as they travel
+				// soft wash just inside the ring
+				var tr = x.createRadialGradient(oo.x, oo.y, Math.max(0, r - wd * 5), oo.x, oo.y, r);
+				tr.addColorStop(0, 'rgba(232,194,122,0)');
+				tr.addColorStop(1, 'rgba(232,194,122,' + 0.12 * a + ')');
+				x.fillStyle = tr;
+				x.beginPath();
+				x.arc(oo.x, oo.y, r, 0, 6.2832);
+				x.fill();
+				// feathered body of the ring (champagne gold), brightness varies around it
+				var lg = x.createRadialGradient(oo.x, oo.y, Math.max(0, r - wd * 1.8), oo.x, oo.y, r + wd * 1.8);
+				lg.addColorStop(0, 'rgba(212,162,118,0)');
+				lg.addColorStop(0.42, 'rgba(212,162,118,' + 0.38 * a + ')');
+				lg.addColorStop(0.5, 'rgba(238,208,150,' + 0.62 * a + ')');
+				lg.addColorStop(0.58, 'rgba(212,162,118,' + 0.38 * a + ')');
+				lg.addColorStop(1, 'rgba(212,162,118,0)');
+				x.fillStyle = lg;
+				x.beginPath();
+				x.arc(oo.x, oo.y, r + wd * 1.8, 0, 6.2832);
+				x.fill();
+				// ivory highlight on some stretches of the ring only (organic, not uniform)
+				if (x.createConicGradient) {
+					var cg2 = x.createConicGradient(rg.ang + u * 0.9, oo.x, oo.y);
+					cg2.addColorStop(0, 'rgba(252,249,241,0)');
+					cg2.addColorStop(0.12, 'rgba(252,249,241,' + 0.75 * a + ')');
+					cg2.addColorStop(0.3, 'rgba(252,249,241,0)');
+					cg2.addColorStop(0.58, 'rgba(252,249,241,' + 0.45 * a + ')');
+					cg2.addColorStop(0.72, 'rgba(252,249,241,0)');
+					cg2.addColorStop(1, 'rgba(252,249,241,0)');
+					x.strokeStyle = cg2;
+					x.lineWidth = Math.max(1.2, wd * 0.22);
+					x.beginPath();
+					x.arc(oo.x, oo.y, r, 0, 6.2832);
+					x.stroke();
+				}
+				// shimmering specks
+				rg.dots.forEach(function (d) {
+					var tw = 0.5 + 0.5 * Math.sin(d.ph + t * d.sp * 6);
+					var aa = a * tw * 0.95;
+					if (aa < 0.02) return;
+					var ang = d.a + u * 0.35;
+					var px = oo.x + Math.cos(ang) * (r + d.o);
+					var py = oo.y + Math.sin(ang) * (r + d.o);
+					var sz = d.s * 7;
+					x.globalAlpha = Math.min(1, aa);
+					x.drawImage(glowSprite, px - sz, py - sz, sz * 2, sz * 2);
+				});
+				x.globalAlpha = 1;
+			});
+			x.setTransform(1, 0, 0, 1, 0, 0);
+			x.globalCompositeOperation = 'source-over';
+		});
+	};
+
+	/* --- 3. fairy dust and twinkling stars while the flap opens and the cards come out --- */
+	var dust = null;
+	var startDust = function () {
+		var Sp = S.sparkle;
+		if (reduceMotion || !Sp || !Sp.enabled) return;
+		stopDust(true);
+		var f = fxCanvas();
+		var ps = [];
+		var rate = 0; // new particles per second
+		var carry = 0;
+		var fading = false;
+		var fadeT = 0;
+		var last = performance.now();
+		var stop = null;
+		var spawn = function () {
+			var r = envEl.getBoundingClientRect();
+			var star = Math.random() < Sp.starShare;
+			// from inside the envelope, and (once the cards rise) around the envelope and the cards
+			var wide = dust.mode === 2;
+			var fr = flapEl.getBoundingClientRect();
+			var px = wide ? rnd(r.left - r.width * 0.12, r.right + r.width * 0.12) : rnd(fr.left + fr.width * 0.2, fr.right - fr.width * 0.185);
+			var py = wide ? rnd(r.top - r.height * 0.55, r.bottom - r.height * 0.15) : rnd(fr.top + fr.height * 0.15, fr.bottom - fr.height * 0.15);
+			ps.push({
+				x: px,
+				y: py,
+				vx: rnd(-9, 9) + (px - (r.left + r.width / 2)) * 0.05,
+				vy: rnd(-26, -8),
+				s: star ? rnd(3.2, 6.2) : rnd(0.9, 2.1),
+				star: star,
+				life: 0,
+				max: rnd(2.2, 4.2),
+				ph: rnd(0, 6.28),
+				rot: rnd(-0.4, 0.4),
+				al: rnd(0.5, 1),
+			});
+		};
+		dust = {
+			c: f.c,
+			mode: 1,
+			setRate: function (r) {
+				rate = r;
+			},
+			fade: function () {
+				fading = true;
+				fadeT = performance.now();
+				rate = 0;
+			},
+			kill: function () {
+				if (stop) stop();
+				if (f.c.parentNode) f.c.parentNode.removeChild(f.c);
+			},
+		};
+		stop = tick(function () {
+			var now = performance.now();
+			var d = Math.min(0.05, (now - last) / 1000);
+			last = now;
+			carry += rate * d;
+			while (carry >= 1 && ps.length < Sp.max) {
+				spawn();
+				carry -= 1;
+			}
+			if (carry > 3) carry = 0;
+			var x = f.x;
+			x.clearRect(0, 0, f.w, f.h);
+			x.globalCompositeOperation = 'screen';
+			var g = fading ? 1 - smooth(0, Sp.fadeMs, now - fadeT) : 1;
+			var alive = 0;
+			for (var i = 0; i < ps.length; i++) {
+				var p = ps[i];
+				if (p.life >= p.max) continue;
+				alive++;
+				p.life += d;
+				p.x += p.vx * d;
+				p.y += p.vy * d;
+				p.vx += Math.sin(p.ph + p.life * 2) * 5 * d;
+				var u = p.life / p.max;
+				var a = p.al * g * smooth(0, 0.18, u) * (1 - smooth(0.6, 1, u));
+				if (a < 0.01) continue;
+				if (p.star) {
+					var tw = 0.35 + 0.65 * Math.abs(Math.sin(p.life * 5 + p.ph)); // brief twinkle
+					x.globalAlpha = a * tw * 0.55;
+					var gs = p.s * 5;
+					x.drawImage(glowSprite, p.x - gs, p.y - gs, gs * 2, gs * 2);
+					x.globalAlpha = a * tw;
+					x.fillStyle = '#FCF9F1';
+					drawStar(x, p.x, p.y, p.s * (0.7 + 0.5 * tw), p.rot);
+				} else {
+					x.globalAlpha = a;
+					var ds = p.s * 4.2;
+					x.drawImage(glowSprite, p.x - ds, p.y - ds, ds * 2, ds * 2);
+				}
+			}
+			x.globalAlpha = 1;
+			x.globalCompositeOperation = 'source-over';
+			if (fading && g <= 0.001 && alive === 0) stopDust(false);
+			else if (fading && g <= 0.001) stopDust(false);
+		});
+	};
+	var stopDust = function (silent) {
+		if (!dust) return;
+		dust.kill();
+		dust = null;
 	};
 
 	var fireRing = function () {
@@ -731,6 +988,37 @@
 
 	/* ----- the opening / closing animation (GSAP): one timeline, played forward to open, backwards to close ----- */
 	var D = S.anim;
+	// CSS-style cubic-bezier as a GSAP ease (no plugin needed)
+	var bez = function (x1, y1, x2, y2) {
+		var cx = 3 * x1, bx = 3 * (x2 - x1) - cx, ax = 1 - cx - bx;
+		var cy = 3 * y1, by = 3 * (y2 - y1) - cy, ay = 1 - cy - by;
+		var X = function (t) { return ((ax * t + bx) * t + cx) * t; };
+		var Y = function (t) { return ((ay * t + by) * t + cy) * t; };
+		var dX = function (t) { return (3 * ax * t + 2 * bx) * t + cx; };
+		return function (p) {
+			if (p <= 0) return 0;
+			if (p >= 1) return 1;
+			var t = p;
+			for (var i = 0; i < 8; i++) {
+				var e = X(t) - p;
+				if (Math.abs(e) < 1e-5) return Y(t);
+				var d = dX(t);
+				if (Math.abs(d) < 1e-6) break;
+				t -= e / d;
+			}
+			var lo = 0, hi = 1;
+			t = p;
+			for (var k = 0; k < 24; k++) {
+				var xv = X(t);
+				if (Math.abs(xv - p) < 1e-5) break;
+				if (xv < p) lo = t; else hi = t;
+				t = (lo + hi) / 2;
+			}
+			return Y(t);
+		};
+	};
+	var easeUp = bez(0.42, 0.04, 0.22, 1); // opening: soft start, long gentle finish
+	var easeDown = bez(0.4, 0, 0.2, 1); // closing and settling: smooth in and out
 	var tl = null;
 	var cardW = 0; // px, set in buildTimeline
 	var tLiftEnd = 0;
@@ -817,26 +1105,43 @@
 		tl.set(flapEl, { zIndex: 1 }, tf0 + D.flap / 2);
 		// 4. when the flap is open, the whole stack lifts a little together
 		var tLift = tf0 + D.flap * 0.7;
-		tLiftEnd = tLift + 0.55;
+		tLiftEnd = tLift + 0.9;
 		cards.forEach(function (c) {
-			tl.to(c.el, { y: c.pose.lift.y, duration: 0.55, ease: 'power2.out' }, tLift);
+			tl.to(c.el, { y: c.pose.lift.y, duration: 0.9, ease: 'sine.inOut' }, tLift);
 		});
 		// 5. then the first card steps out and stops in front; the others follow one by one and line up behind it
 		var step = D.cardStagger;
 		var tc = tf0 + D.flap + 0.1;
-		var up = D.cards * 0.55;
+		var up = D.cardUp;
 		cards.forEach(function (c) {
 			var d = c.pose.kk * step;
-			tl.to(c.el, { y: c.pose.pile.out, duration: up, ease: 'power2.out' }, tc + d);
+			tl.to(c.el, { y: c.pose.pile.out, duration: up, ease: easeUp }, tc + d);
 			tl.call(
 				function () {
 					cardsTop.appendChild(c.el);
 				},
 				null,
-				tc + d + up
+				tc + d + up * 0.8
 			);
-			tl.to(c.el, { y: c.pose.pile.y, x: c.pose.pile.x, scale: c.pose.pile.s, duration: D.cards * 0.75, ease: 'power2.inOut' }, tc + d + up);
+			tl.to(c.el, { y: c.pose.pile.y, x: c.pose.pile.x, scale: c.pose.pile.s, duration: D.cardSettle, ease: easeDown }, tc + d + up);
 		});
+		// fairy dust follows the opening: a few specks from inside as the flap lifts, more as the cards rise, fading as they settle
+		var lastD = cards[cards.length - 1].pose.kk * step;
+		tl.call(function () {
+			if (state === 'opening' && dust) {
+				dust.mode = 1;
+				dust.setRate(17);
+			}
+		}, null, tf0 + 0.05);
+		tl.call(function () {
+			if (state === 'opening' && dust) {
+				dust.mode = 2;
+				dust.setRate(24);
+			}
+		}, null, tc);
+		tl.call(function () {
+			if (state === 'opening' && dust) dust.fade();
+		}, null, tc + lastD + up + D.cardSettle * 0.35);
 		// the envelope settles back before the first card steps out
 		tl.to(liftEl, { scale: 1, y: 0, duration: 1.0, ease: 'power1.inOut' }, tf0 + D.flap * 0.35);
 	}
@@ -851,9 +1156,9 @@
 		stage.classList.add('is-open');
 		fireRing();
 		fireRipple();
-		fireConfetti();
+		startDust();
 		wait(TM.peekDelay).then(function () {
-			if (state !== 'idle') stage.classList.add('peek-on');
+			if (state !== 'idle') stage.classList.add('peek-on'); // (no strip any more)
 		});
 		tl.timeScale(D.openSpeed).play(0);
 	};
@@ -917,7 +1222,7 @@
 		flyTl = gsap.timeline({ onComplete: done });
 		flyers.forEach(function (f, i) {
 			var t = targets[i];
-			flyTl.to(f.el, { x: t.cx - f.cx, y: t.cy - f.cy, scale: t.s, rotation: t.rot || 0, duration: D.row, ease: 'power3.inOut' }, i * D.rowStagger);
+			flyTl.to(f.el, { x: t.cx - f.cx, y: t.cy - f.cy, scale: t.s, rotation: t.rot || 0, duration: D.row, ease: easeDown }, i * D.rowStagger);
 		});
 	};
 
@@ -991,7 +1296,7 @@
 			},
 		});
 		cards.forEach(function (c) {
-			ctl.to(c.el, { y: c.pose.pile.out, x: 0, scale: 1, rotation: 0, duration: 0.8, ease: 'power2.inOut' }, 0);
+			ctl.to(c.el, { y: c.pose.pile.out, x: 0, scale: 1, rotation: 0, duration: D.cardDown, ease: easeDown }, 0);
 		});
 		ctl.call(
 			function () {
@@ -1000,15 +1305,16 @@
 				});
 			},
 			null,
-			0.8
+			D.cardDown
 		);
 		cards.forEach(function (c) {
-			ctl.to(c.el, { y: c.pose.lift.y, duration: 0.85, ease: 'power2.inOut' }, 0.8 + c.pose.kk * step);
+			ctl.to(c.el, { y: c.pose.lift.y, duration: D.cardDown, ease: easeDown }, D.cardDown + c.pose.kk * step);
 		});
 	}
 
 	var closeAll = function () {
 		if (state !== 'open') return;
+		stopDust();
 		state = 'closing';
 		closeBtn.classList.remove('show');
 		closeZoom();
@@ -1123,10 +1429,6 @@
 	/* ---------- events ---------- */
 	tapBtn.addEventListener('click', openAll);
 	closeBtn.addEventListener('click', closeAll);
-	backBtn.addEventListener('click', goBack);
-	$('ev-peek').addEventListener('click', function () {
-		$('ev-footwrap').scrollIntoView({ behavior: 'smooth' });
-	});
 	$('ev-prev').addEventListener('click', function () {
 		goTo(vwIndex - 1, true);
 	});
@@ -1154,6 +1456,7 @@
 	window.addEventListener('resize', function () {
 		clearTimeout(rsz);
 		rsz = setTimeout(function () {
+			fitTray();
 			if (!cards.length || typeof gsap === 'undefined') return;
 			if (state === 'idle') buildTimeline();
 			else if (state === 'open') {
@@ -1167,34 +1470,12 @@
 		}, 150);
 	});
 
-	// the Close button hides while the footer is on screen
-	if ('IntersectionObserver' in window) {
-		new IntersectionObserver(
-			function (list) {
-				closeBtn.classList.toggle('away', list[0].isIntersecting);
-			},
-			{ threshold: 0.35 }
-		).observe($('ev-footwrap'));
-		var io = new IntersectionObserver(
-			function (list) {
-				list.forEach(function (en) {
-					if (en.isIntersecting) en.target.classList.add('vis');
-				});
-			},
-			{ threshold: 0.25 }
-		);
-		document.querySelectorAll('.ev-fade').forEach(function (n, i) {
-			n.style.transitionDelay = i * 0.12 + 's';
-			io.observe(n);
-		});
-	} else {
-		document.querySelectorAll('.ev-fade').forEach(function (n) {
-			n.classList.add('vis');
-		});
-	}
+	document.querySelectorAll('.ev-fade').forEach(function (n) {
+		n.classList.add('vis');
+	});
 
 	/* ---------- start ---------- */
-	var imgs = [S.images.tray, S.images.closed, S.images.body, S.images.front, S.images.flap, S.images.flapBack];
+	var imgs = [S.images.tray, S.images.closed, S.images.body, S.images.front, S.images.flap, S.images.flapBack].filter(Boolean);
 	var imagesReady = Promise.all(
 		imgs.map(function (s) {
 			return loadOne(s).catch(function () {});
@@ -1202,6 +1483,7 @@
 	);
 	Promise.race([Promise.all([imagesReady, fontsReady]), wait(3500)]).then(function () {
 		stage.classList.add('ev-in');
+		fireConfetti(); // confetti falls as soon as the invitation opens, once
 		wait(TM.hintDelay).then(function () {
 			hintEl.classList.add('show');
 		});

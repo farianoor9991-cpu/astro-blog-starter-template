@@ -89,24 +89,6 @@ const p = products[slug as string];
 		</section>
 
 		<section class="block">
-			<h2>Pricing</h2>
-			<div class="table">
-				{
-					p.prices.map((r) => (
-						<div class="row">
-							<div>
-								<b>{r.item}</b>
-								{r.note && <small>{r.note}</small>}
-							</div>
-							<span>{r.price}</span>
-						</div>
-					))
-				}
-			</div>
-			<p class="fine">Your total updates automatically as you choose cards and add-ons in the form.</p>
-		</section>
-
-		<section class="block">
 			<h2>Questions</h2>
 			<div class="faqs">
 				{
@@ -135,7 +117,7 @@ const p = products[slug as string];
 		max-width: 1040px;
 		margin: 0 auto;
 		padding: 24px 16px 48px;
-		color: #3d3d3d;
+		color: #5A5A5A;
 	}
 	.hero {
 		display: grid;
@@ -155,14 +137,14 @@ const p = products[slug as string];
 		font-size: 12px;
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
-		color: #b8793c;
+		color: #D4A276;
 		font-weight: 600;
 	}
 	h1 {
 		font-family: 'Playfair Display', serif;
 		font-size: clamp(2.2rem, 8vw, 3.2rem);
 		margin: 6px 0 8px;
-		color: #276041;
+		color: #1A1A1A;
 		line-height: 1.1;
 	}
 	.tag {
@@ -186,7 +168,7 @@ const p = products[slug as string];
 	.price-note {
 		margin: 4px 0 0;
 		font-size: 13px;
-		color: #6b6b6b;
+		color: #5A5A5A;
 	}
 	.btns {
 		display: flex;
@@ -203,12 +185,12 @@ const p = products[slug as string];
 		text-align: center;
 	}
 	.btn.fill {
-		background: #276041;
-		color: #fff;
+		background: #D4A276;
+		color: #1A1A1A;
 	}
 	.btn.line {
-		border: 1.5px solid #276041;
-		color: #276041;
+		border: 1.5px solid #D4A276;
+		color: #1A1A1A;
 		background: transparent;
 	}
 	.block {
@@ -238,7 +220,7 @@ const p = products[slug as string];
 	h3 {
 		margin: 0 0 6px;
 		font-size: 16px;
-		color: #276041;
+		color: #1A1A1A;
 	}
 	.card p,
 	.steps p {
@@ -257,7 +239,7 @@ const p = products[slug as string];
 		background: #fff;
 		border: 1px solid #d9c8a6;
 		font-size: 14px;
-		color: #276041;
+		color: #1A1A1A;
 	}
 	.steps {
 		list-style: none;
@@ -275,8 +257,8 @@ const p = products[slug as string];
 		flex: 0 0 34px;
 		height: 34px;
 		border-radius: 50%;
-		background: #276041;
-		color: #fff;
+		background: #D4A276;
+		color: #1A1A1A;
 		display: grid;
 		place-items: center;
 		font-weight: 700;
@@ -300,7 +282,7 @@ const p = products[slug as string];
 	}
 	.row small {
 		display: block;
-		color: #6b6b6b;
+		color: #5A5A5A;
 		font-size: 12.5px;
 		margin-top: 2px;
 	}
@@ -311,7 +293,7 @@ const p = products[slug as string];
 	}
 	.fine {
 		font-size: 13px;
-		color: #6b6b6b;
+		color: #5A5A5A;
 		margin: 10px 2px 0;
 	}
 	.faqs details {

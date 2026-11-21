@@ -475,7 +475,7 @@ const save = () => {};
 				);
 				drawVenue(ctx, T.venue, L.fields.venue, W, H);
 			}
-			watermark(ctx, W, H);
+			if (!S.sample) watermark(ctx, W, H);
 		};
 
 		const canvases = Array.from(document.querySelectorAll<HTMLCanvasElement>('canvas[data-preview]'));
@@ -871,8 +871,17 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 				S.events[e.id] = { on: true, date: e.sample.date, time: e.sample.time, venue: tpl.sampleVenue };
 			});
 			S.hosts = { want: true, list: tpl.sampleHosts.map((h: D) => ({ name: h.name, phone: String(h.phone).replace(/x/gi, '1') })) };
-			S.links = { mode: 'one', list: [] };
-			S.guests = { on: true, one: 'Shaheer Aslam\nHamza Chachu\nMr. Ali & Family' };
+			// option 2 (different links) with the personalized add-on, so the whole experience can be tried
+			const evIds = tpl.events.map((e: D) => e.id);
+			S.links = {
+				mode: 'many',
+				list: [
+					{ id: uid(), label: 'Family', cards: evIds.slice(), guests: 'Shaheer Aslam\nHamza Chachu' },
+					{ id: uid(), label: 'Friends', cards: evIds.slice(0, Math.max(1, Math.ceil(evIds.length / 2))), guests: 'Mr. Ali & Family' },
+				],
+			};
+			S.guests = { on: true, one: '' };
+			S.sample = true; // sample details: no watermark on the preview / envelope until the customer types their own
 			S.done = {};
 			S.active = pkg()[0];
 			save();
@@ -899,7 +908,7 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 				localStorage.setItem('ih-haya-preview', JSON.stringify(data));
 			} catch (e) {}
 			const gIdx = gi !== undefined && !isNaN(gi) ? gi : gs.length ? 0 : undefined;
-			window.open('/demo-haya?preview=1' + (gIdx !== undefined ? '&g=' + gIdx : '') + (TEST ? '&nowm=1' : ''), '_blank');
+			window.open('/demo-haya?preview=1' + (gIdx !== undefined ? '&g=' + gIdx : '') + (TEST || S.sample ? '&nowm=1' : ''), '_blank');
 		};
 		let pinA = '';
 		let pinB = '';
@@ -983,8 +992,13 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 
 		const root = document.getElementById('cz') as HTMLElement;
 
+		root.addEventListener('click', (ev) => {
+			const b = (ev.target as HTMLElement).closest('[data-ev-toggle],[data-mode],[data-card-pick],[data-act="gtoggle"],[data-act="addlink"],[data-act="addev"],[data-act="rmev"],[data-act="rmlink"]');
+			if (b) S.sample = false; // the customer is changing the details: the watermark comes back
+		});
 		root.addEventListener('input', (ev) => {
 			const t = ev.target as HTMLInputElement;
+			if (t.id !== 'cz-pin' && t.id !== 'cz-pin2') S.sample = false;
 			const ds = t.dataset;
 			if (ds.part && ds.ev) { 				setPart(ds.ev, ds.part, t.value); 			} else if (ds.couple) {
 				S.couple[ds.couple] = t.value;

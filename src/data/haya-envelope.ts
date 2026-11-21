@@ -3,8 +3,8 @@
 
 export const hayaEnvelope = {
 	background: '#fbf3e4', // page colour (cream), shown until the silk pictures load
-	backgroundImage: '/haya-bg.jpg', // silk background on phones (9:16)
-	backgroundImageWide: '/haya-bg-wd.jpg', // silk background on laptops (16:9)
+	backgroundImage: '/haya-bg.jpg?v=3', // silk background on phones (9:16)
+	backgroundImageWide: '/haya-bg-wd.jpg?v=3', // silk background on laptops (16:9)
 	footerBackground: '#1d4a30', // closing section and the strip that rises after the tap
 	stageMaxWidth: 430, // widest the invitation column gets on a laptop (px)
 
@@ -20,10 +20,11 @@ export const hayaEnvelope = {
 		messageColor: '#fbf3e4',
 		brandStart: 'Invite',
 		brandEnd: 'Heaven',
-		brandStartColor: '#fbf3e4',
-		brandEndColor: '#e7c27d',
+		brandStartColor: '#1a1a1a',
+		brandEndColor: '#9a6a36',
+		brandUrl: '/', // "Created by InviteHeaven" links to the main page
 		createdBy: 'Created by',
-		createdByColor: '#e7c27d',
+		createdByColor: '#6b5a3e',
 	},
 
 	buttons: { closeLabel: 'Close', goBackLabel: 'Go Back', font: 'Unna', background: '#b1232c', text: '#ffffff', linkColor: '#e7c27d' },
@@ -31,7 +32,7 @@ export const hayaEnvelope = {
 	viewer: { background: 'rgba(40, 16, 10, 0.88)', text: '#fff3e0' }, // the card reading screen
 
 	images: {
-		tray: '/haya2-tray.webp',
+		tray: '/haya-tray.webp', // used on laptops only (on phones the tray is part of the background picture)
 		closed: '/haya3-closed.webp?v=2', // the full closed envelope
 		body: '/haya3-body.webp', // the open envelope without its flap
 		front: '/haya3-front.webp', // the front of the pocket (cut-out where the cards show)
@@ -56,11 +57,18 @@ export const hayaEnvelope = {
 	ring: { enabled: false, color: '255, 236, 170', duration: 2000, scale: 7 },
 
 	// The golden ripple from the wax seal (runs across the whole screen) and the slow gold confetti
-	ripple: { enabled: true, duration: 1900 },
-	confetti: { enabled: true, count: 46, spawnMs: 2800, totalMs: 8000 },
+	ripple: { enabled: true, duration: 2600 }, // luminous rings from the wax seal (ms)
+	sparkle: { enabled: true, max: 96, starShare: 0.22, fadeMs: 1800 }, // fairy dust and twinkling stars while the cards come out
+	confetti: { enabled: true, count: 130, spawnMs: 3400 }, // starts when the page opens
 
 	// Optional background music. Put the file in the public folder and write its name, e.g. '/haya-music.mp3'. Empty = no music.
 	music: { src: '', volume: 0.6 },
+
+	// Where the tray is inside the background pictures (fractions of the picture): centre x/y and size. maxColByH limits how big the invitation gets on a laptop.
+	trayInBg: {
+		port: { iw: 1440, ih: 2560, cx: 0.5, cy: 0.5164, w: 0.9736, h: 0.373 },
+		lap: { colByH: 0.66, trayByCol: 1.12, ratio: 0.674, cy: 0.52 }, // laptop: invitation width (x screen height), tray width (x invitation width), tray height/width, tray centre (x screen height)
+	},
 
 	layout: {
 		trayWidth: 100, // tray width (% of column)
@@ -82,12 +90,15 @@ export const hayaEnvelope = {
 		flap: 1.9, // the flap turning over
 		perspective: 1.3, // depth of the turn (x envelope width). Smaller = stronger 3D
 		cardsAfter: 1.2, // cards start coming out this long after the flap starts turning
-		cards: 1.3, // each card's rise out of the envelope
-		cardStagger: 0.3, // gap between cards coming out
+		cards: 1.3,
+		cardUp: 1.5, // each card gliding up out of the envelope (s)
+		cardSettle: 1.0, // then settling into the stack in front (s)
+		cardDown: 1.5, // each card gliding back into the envelope when closing (s)
+		cardStagger: 0.1, // gap between cards, opening and closing (s)
 		cardStaggerTotal: 1.2,
 		settle: 0.6,
 		row: 1.0, // the pile spreading into the row of cards (and back)
-		rowStagger: 0.07,
+		rowStagger: 0.1,
 		openSpeed: 1, // 1 = as written, 0.8 = slower
 		closeSpeed: 1,
 	},

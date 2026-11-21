@@ -1,0 +1,12 @@
+---
+import InviteShell from '../../../components/InviteShell.astro';
+
+// Guest links look like /inviteheaven/maria-weds-ahtesham/guest=shaheer-aslam-&-family
+export const prerender = false;
+
+if (String(Astro.params.brand).toLowerCase() !== 'inviteheaven') {
+	return new Response('Not found', { status: 404 });
+}
+---
+
+<InviteShell />

@@ -29,7 +29,9 @@ body {
 	overflow: hidden;
 }
 @media (min-width: 700px) and (orientation: landscape) {
+	/* laptops: plain silk picture, with the tray picture on top */
 	.ev-stage { background-image: var(--ev-bgimg-w, var(--ev-bgimg, none)); }
+	.ev-col .ev-tray { display: flex; }
 }
 .ev-fx { position: fixed; left: 0; top: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 30; }
 .ev-col {
@@ -55,7 +57,7 @@ body {
 
 .ev-title {
 	position: absolute;
-	top: 7%;
+	top: var(--ev-title-top, 7%);
 	left: 0;
 	right: 0;
 	margin: 0;
@@ -74,15 +76,15 @@ body {
 	position: absolute;
 	left: 0;
 	right: 0;
-	bottom: var(--ev-tray-b, 15%);
-	display: flex;
+	bottom: var(--ev-trayimg-b, 15%);
+	display: none;
 	justify-content: center;
 	pointer-events: none;
 }
 .ev-tray img {
 	display: block;
 	width: var(--ev-tray-w, 92%);
-	max-width: 100%;
+	max-width: none;
 	height: auto;
 	filter: drop-shadow(0 12px 14px rgba(60, 30, 5, 0.25));
 	user-select: none;
@@ -257,6 +259,7 @@ body {
 
 /* The footer-coloured strip that rises from the bottom after the tap: a hint to scroll */
 .ev-peek {
+	display: none !important;
 	position: absolute;
 	left: 0;
 	right: 0;
@@ -499,17 +502,30 @@ body {
 .ev-zprev { left: 18px; }
 .ev-znext { right: 18px; }
 
-/* Closing section */
+/* Credit line: only "Created by InviteHeaven", on the same silk background */
 .ev-footwrap {
-	background: var(--ev-foot-bg);
-	width: 100%;
+	position: fixed;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 4;
+	padding: 6px 0 calc(env(safe-area-inset-bottom, 0px) + 12px);
+	text-align: right;
+	padding-right: 12px;
+	pointer-events: none;
+	transition: opacity 0.4s ease;
 }
-.ev-foot {
-	width: var(--w);
-	margin: 0 auto;
-	padding: 84px 6% 96px;
-	text-align: center;
+.ev-stage.vw-on ~ .ev-footwrap { opacity: 0; }
+.ev-credit {
+	position: relative;
+	display: inline-block;
+	padding: 14px 10px 2px;
+	text-decoration: none;
+	pointer-events: auto;
 }
+.ev-credit { padding: 10px 2px 0; }
+.ev-credit .ev-by { top: 9px; font-size: 0.48rem; }
+.ev-credit .ev-brand { font-size: 0.95rem; }
 .ev-fade {
 	opacity: 0;
 	transform: translateY(18px);
@@ -540,7 +556,7 @@ body {
 	transform: translateY(-85%);
 	font: 700 0.58rem / 1 'Unna', serif;
 	letter-spacing: 0.03em;
-	color: var(--ev-by, #e7c27d);
+	color: var(--ev-by, #6b5a3e);
 	white-space: nowrap;
 }
 .ev-brand {

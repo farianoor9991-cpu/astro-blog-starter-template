@@ -56,7 +56,35 @@ export const clean = (input: any, existing?: any) => {
 	return { couple, events, hosts };
 };
 
-export const cleanLinks = (input: any, events: any[]) => {
+// ---------- readable link parts ----------
+// "Shaheer Aslam & Family" -> "shaheer-aslam-&-family" (the & stays, as in the shared link)
+export const guestSlugOf = (name: string): string =>
+	String(name || '')
+		.toLowerCase()
+		.replace(/[^a-z0-9&\s-]/g, '')
+		.replace(/\s+/g, '-')
+		.replace(/-{2,}/g, '-')
+		.replace(/^-+|-+$/g, '')
+		.slice(0, 60) || 'guest';
+export const plainSlugOf = (name: string): string =>
+	String(name || '')
+		.toLowerCase()
+		.replace(/[^a-z0-9]+/g, '-')
+		.replace(/^-+|-+$/g, '')
+		.slice(0, 40);
+export const coupleSlugOf = (couple: any): string => {
+	const f = (n: string) => plainSlugOf(String(n || '').trim().split(/\s+/)[0]);
+	return (f(couple?.brideName) || 'bride') + '-weds-' + (f(couple?.groomName) || 'groom');
+};
+const uniqueSlug = (base: string, used: Set<string>): string => {
+	let s = base;
+	for (let i = 2; used.has(s); i++) s = base + '-' + i;
+	used.add(s);
+	return s;
+};
+export const BRAND = 'inviteheaven';
+
+export const cleanLinks = (input: any, events: any[], existing?: any[]) => {
 	const valid = new Set(events.map((e) => e.id));
 	const used = new Set<string>();
 	let list = (Array.isArray(input) ? input : []).slice(0, MAX_LINKS).map((l: any, i: number) => {
@@ -73,19 +101,40 @@ export const cleanLinks = (input: any, events: any[]) => {
 		const only = list[0] || { id: 'all', label: 'All events' };
 		list = [{ id: only.id, label: only.label || 'All events', cards: events.map((e) => e.id) }];
 	}
+	// every group gets a short readable name for its link; it stays the same even if the group is renamed later
+	const usedS = new Set<string>();
+	const kept = new Map<string, string>();
+	(existing || []).forEach((x: any) => x?.slug && kept.set(x.id, x.slug));
+	list.forEach((l: any) => {
+		const k = kept.get(l.id);
+		if (k && !usedS.has(k)) usedS.add(k), (l.slug = k);
+	});
+	list.forEach((l: any) => {
+		if (!l.slug) l.slug = uniqueSlug(plainSlugOf(l.label) || 'group', usedS);
+	});
 	return list;
 };
 
 export const cleanGuests = (input: any, links: any[], existing?: any[]) => {
 	const ok = new Set(links.map((l) => l.id));
 	const seen = new Set<string>();
+	const usedS = new Set<string>();
+	const kept = new Map<string, string>();
+	(existing || []).forEach((x: any) => x?.slug && kept.set(x.id, x.slug));
+	// names that already have a link keep their slug first, so nobody's shared link changes
+	(Array.isArray(input) ? input : []).forEach((g: any) => {
+		const k = g?.id ? kept.get(g.id) : '';
+		if (k) usedS.add(k);
+	});
 	return (Array.isArray(input) ? input : []).slice(0, MAX_GUESTS).map((g: any) => {
 		const prev = g?.id ? existing?.find((x: any) => x.id === g.id) : null;
 		let id = prev ? prev.id : rid(6);
 		while (seen.has(id)) id = rid(6);
 		seen.add(id);
 		const linkId = ok.has(g?.linkId) ? g.linkId : links[0]?.id;
-		return { id, name: str(g?.name, 45), linkId };
+		const name = str(g?.name, 45);
+		const slug = prev && kept.get(prev.id) ? kept.get(prev.id) : name ? uniqueSlug(guestSlugOf(name), usedS) : '';
+		return { id, name, linkId, slug };
 	}).filter((g: any) => g.name);
 };
 
@@ -95,6 +144,31 @@ export const eventsForLink = (order: any, linkId?: string) => {
 	if (!link) return order.events;
 	return order.events.filter((e: any) => link.cards.indexOf(e.id) >= 0);
 };
+
+// ---------- storage (Cloudflare KV): as few reads and writes as possible ----------
+//   o:<couple-slug>  the whole order (one key, so a guest opening a link costs ONE read)
+//   t:<token start>  -> couple slug (so the private order link finds its order)
+//   no:<n>, counter  order numbers
+// Everything expires by itself 6 months after the order was made (no cleanup jobs, no deletes, no lists).
+// Orders made by earlier versions (order:<token>, pid:<pid>) still open, and are saved back where they are.
+export const expiryOpts = (createdAt: string) => {
+	const d = new Date(createdAt);
+	d.setUTCMonth(d.getUTCMonth() + 6);
+	return { expiration: Math.max(Math.floor(d.getTime() / 1000), Math.floor(Date.now() / 1000) + 3600) };
+};
+export type Loaded = { o: any; key: string; legacy: boolean };
+export const loadByToken = async (kv: any, t: string): Promise<Loaded | null> => {
+	const slug = await kv.get('t:' + t.slice(0, 10));
+	if (slug) {
+		const raw = await kv.get('o:' + slug);
+		if (!raw) return null;
+		const o = JSON.parse(raw);
+		return o.token === t ? { o, key: 'o:' + slug, legacy: false } : null;
+	}
+	const raw = await kv.get('order:' + t);
+	return raw ? { o: JSON.parse(raw), key: 'order:' + t, legacy: true } : null;
+};
+export const saveOrder = (kv: any, L: Loaded) => kv.put(L.key, JSON.stringify(L.o), expiryOpts(L.o.createdAt));
 
 export const json = (data: unknown, status = 200) =>
 	new Response(JSON.stringify(data), {
