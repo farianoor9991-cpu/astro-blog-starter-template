@@ -131,4 +131,5 @@ export const hayaDemoInvitation = {
 		{ name: 'Bilal Ahmed Sheikh', phone: '0300 2222222' },
 		{ name: 'Usman Ghani Malik', phone: '0300 3333333' },
 	],
+	guest: 'Shaheer Aslam', // the demo always opens with the personalized greeting card first
 };

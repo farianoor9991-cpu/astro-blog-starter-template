@@ -632,11 +632,13 @@
 			on = false;
 		};
 	};
+	var fxDpr = 1;
 	var fxCanvas = function () {
 		var c = document.createElement('canvas');
 		c.className = 'ev-fx';
 		c.setAttribute('aria-hidden', 'true');
 		var dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+		fxDpr = dpr;
 		c.width = Math.round(window.innerWidth * dpr);
 		c.height = Math.round(window.innerHeight * dpr);
 		var x = c.getContext('2d');
@@ -832,7 +834,7 @@
 				var ec = Math.pow(e, 2.4);
 				var oo = { x: o.x + (TL.cx - o.x) * ec, y: o.y + (TL.cy - o.y) * ec };
 				var ykt = 1 + (yk - 1) * ec;
-				x.setTransform(1, 0, 0, ykt, 0, oo.y * (1 - ykt));
+				x.setTransform(fxDpr, 0, 0, fxDpr * ykt, 0, fxDpr * oo.y * (1 - ykt));
 				var r = r0 + (R - r0) * e;
 				var a = rg.k * smooth(0, 0.08, u) * Math.pow(1 - smooth(0.5, 1, u), 1.2);
 				if (a < 0.004) return;
@@ -885,7 +887,7 @@
 				});
 				x.globalAlpha = 1;
 			});
-			x.setTransform(1, 0, 0, 1, 0, 0);
+			x.setTransform(fxDpr, 0, 0, fxDpr, 0, 0);
 			x.globalCompositeOperation = 'source-over';
 		});
 	};

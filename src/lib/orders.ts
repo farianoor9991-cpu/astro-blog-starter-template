@@ -93,7 +93,7 @@ export const cleanLinks = (input: any, events: any[], existing?: any[]) => {
 		used.add(id);
 		return {
 			id,
-			label: str(l?.label, 40) || 'Link ' + (i + 1),
+			label: str(l?.label, 40) || 'Group ' + (i + 1),
 			cards: (Array.isArray(l?.cards) ? l.cards : []).map((c: any) => str(c, 40)).filter((c: string) => valid.has(c)),
 		};
 	});

@@ -558,10 +558,10 @@ const save = () => {};
 			const c = S.couple;
 			const sm = tpl.sample;
 			return `
-				<div class="f"><label>Groom's name</label>${inp('data-couple="groomName"', c.groomName, sm.groomName)}</div>
-				<div class="f"><label>Groom's parents</label><div class="pre"><span>S/O Mr &amp; Mrs</span>${inp('data-couple="groomParents"', c.groomParents, sm.groomParents)}</div></div>
 				<div class="f"><label>Bride's name</label>${inp('data-couple="brideName"', c.brideName, sm.brideName)}</div>
 				<div class="f"><label>Bride's parents</label><div class="pre"><span>D/O Mr &amp; Mrs</span>${inp('data-couple="brideParents"', c.brideParents, sm.brideParents)}</div><p class="hint">Type only the names, like the examples. We add "D/O Mr &amp; Mrs" and "S/O Mr &amp; Mrs" for you.</p></div>
+				<div class="f"><label>Groom's name</label>${inp('data-couple="groomName"', c.groomName, sm.groomName)}</div>
+				<div class="f"><label>Groom's parents</label><div class="pre"><span>S/O Mr &amp; Mrs</span>${inp('data-couple="groomParents"', c.groomParents, sm.groomParents)}</div></div>
 				<div class="err" data-err="1"></div>
 				<div class="acts" style="margin:0 0 10px"><button class="btn-o" type="button" data-act="sample">Fill with sample details</button></div><div class="acts"><button class="btn-g" type="button" data-act="next" data-n="1">Continue to Step 2</button></div>`;
 		};
@@ -664,7 +664,7 @@ const save = () => {};
 							(lk: D, i: number) => `
 						<div class="lk">
 							<div class="f"><label><b>Group ${i + 1} name</b></label><input data-lk="${lk.id}" data-k="label" value="${esc(lk.label)}" placeholder="e.g. ${['Nikkah &amp; Baraat only', 'Walima only', 'Close family', 'Friends'][i % 4]}" autocomplete="off"></div>
-							<p class="hint" style="margin:10px 0 2px;color:#1a1a1a"><b>Choose the events for Group ${i + 1}</b></p><p class="hint" style="margin:0 0 6px">Everyone in this group will receive these selected event cards only</p><div class="chips">${evCards
+							<p class="hint" style="margin:16px 0 8px;color:#1a1a1a"><b>Choose the events for Group ${i + 1}</b></p><p class="hint" style="margin:0 0 14px;line-height:1.5">Everyone in this group will receive these selected event cards only</p><div class="chips">${evCards
 								.map(
 									(c) =>
 										`<label class="chip ck${lk.cards.indexOf(c) >= 0 ? ' on' : ''}"><input type="checkbox" data-lk="${lk.id}" data-card-pick="${c}" ${lk.cards.indexOf(c) >= 0 ? 'checked' : ''}>${esc(label(c))}</label>`
