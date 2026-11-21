@@ -92,10 +92,10 @@
 	root.innerHTML =
 		'<div class="ev-stage" id="ev-stage">' +
 		'<div class="ev-col">' +
-		'<h1 class="ev-title ev-rise">' + esc(S.welcome.text) + '</h1>' +
+		'<h1 class="ev-title ev-rise" id="ev-title">' + esc(S.welcome.text) + '</h1>' +
 		'<p class="ev-hint2" id="ev-hint2">' + esc(S.hint.openText) + '</p>' +
-		(S.images.tray ? '<div class="ev-tray ev-rise" style="--d:.12s"><img src="' + esc(S.images.tray) + '" alt="" draggable="false"></div>' : '') +
-		'<div class="ev-envbox ev-rise" style="--d:.24s">' +
+		(S.images.tray ? '<div class="ev-tray ev-rise ev-trayrise" style="--d:0s;--dur:' + (TM.trayRise || 1900) + 'ms"><img id="ev-trayimg" src="' + esc(S.images.trayPhone || S.images.tray) + '" alt="" draggable="false"></div>' : '') +
+		'<div class="ev-envbox ev-rise" style="--d:' + (TM.envDelay || 0.24) + 's">' +
 		'<div class="ev-env" id="ev-env">' +
 		'<div class="ev-lift" id="ev-lift">' +
 		img('ev-img ev-closed', S.images.closed) +
@@ -151,6 +151,16 @@
 
 	/* The tray is part of the silk background picture. Work out where it is on screen and put the envelope exactly in the middle of it. */
 	var trayLive = null;
+	// the welcome line sits just above the raised flap (the flap, once open, reaches this far above the envelope)
+	var placeTitle = function (H, envH, envBottom) {
+		var envTop = H - envBottom - envH;
+		var flapTop = envTop - envH * (S.envelope.openFlapRise || 0.74);
+		rs.setProperty('--ev-title-b', Math.round(H - flapTop + (S.welcome.gap || 14)) + 'px');
+		var im = document.getElementById('ev-trayimg');
+		var want = wide0() ? S.images.tray : S.images.trayPhone || S.images.tray;
+		if (im && want && im.getAttribute('src') !== want) im.setAttribute('src', want);
+	};
+	var wide0 = function () { return window.matchMedia('(min-width: 700px) and (orientation: landscape)').matches; };
 	var fitTray = function () {
 		var T = S.trayInBg;
 		if (!T || cfg.cardsOnly) return;
@@ -170,9 +180,9 @@
 			rs.setProperty('--ev-trayimg-b', Math.round(H - (cyL + trH / 2)) + 'px');
 			rs.setProperty('--ev-tray-b', Math.round(H - (cyL + envHL / 2) - colL * L.envelopeLift) + 'px');
 			trayLive = { cx: W / 2, cy: cyL, rx: (trW / 2) * 0.96, ry: (trH / 2) * 0.96 };
+			placeTitle(H, envHL, H - (cyL + envHL / 2));
 			return;
 		}
-		rs.setProperty('--ev-tray-w', L.trayWidth + '%');
 		var Wv = W;
 		var sc = Math.max(Wv / g.iw, H / g.ih); // background-size: cover
 		var ox = (W - Wv) / 2 + (Wv - g.iw * sc) / 2, oy = (H - g.ih * sc) / 2;
@@ -185,6 +195,10 @@
 		rs.setProperty('--ev-max', Math.round(colW) + 'px');
 		rs.setProperty('--ev-tray-b', Math.round(bottom - colW * L.envelopeLift) + 'px');
 		trayLive = { cx: cx, cy: cy, rx: Math.min(tw / 2, Wv / 2 - 6) * 0.97, ry: Math.min(th / 2, H / 2 - 6) * 0.97 };
+		// phone: the tray is its own picture, placed exactly where it used to be inside the background
+		rs.setProperty('--ev-tray-w', Math.round(tw) + 'px');
+		rs.setProperty('--ev-trayimg-b', Math.round(H - (cy + th / 2)) + 'px');
+		placeTitle(H, envH, bottom);
 	};
 	fitTray();
 	var vw = $('ev-vw');
@@ -768,6 +782,7 @@
 		// the ring stops at the edge of the tray (an oval), nothing beyond it
 		var TL = trayLive || (function () { var e = envEl.getBoundingClientRect(); return { cx: o.x, cy: o.y, rx: e.width * 0.7, ry: e.height * 0.9 }; })();
 		var R = TL.rx;
+		var r0 = Math.max(8, closedEl.getBoundingClientRect().width * ENV.sealR / 100 * 0.8); // starts inside the wax seal
 		var yk = TL.ry / TL.rx;
 		var dur = Rp.duration;
 		var t0 = null;
@@ -813,9 +828,12 @@
 				if (u <= 0) return;
 				var e = 1 - Math.pow(1 - u, 1.9); // quick start, long soft finish
 				// the ring starts at the seal and ends as the outline of the tray, reaching all its sides and corners
-				var oo = { x: o.x + (TL.cx - o.x) * e, y: o.y + (TL.cy - o.y) * e };
-				x.setTransform(1, 0, 0, yk, 0, oo.y * (1 - yk));
-				var r = 14 + (R - 14) * e;
+				// (round and centred on the seal at first; the centre and the oval shape settle onto the tray only as it grows)
+				var ec = Math.pow(e, 2.4);
+				var oo = { x: o.x + (TL.cx - o.x) * ec, y: o.y + (TL.cy - o.y) * ec };
+				var ykt = 1 + (yk - 1) * ec;
+				x.setTransform(1, 0, 0, ykt, 0, oo.y * (1 - ykt));
+				var r = r0 + (R - r0) * e;
 				var a = rg.k * smooth(0, 0.08, u) * Math.pow(1 - smooth(0.5, 1, u), 1.2);
 				if (a < 0.004) return;
 				var wd = 10 + r * 0.045; // rings grow softer as they travel
@@ -1036,7 +1054,7 @@
 		// the stack forms in front of the envelope, right where the swipe row will be; the back cards only show as a line behind the first card
 		var s = tgt.w / (ch / cardRatio);
 		var pile = { y: tgt.cy - from.cy - kk * 0.02 * tgt.h, x: tgt.cx - from.cx, rot: 0, s: s, out: out };
-		return { rest: rest, lift: lift, pile: pile, kk: kk };
+		return { rest: rest, lift: lift, pile: pile, kk: kk, k: k };
 	};
 	var firstSlot = function () {
 		var hold = !vwOpen;
@@ -1114,7 +1132,7 @@
 		var tc = tf0 + D.flap + 0.1;
 		var up = D.cardUp;
 		cards.forEach(function (c) {
-			var d = c.pose.kk * step;
+			var d = c.pose.k * step;
 			tl.to(c.el, { y: c.pose.pile.out, duration: up, ease: easeUp }, tc + d);
 			tl.call(
 				function () {
@@ -1126,7 +1144,7 @@
 			tl.to(c.el, { y: c.pose.pile.y, x: c.pose.pile.x, scale: c.pose.pile.s, duration: D.cardSettle, ease: easeDown }, tc + d + up);
 		});
 		// fairy dust follows the opening: a few specks from inside as the flap lifts, more as the cards rise, fading as they settle
-		var lastD = cards[cards.length - 1].pose.kk * step;
+		var lastD = cards[cards.length - 1].pose.k * step;
 		tl.call(function () {
 			if (state === 'opening' && dust) {
 				dust.mode = 1;
@@ -1308,7 +1326,7 @@
 			D.cardDown
 		);
 		cards.forEach(function (c) {
-			ctl.to(c.el, { y: c.pose.lift.y, duration: D.cardDown, ease: easeDown }, D.cardDown + c.pose.kk * step);
+			ctl.to(c.el, { y: c.pose.lift.y, duration: D.cardDown, ease: easeDown }, D.cardDown + c.pose.k * step);
 		});
 	}
 

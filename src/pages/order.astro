@@ -174,6 +174,11 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 				});
 			});
 		}
+		// the PIN is remembered on the browser it was created / entered in, so the owner is not asked again there;
+		// any other browser or device asks for it once
+		function pinKey() { return 'ih-pin-' + T; }
+		function rememberPin(p) { try { if (p) localStorage.setItem(pinKey(), p); else localStorage.removeItem(pinKey()); } catch (e) {} }
+		function storedPin() { try { return localStorage.getItem(pinKey()) || ''; } catch (e) { return ''; } }
 		function askPin() {
 			var legacy = !O.hasPin;
 			var m = popup('<h3>' + (legacy ? 'Create your Edit PIN' : 'Enter your Edit PIN') + '</h3><p class="hint">' + (legacy ? 'Choose a 4-digit PIN. You will need it every time you want to edit this order. Do not share it.' : 'Your link can only view this order. Enter your 4-digit PIN to edit.') + '</p><input id="od-pin" type="password" inputmode="numeric" autocomplete="off" maxlength="4" placeholder="4-digit PIN">' + (legacy ? '<div style="height:8px"></div><input id="od-pin2" type="password" inputmode="numeric" autocomplete="off" maxlength="4" placeholder="Repeat PIN">' : '') + '<p class="od-err" id="od-pinerr" hidden></p><div class="od-inline"><button type="button" class="btn-p" id="od-pinok">' + (legacy ? 'Set PIN and edit' : 'Unlock editing') + '</button><button type="button" class="lnk" id="od-pinno">Cancel</button></div>');
@@ -193,8 +198,8 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 					body = { action: 'verify', newPin: pin };
 				}
 				api(body).then(function (d) {
-					PIN = legacy ? '' : pin;
-					if (legacy) PIN = pin;
+					PIN = pin;
+					rememberPin(pin);
 					m.close();
 					O = Object.assign({}, d);
 					var afterUnlock = function () {
@@ -370,10 +375,11 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 				var lk = O.links.filter(function (l) { return l.id === g.linkId; })[0];
 				if (lk) evs = O.events.filter(function (e) { return lk.cards.indexOf(e.id) >= 0; });
 			}
+			// greeting card only (the event cards are in the next window)
 			return {
 				couple: O.couple,
-				events: evs,
-				hosts: hostsOn() ? O.hosts.filter(function (h) { return String(h.name || '').trim(); }) : [],
+				events: [],
+				hosts: [],
 				guest: g && g.name.trim() ? g.name : '',
 				gid: g ? g.id : '',
 			};
@@ -389,7 +395,8 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			};
 		}
 		function previewBody() {
-			var h = '<p class="hint">This is how the cards look. Swipe left or right to see every card.</p>';
+			if (!(O.guestsOn && O.guests.length)) return '<p class="hint">This order has no personalized greeting cards.</p>';
+			var h = '<p class="hint">The personal greeting card each guest sees first, with their name on it. Choose a guest to see their card.</p>';
 			if (O.guestsOn && O.guests.length > 1) {
 				h += '<label class="lab" for="od-pvguest">Show cards for</label><select id="od-pvguest">' + O.guests.map(function (g) {
 					return '<option value="' + esc(g.id) + '"' + (g.id === pv.guestId ? ' selected' : '') + '>' + esc(g.name) + '</option>';
@@ -480,7 +487,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			h += acPanel('message', 'Edit WhatsApp message', messageBody());
 			h += acPanel('events', 'Edit events', eventsBody());
 			if (hostsOn()) h += acPanel('hosts', 'Edit reception hosts', hostsBody());
-			h += acPanel('preview', 'Preview your cards', previewBody());
+			h += acPanel('preview', 'Preview greeting cards', previewBody());
 			h += acPanel('preview2', 'Preview event cards', previewAllBody());
 			h += '</aside></div>';
 			root.innerHTML = h;
@@ -554,6 +561,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 				var m = e.message;
 				if (m === 'Wrong PIN' || /locked/i.test(m)) {
 					editing = false;
+					if (m === 'Wrong PIN') rememberPin('');
 					PIN = '';
 					render();
 					updateBar();
@@ -847,6 +855,18 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 				render();
 				setDirty(false);
 				updateBar();
+				// same browser as the one the order was made in: go straight to edit mode, no PIN prompt
+				var sp = storedPin();
+				if (sp && O.hasPin && !O.locked) {
+					api({ action: 'verify', pin: sp }).then(function (d2) {
+						PIN = sp;
+						O = Object.assign({}, d2);
+						editing = true;
+						render();
+						updateBar();
+						offerDraft();
+					}).catch(function (e) { if (e && e.message === 'Wrong PIN') rememberPin(''); });
+				}
 			})
 			.catch(function () {
 				setState('We could not find this order. Please check the link you were given.');

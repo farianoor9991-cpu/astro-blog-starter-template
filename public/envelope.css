@@ -45,7 +45,7 @@ body {
 .ev-rise {
 	opacity: 0;
 	transform: translateY(70px);
-	transition: opacity var(--ev-enter, 1100ms) ease var(--d, 0s), transform var(--ev-enter, 1100ms) cubic-bezier(0.2, 0.8, 0.2, 1) var(--d, 0s);
+	transition: opacity var(--dur, var(--ev-enter, 1100ms)) ease var(--d, 0s), transform var(--dur, var(--ev-enter, 1100ms)) cubic-bezier(0.2, 0.8, 0.2, 1) var(--d, 0s);
 }
 .ev-in .ev-rise {
 	opacity: 1;
@@ -57,7 +57,8 @@ body {
 
 .ev-title {
 	position: absolute;
-	top: var(--ev-title-top, 7%);
+	top: auto;
+	bottom: var(--ev-title-b, 80%);
 	left: 0;
 	right: 0;
 	margin: 0;
@@ -65,6 +66,9 @@ body {
 	text-align: center;
 	font: 400 var(--ev-title-size, 2.4rem) / 1.2 var(--ev-title-font, serif);
 	color: var(--ev-title-color, #b1232c);
+}
+@media (min-width: 700px) and (orientation: landscape) {
+	.ev-title { left: -25%; right: -25%; font-size: 2rem; }
 }
 .ev-greet {
 	display: block;
@@ -77,10 +81,12 @@ body {
 	left: 0;
 	right: 0;
 	bottom: var(--ev-trayimg-b, 15%);
-	display: none;
+	display: flex;
 	justify-content: center;
 	pointer-events: none;
 }
+.ev-trayrise.ev-rise { transform: translateY(120px); }
+.ev-in .ev-trayrise.ev-rise { transform: none; }
 .ev-tray img {
 	display: block;
 	width: var(--ev-tray-w, 92%);

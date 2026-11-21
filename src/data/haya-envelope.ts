@@ -3,12 +3,12 @@
 
 export const hayaEnvelope = {
 	background: '#fbf3e4', // page colour (cream), shown until the silk pictures load
-	backgroundImage: '/haya-bg.jpg?v=3', // silk background on phones (9:16)
+	backgroundImage: '/haya-bg.jpg?v=4', // silk background on phones (9:16)
 	backgroundImageWide: '/haya-bg-wd.jpg?v=3', // silk background on laptops (16:9)
 	footerBackground: '#1d4a30', // closing section and the strip that rises after the tap
 	stageMaxWidth: 430, // widest the invitation column gets on a laptop (px)
 
-	welcome: { text: 'A Little Something, For You', font: 'Berkshire Swash', color: '#b1232c', size: 'clamp(2rem, 9.5vw, 2.7rem)' },
+	welcome: { text: 'We\u2019re Honoured To Have You \u2665\uFE0F', font: 'Berkshire Swash', color: '#276041', size: 'clamp(1.7rem, 7.6vw, 2.3rem)', gap: 14 },
 	hint: { text: 'Tap the envelope to open', openText: 'Tap the cards to read', font: 'Unna', color: '#5a1016', size: '1.1rem' },
 
 	footer: {
@@ -32,7 +32,8 @@ export const hayaEnvelope = {
 	viewer: { background: 'rgba(40, 16, 10, 0.88)', text: '#fff3e0' }, // the card reading screen
 
 	images: {
-		tray: '/haya-tray.webp', // used on laptops only (on phones the tray is part of the background picture)
+		tray: '/haya-tray.webp', // the tray on laptops
+		trayPhone: '/haya-tray-m.webp', // the tray on phones
 		closed: '/haya3-closed.webp?v=2', // the full closed envelope
 		body: '/haya3-body.webp', // the open envelope without its flap
 		front: '/haya3-front.webp', // the front of the pocket (cut-out where the cards show)
@@ -105,8 +106,8 @@ export const hayaEnvelope = {
 
 	// Other times in milliseconds
 	timing: {
-		entrance: 1100, // text, tray and envelope rising in
-		hintDelay: 1700, // when the "tap" hint appears
+		entrance: 1100, trayRise: 1900, envDelay: 1.15, // text, tray and envelope rising in
+		hintDelay: 3000, // when the "tap" hint appears
 		peek: 900, // the strip rising from the bottom
 		peekDelay: 1200, // when it starts after the tap
 		viewerIn: 450, // reading screen opening
