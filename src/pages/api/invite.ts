@@ -50,6 +50,8 @@ const build = async (kv: any, q: URLSearchParams): Promise<Response> => {
 		}),
 		hosts: o.hosts,
 		guest: guest ? guest.name : '',
+		seats: guest && guest.seats ? guest.seats : 0,
+		footer: o.footer || { mode: 'couple', family: '' },
 		musicSrc: o.music === 'none' ? 'none' : (((hayaEnvelope as any).musicLibrary || []).find((m: any) => m.id === o.music) || {}).src || '',
 	});
 };

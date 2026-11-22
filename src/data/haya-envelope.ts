@@ -133,5 +133,7 @@ export const hayaDemoInvitation = {
 		{ name: 'Bilal Ahmed Sheikh', phone: '0300 2222222' },
 		{ name: 'Usman Ghani Malik', phone: '0300 3333333' },
 	],
+	seats: 2, // the demo shows the seats lines in the footer
+	footer: { mode: 'couple', family: '' },
 	guest: 'Shaheer Aslam', // the demo always opens with the personalized greeting card first
 };

@@ -114,9 +114,12 @@
 		'</div></div></div>' +
 		'<p class="ev-hint" id="ev-hint">' + esc(S.hint.text) + '</p>' +
 		'<button class="ev-music" id="ev-music" type="button" aria-label="Music on or off" hidden></button>' +
+		'<button class="ev-scroll" id="ev-scroll" type="button" aria-label="Scroll down for more"><span>Scroll down, there is more</span><svg viewBox="0 0 18 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3l7 6 7-6"/></svg></button>' +
 		'</div>' +
 		'</div>' +
-		'<div class="ev-footwrap" id="ev-footwrap"><a class="ev-credit" href="' + esc(S.footer.brandUrl || '/') + '"><span class="ev-by">' + esc(S.footer.createdBy) + '</span> <span class="ev-brand">' + esc(S.footer.brandStart) + '<span>' + esc(S.footer.brandEnd) + '</span></span></a></div>' +
+		(window.IHFooter && !cfg.cardsOnly
+			? '<section class="ev-foot" id="ev-foot">' + window.IHFooter.html({ bride: INV.couple && INV.couple.brideName, groom: INV.couple && INV.couple.groomName, mode: INV.footer && INV.footer.mode, family: INV.footer && INV.footer.family, seats: INV.seats }) + '</section>'
+			: '') +
 		'<div class="ev-flyers" id="ev-flyers"></div>' +
 		'<div class="ev-vw" id="ev-vw" aria-hidden="true">' +
 		'<div class="ev-vw-track" id="ev-vw-track"></div>' +
@@ -1498,6 +1501,37 @@
 		n.classList.add('vis');
 	});
 
+	/* ---------- footer: the hint to scroll, and the fade-in ---------- */
+	(function () {
+		var sc = document.getElementById('ev-scroll');
+		var ft = document.getElementById('ev-foot');
+		if (!ft) {
+			if (sc) sc.remove();
+			return;
+		}
+		var onScroll = function () {
+			if (sc) sc.classList.toggle('gone', (window.pageYOffset || document.documentElement.scrollTop) > 40);
+		};
+		window.addEventListener('scroll', onScroll, { passive: true });
+		if (sc) sc.addEventListener('click', function () {
+			ft.scrollIntoView({ behavior: 'smooth', block: 'end' });
+		});
+		if ('IntersectionObserver' in window) {
+			var io = new IntersectionObserver(function (en) {
+				en.forEach(function (e) {
+					if (e.isIntersecting) {
+						ft.classList.add('vis');
+						io.disconnect();
+					}
+				});
+			}, { threshold: 0.25 });
+			io.observe(ft);
+		} else ft.classList.add('vis');
+		window.__evShowScroll = function () {
+			if (sc) sc.classList.add('on');
+		};
+	})();
+
 	/* ---------- start ---------- */
 	var imgs = [S.images.tray, S.images.closed, S.images.body, S.images.front, S.images.flap, S.images.flapBack].filter(Boolean);
 	var imagesReady = Promise.all(
@@ -1514,6 +1548,9 @@
 	Promise.race([firstImgs, wait(1800)]).then(function () {
 		stage.classList.add('ev-in');
 		fireConfetti(); // confetti falls as soon as the invitation opens, once
+		wait((TM.hintDelay || 0) + 900).then(function () {
+			if (window.__evShowScroll) window.__evShowScroll();
+		});
 		wait(TM.hintDelay).then(function () {
 			hintEl.classList.add('show');
 		});

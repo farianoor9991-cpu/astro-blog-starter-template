@@ -141,7 +141,11 @@ export const cleanGuests = (input: any, links: any[], existing?: any[]) => {
 		const name = str(g?.name, 45);
 		const slug = prev && kept.get(prev.id) ? kept.get(prev.id) : name ? uniqueSlug(guestSlugOf(name), usedS) : '';
 		const phone = String(g?.phone ?? prev?.phone ?? '').replace(/[^0-9+]/g, '').slice(0, 16);
-		return { id, name, linkId, slug, phone };
+		// seats: 0 = the full family is invited (nothing is written on the invitation); 1 or more = that many seats are reserved
+		const rawSeats = g?.seats !== undefined ? g.seats : prev?.seats;
+		const sn = Math.floor(Number(rawSeats));
+		const seats = sn >= 1 && sn <= 50 ? sn : 0;
+		return { id, name, linkId, slug, phone, seats };
 	}).filter((g: any) => g.name);
 };
 
@@ -188,4 +192,13 @@ export const expiresAt = (createdAt: string): number => {
 	const d = new Date(createdAt);
 	d.setUTCMonth(d.getUTCMonth() + 3);
 	return d.getTime();
+};
+
+
+// The footer of the invitation page: whose names it shows
+export const cleanFooter = (input: any, prev?: any) => {
+	const src = input && typeof input === 'object' ? input : prev || {};
+	const mode = ['couple', 'family', 'none'].includes(src.mode) ? src.mode : 'couple';
+	const family = String(src.family ?? '').replace(/[<>]/g, '').trim().slice(0, 40);
+	return { mode, family };
 };

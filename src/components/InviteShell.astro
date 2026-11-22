@@ -20,10 +20,11 @@ const config = {
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 		<link
-			href="https://fonts.googleapis.com/css2?family=Berkshire+Swash&family=Unna:wght@400;700&family=Playfair+Display:wght@700&display=swap"
+			href="https://fonts.googleapis.com/css2?family=Berkshire+Swash&family=Unna:ital,wght@0,400;0,700;1,600&family=Playfair+Display:wght@700&family=Pinyon+Script&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&display=swap"
 			rel="stylesheet"
 		/>
-		<link rel="stylesheet" href="/envelope.css?v=23" />
+		<link rel="stylesheet" href="/envelope.css?v=24" />
+		<link rel="stylesheet" href="/ih-footer.css?v=2" />
 		<link rel="preload" as="image" href="/haya-tray-m.webp" media="(max-width: 699px), (orientation: portrait)" />
 		<link rel="preload" as="image" href="/haya-tray.webp" media="(min-width: 700px) and (orientation: landscape)" />
 		<link rel="preload" as="image" href="/haya3-closed.webp?v=2" />
@@ -70,11 +71,13 @@ const config = {
 					})
 					.then(function (d) {
 						var cfg = JSON.parse(el.textContent);
-						cfg.invitation = { couple: d.couple, events: d.events, hosts: d.hosts || [], guest: d.guest || '', musicSrc: d.musicSrc || '' };
+						cfg.invitation = { couple: d.couple, events: d.events, hosts: d.hosts || [], guest: d.guest || '', musicSrc: d.musicSrc || '', seats: d.seats || 0, footer: d.footer || { mode: 'couple', family: '' } };
 						el.textContent = JSON.stringify(cfg);
 						document.title = d.couple.brideName.split(' ')[0] + ' & ' + d.couple.groomName.split(' ')[0] + ' | Invitation';
-						load('/gsap.min.js', function () {
-							load('/envelope-engine.js?v=28');
+						load('/ih-footer.js?v=1', function () {
+							load('/gsap.min.js', function () {
+								load('/envelope-engine.js?v=29');
+							});
 						});
 					})
 					.catch(function (e) {

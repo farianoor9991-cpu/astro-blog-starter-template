@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 import { hayaEnvelope } from '../../data/haya-envelope';
-import { clean, cleanGuests, cleanLinks, coupleSlugOf, DEFAULT_TEMPLATE, expiryOpts, json, loadByToken, rid, saveOrder } from '../../lib/orders';
+import { clean, cleanFooter, cleanGuests, cleanLinks, coupleSlugOf, DEFAULT_TEMPLATE, expiryOpts, json, loadByToken, rid, saveOrder } from '../../lib/orders';
 
 export const prerender = false;
 
@@ -72,6 +72,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
 		guestsOn: !!body.guestsOn, // the personalized greeting cards add-on
 		setupTeam: !!body.setupTeam, // the customer asked our team to set everything up (+Rs. 1,999)
 		music: '',
+		footer: { mode: 'couple', family: '' },
 		guests,
 		template: DEFAULT_TEMPLATE,
 		paid: false,
@@ -161,6 +162,7 @@ export const PUT: APIRoute = async ({ request, url, locals }) => {
 	const next = {
 		...order,
 		music,
+		footer: cleanFooter(body.footer, order.footer),
 		couple: base.couple,
 		events: base.events,
 		hosts: base.hosts,
@@ -170,7 +172,7 @@ export const PUT: APIRoute = async ({ request, url, locals }) => {
 		guests,
 		template: typeof body.template === 'string' && body.template.trim() ? body.template.slice(0, 1500) : order.template,
 	};
-	const part = (o: any) => JSON.stringify([o.couple, o.events, o.hosts, o.hostsOn, o.mode, o.links, o.guests, o.template, o.music]);
+	const part = (o: any) => JSON.stringify([o.couple, o.events, o.hosts, o.hostsOn, o.mode, o.links, o.guests, o.template, o.music, o.footer]);
 	if (part(next) === part(order) && !pinChanged) return json(publicView(order)); // nothing changed: no write
 	L.o = { ...next, updatedAt: new Date().toISOString() };
 	await saveOrder(kv, L);

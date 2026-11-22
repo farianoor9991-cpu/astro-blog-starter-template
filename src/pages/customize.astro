@@ -27,8 +27,7 @@ import PageLayout from '../layouts/PageLayout.astro';
 			</div>
 
 			<div class="cz-bar">
-				<button class="btn-o" type="button" data-act="preview">Preview</button>
-				<button class="btn-o" type="button" data-act="draft" id="cz-draft">Save draft</button>
+				<button class="btn-g" type="button" data-act="envelope" style="flex:1;padding:12px 14px">See it in the envelope</button>
 				<span class="pr" id="cz-price"></span>
 			</div>
 
@@ -150,7 +149,7 @@ const save = () => {};
 		const tabs = (): string[] => {
 			let p = pkg();
 			if (!selEvents().length) p = [tpl.events[0].id].concat(p); // nothing chosen yet: the preview shows the first event card, never the hosts card
-			return S.guests.on && S.links.mode ? ['guest'].concat(p) : p;
+			return S.guests.on ? ['guest'].concat(p) : p;
 		};
 		const label = (id: string) => (id === 'hosts' ? 'Reception Hosts' : id === 'guest' ? 'Greeting card' : evDef(id).label);
 		const ensureActive = () => {
@@ -611,20 +610,19 @@ const save = () => {};
 				<div class="acts"><button class="btn-g" type="button" data-act="next" data-n="3">Continue to Step 4</button></div>`;
 		};
 
+		const optHead = (t: string, price: string) =>
+			`<b style="display:flex;justify-content:space-between;align-items:baseline;gap:10px"><span>${t}</span><span style="font:700 15px Poppins,sans-serif;color:#b8793c;white-space:nowrap">${price}</span></b>`;
 		const body4 = (): string => {
 			const cards = pkg();
 			if (!cards.length) {
 				return `<p class="hint">Please choose your events in Step 2 first.</p><div class="acts"><button class="btn-o" type="button" data-open="2">Go to Step 2</button></div>`;
 			}
 			const ex = (g: string, t: string) => `<div class="exg"><b>${g}</b><span>${t}</span></div>`;
-			const head = (t: string, price: string, note = '') =>
-				`<b style="display:flex;justify-content:space-between;align-items:baseline;gap:10px"><span>${t}${note ? ` <span style="font-weight:400;color:#5a5a5a">${note}</span>` : ''}</span><span style="font:700 15px Poppins,sans-serif;color:#b8793c;white-space:nowrap">${price}</span></b>`;
-			const opt1 = `<div class="opt on" role="checkbox" aria-checked="true" aria-disabled="true" style="cursor:default"><span class="cb"></span><span class="ot">${head('Invitation links', fmtRs(P_BASE), '(personal dashboard provided)')}<small>✔️ One link for everyone with all cards<br>✔️ Separate links for each group<br>&gt; Create your own groups with your selected events for each group</small>
-				<small style="margin-top:8px">e.g.</small><div class="exr">${ex('Group 1', 'Mehndi &amp; Baraat only guests')}${ex('Group 2', 'Walima only guests')}${ex('Group 3', 'Baraat &amp; Walima only guests')}</div>
-				<button type="button" class="lnk" data-act="howto" style="font-size:12px">See how it works</button></span></div>`;
-			const opt2 = `<div class="opt${S.guests.on ? ' on' : ''}" role="checkbox" aria-checked="${S.guests.on}" tabindex="0" data-act="gtoggle"><span class="cb"></span><span class="ot">${head('Invitation links + Guest name greeting cards', fmtRs(P_FULL))}${
+			const opt1 = `<div class="opt on" role="checkbox" aria-checked="true" style="cursor:default"><span class="cb"></span><span class="ot">${optHead('Invitation links', fmtRs(P_BASE))}<small>✔️ One link for everyone with all cards<br>✔️ Separate links for each group<br>&gt; Create your own groups with your selected events for each group (personal dashboard provided)</small>
+				<button type="button" class="lnk" data-act="howto" style="font-size:12px;margin-top:6px">See how it works</button></span></div>`;
+			const opt2 = `<div class="opt${S.guests.on ? ' on' : ''}" role="checkbox" aria-checked="${S.guests.on}" tabindex="0" data-act="gtoggle"><span class="cb"></span><span class="ot">${optHead('Invitation links + Guest name greeting cards', fmtRs(P_FULL))}${
 				S.guests.on
-					? `<small>✔️ Everything in Invitation links (personal dashboard provided)<br>✔️ A personalized greeting card for each guest you list (unlimited guests). Their first card greets them by name: "Dear Shaheer Aslam! You are specially invited to..."</small><button type="button" class="lnk" data-act="howto" style="font-size:12px;margin-top:6px">See how groups work</button>`
+					? `<small>✔️ One link for everyone with all cards<br>✔️ Separate links for each group (personal dashboard provided)<br>✔️ A personalized greeting card for each guest you list (unlimited guests). Their first card greets them by name: "Dear Shaheer Aslam! You are specially invited to..."</small>`
 					: ''
 			}</span></div>`;
 			return `
@@ -634,21 +632,23 @@ const save = () => {};
 		};
 		const body6 = (): string => {
 			const card = (v: string, title: string, price: string, lines: string[]) =>
-				`<button type="button" class="opt${S.setup === v ? ' on' : ''}" data-act="setup" data-v="${v}" aria-pressed="${S.setup === v}"><span class="cb"></span><span class="ot"><b>${title} <span style="color:#b8793c;white-space:nowrap">${price}</span></b><small>${lines.map((l) => '\u2714\uFE0F ' + l).join('<br>')}</small></span></button>`;
+				`<button type="button" class="opt${S.setup === v ? ' on' : ''}" data-act="setup" data-v="${v}" aria-pressed="${S.setup === v}"><span class="cb"></span><span class="ot">${optHead(title, price)}<small>${lines.map((l) => '\u2714\uFE0F ' + l).join('<br>')}</small></span></button>`;
 			return `
 				<div class="ihx" style="padding:10px 10px 8px">
-					${card('self', 'A) I\u2019ll manage it \u2014', 'FREE', ['You get your own Guest Management Panel.', 'Make groups, add guests, and edit anything anytime.', 'Short video guide for every step.'])}
-					${card('team', 'B) Let our team handle it \u2014', '+Rs. 1,999', ['Send us everything on WhatsApp and we set it all up for you. You can change anything later.'])}
+					${card('self', 'A) I\u2019ll manage it', 'FREE', ['You get your own Guest Management Panel.', 'Make groups, add guests, and edit anything anytime.', 'Short video guide for every step.'])}
+					${card('team', 'B) Let our team handle it', '+Rs. 1,999', ['Send us everything on WhatsApp and we set it all up for you. You can change anything later.'])}
 				</div>
 				<div class="err" data-err="6"></div><div class="acts"><button class="btn-g" type="button" data-act="next" data-n="6">Continue to Step 5</button></div>`;
 		};
 		const howTo = () => {
 			const w = document.createElement('div');
 			w.className = 'hw-bg';
-			w.innerHTML = `<div class="hw" role="dialog" aria-modal="true"><h3>How groups work</h3><p>Create as many groups as you like. Send a different link to each group of guests, so guests only see the cards for the events they're invited to.</p>
-				<div class="st1"><i>1</i><div><b>Make groups</b><p>Name them anything, then tick the events each group should see.</p><div class="exr">${'Group 1|Mehndi &amp; Baraat only guests~Group 2|Walima only guests~Group 3|Baraat &amp; Walima only guests'.split('~').map((x) => ex2(x)).join('')}</div></div></div>
-				<div class="st1"><i>2</i><div><b>Each group gets its own link</b><span class="lkb">../maria-weds-ali/group=baraat-&amp;-mehndi-guests/</span><span class="lkb">../maria-weds-ali/group=walima-guests/</span></div></div>
-				<div class="st1"><i>3</i><div><b>Send on WhatsApp</b><p>Copy each group's link and send it to a specific group of guests, so those guests only see the cards for the events they're invited to.</p></div></div>
+			w.innerHTML = `<div class="hw" role="dialog" aria-modal="true"><h3 style="font-size:24px;margin-bottom:10px">Different guests for different events?</h3><p style="margin:0 0 10px"><b>Follow these steps:</b></p>
+				<div class="st1"><i>1</i><div><b>Create a group</b><p>e.g. Walima only guests</p></div></div>
+				<div class="st1"><i>2</i><div><b>Select the event or events for this group</b></div></div>
+				<div class="st1"><i>3</i><div><b>Get its link</b><span class="lkb">ali-weds-sara/group=walima-guests</span></div></div>
+				<div class="st1"><i>4</i><div><b>Copy the link and send it on WhatsApp</b></div></div>
+				<p style="margin:12px 0 0">Create as many groups as you like. Each link shows only the event cards you choose for that group.</p>
 				<div class="acts"><button type="button" data-act="howclose" style="background:#d4a276;color:#fff;border:0;border-radius:999px;padding:10px 24px;font:600 14px Poppins,sans-serif;cursor:pointer">Got it</button></div></div>`;
 			w.addEventListener('click', (e) => { const t = e.target as HTMLElement; if (t === w || t.closest('[data-act="howclose"]')) w.remove(); });
 			document.body.appendChild(w);
@@ -658,30 +658,10 @@ const save = () => {};
 			const cards = pkg();
 			if (!cards.length) return '<p class="hint">Please complete the earlier steps first.</p>';
 			const c = S.couple;
-			const evLines = selEvents()
-				.sort(byDate)
-				.map((e: D) => {
-					const v = S.events[e.id];
-					const d = parseDate(v.date);
-					const when = d ? `${DAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}` : 'date missing';
-					return `<p>${esc(e.label)}: ${esc(when)}, ${esc(fmtTime(v.time).replace('At ', ''))}, ${esc(String(v.venue).trim())}</p>`;
-				})
-				.join('');
-			const linkLines = '<p>One link for everyone, plus separate group links. You set up your groups on your dashboard.</p>';
-			const guestLines = '<p>Personal links and greeting cards for each guest. You add the guest names on your dashboard.</p>';
-			const row = (title: string, html: string, n: number) =>
-				`<div class="rv-row"><div><b>${title}</b>${html}</div><button class="lnk" type="button" data-open="${n}">Edit</button></div>`;
 			return `
-				<div class="rv">
-					${row('Couple', `<p>${esc(tc(c.brideName))}, D/O Mr &amp; Mrs ${esc(tc(cleanParents(c.brideParents)))}</p><p>${esc(tc(c.groomName))}, S/O Mr &amp; Mrs ${esc(tc(cleanParents(c.groomParents)))}</p>`, 1)}
-					${row('Events', evLines, 2)}
-					${row('Share links', linkLines, 4)}
-					${row('Set-up', S.setup === 'team' ? '<p>Our team sets everything up for you.</p>' : '<p>You manage it yourself with your own dashboard.</p>', 6)}
-					${S.guests.on ? row('Personalized greetings', guestLines, 4) : ''}
-				</div>
 				<div class="rv-row"><div><b>Price</b>${priceLines().map((l) => `<p>${esc(l.t)}: ${fmtRs(l.v)}</p>`).join('')}<p><b>Total: ${fmtRs(totalPrice())}</b></p></div></div>
-				<p class="hint">Your cards, with the preview watermark:</p><button class="btn-o" type="button" data-act="preview">Preview your cards</button> <button class="btn-o" type="button" data-act="envelope">See it in the envelope</button>${TEST ? '<p class="hint"><b>Test mode:</b> the envelope opens without the watermark.</p>' : ''}
-				${S.guests.on && S.links.mode ? '<div class="gwin"><b>Greeting cards</b><small>One for each guest. Each guest\'s link opens with only their own greeting card.</small><div class="gal" id="gal-g"></div></div>' : ''}
+				<button class="btn-o" type="button" data-act="envelope">See it in the envelope</button>${TEST ? '<p class="hint"><b>Test mode:</b> the envelope opens without the watermark.</p>' : ''}
+				${S.guests.on ? '<div class="gwin"><b>Greeting cards</b><small>One for each guest. Each guest\'s link opens with only their own greeting card.</small><div class="gal" id="gal-g"></div></div>' : ''}
 				<div class="gwin"><b>Event cards</b><small>Swipe to see all cards.</small><div class="gal" id="gal"></div></div>
 				<p class="hint">This is a preview. Your final cards will not have the watermark.</p>
 				<div class="gwin"><b>Set your Edit PIN</b><small>You enter this PIN only once, here. This device will not ask for it again. If you open your order from another phone or computer, it asks for the PIN once. Please do not share it.</small>
@@ -1171,7 +1151,7 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 		const DRAFT_KEY = 'ih-haya-draft-v1';
 		let draftTimer: any = 0;
 		const saveDraft = () => {
-			const b = $('#cz-draft') as HTMLElement;
+			const b = ($('#cz-draft') || document.createElement('span')) as HTMLElement;
 			try {
 				localStorage.setItem(DRAFT_KEY, JSON.stringify({ S, custom: tpl.events.filter((e: D) => e.custom), at: Date.now() }));
 				b.textContent = 'Draft saved';
@@ -1210,8 +1190,8 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 
 		/* ---------- start ---------- */
 		($('#cz-name') as HTMLElement).textContent = tpl.name;
-		($('#cz-price') as HTMLElement).textContent = fmtRs(P_FULL);
 		buildSteps();
+		updatePrice();
 		try {
 			if (localStorage.getItem(DRAFT_KEY)) ($('#cz-draftbox') as HTMLElement).hidden = false;
 		} catch (e) {}
