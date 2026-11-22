@@ -637,6 +637,9 @@
 		var c = document.createElement('canvas');
 		c.className = 'ev-fx';
 		c.setAttribute('aria-hidden', 'true');
+		// exact pixel size (100vh is taller than the visible screen on phones, which pushed the ring off the seal)
+		c.style.width = window.innerWidth + 'px';
+		c.style.height = window.innerHeight + 'px';
 		var dpr = Math.min(window.devicePixelRatio || 1, 1.5);
 		fxDpr = dpr;
 		c.width = Math.round(window.innerWidth * dpr);
@@ -1501,7 +1504,13 @@
 			return loadOne(s).catch(function () {});
 		})
 	);
-	Promise.race([Promise.all([imagesReady, fontsReady]), wait(3500)]).then(function () {
+	// the tray and envelope rise as soon as THEIR pictures are here (not after every picture and font)
+	var firstImgs = Promise.all(
+		[S.images.trayPhone && !wide0() ? S.images.trayPhone : S.images.tray, S.images.closed, S.images.body].filter(Boolean).map(function (s) {
+			return loadOne(s).catch(function () {});
+		})
+	);
+	Promise.race([firstImgs, wait(1800)]).then(function () {
 		stage.classList.add('ev-in');
 		fireConfetti(); // confetti falls as soon as the invitation opens, once
 		wait(TM.hintDelay).then(function () {

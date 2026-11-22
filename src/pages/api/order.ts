@@ -30,9 +30,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
 	if (!/^\d{4}$/.test(String(body.pin || ''))) return json({ error: 'Please set a 4-digit PIN.' }, 400);
 	const base = clean(body);
 	if (!base.events.length || !base.couple.brideName || !base.couple.groomName) return json({ error: 'Missing details' }, 400);
-	const wantMany = body.mode === 'many';
-	let links = cleanLinks(wantMany ? body.links : [], base.events);
-	const guests = body.guestsOn ? cleanGuests(body.guests, links) : [];
+	// groups and guest lists are made later, on the order page; the order starts with the one main link
+	const links = cleanLinks([], base.events);
+	const guests: any[] = [];
 	// private link = 10 characters that find the order + 14 secret characters
 	const pid = rid(10);
 	const token = pid + rid(14);
@@ -67,8 +67,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
 		...base,
 		mode: links.length > 1 ? 'many' : 'one',
 		links,
-		hostsOn: base.hosts.length > 0,
-		guestsOn: !!body.guestsOn,
+		hostsOn: true, // the reception hosts card is part of every package; the customer can remove it on the order page
+		guestsOn: !!body.guestsOn, // the personalized greeting cards add-on
 		guests,
 		template: DEFAULT_TEMPLATE,
 		paid: false,
@@ -144,22 +144,18 @@ export const PUT: APIRoute = async ({ request, url, locals }) => {
 		return json(publicView(order));
 	}
 	if (order.locked) return json({ error: 'Your design is locked. Please unlock it first.' }, 423);
-	// Couple and events are fixed after purchase; only hosts (if that card was bought), groups, guests and message can change
-	const hostsOn = order.hostsOn ?? order.hosts.length > 0;
-	// Events: same events as bought; only date, time and venue can change
-	const sent: any[] = Array.isArray(body.events) ? body.events : [];
-	const merged = order.events.map((e: any) => {
-		const x = sent.find((y: any) => y && y.id === e.id) || e;
-		return { ...e, date: x.date, time: x.time, venue: x.venue };
-	});
-	const base = clean({ couple: order.couple, events: merged, hosts: hostsOn ? body.hosts : [] }, order);
-	base.couple = order.couple;
+	// Everything on the invitation can be edited here: couple, events (standard or the customer's own), hosts card, groups, guests
+	const hostsOn = typeof body.hostsOn === 'boolean' ? body.hostsOn : (order.hostsOn ?? true);
+	const base = clean({ couple: body.couple || order.couple, events: Array.isArray(body.events) ? body.events : order.events, hosts: hostsOn ? body.hosts ?? order.hosts : [] }, order);
+	if (!base.events.length) return json({ error: 'Please keep at least one event.' }, 400);
+	if (!base.couple.brideName || !base.couple.groomName) return json({ error: 'Please keep the bride and groom names.' }, 400);
 	const links = cleanLinks(body.links, base.events, order.links);
 	const empty = links.find((l: any) => !l.cards.length);
 	if (empty) return json({ error: 'The group "' + empty.label + '" needs at least one event.' }, 400);
 	const guests = order.guestsOn ? cleanGuests(body.guests, links, order.guests) : [];
 	const next = {
 		...order,
+		couple: base.couple,
 		events: base.events,
 		hosts: base.hosts,
 		hostsOn,
@@ -168,7 +164,7 @@ export const PUT: APIRoute = async ({ request, url, locals }) => {
 		guests,
 		template: typeof body.template === 'string' && body.template.trim() ? body.template.slice(0, 1500) : order.template,
 	};
-	const part = (o: any) => JSON.stringify([o.events, o.hosts, o.mode, o.links, o.guests, o.template]);
+	const part = (o: any) => JSON.stringify([o.couple, o.events, o.hosts, o.hostsOn, o.mode, o.links, o.guests, o.template]);
 	if (part(next) === part(order) && !pinChanged) return json(publicView(order)); // nothing changed: no write
 	L.o = { ...next, updatedAt: new Date().toISOString() };
 	await saveOrder(kv, L);

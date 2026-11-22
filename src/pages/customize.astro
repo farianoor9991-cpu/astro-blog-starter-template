@@ -78,11 +78,10 @@ const MAX_HOSTS: number = tpl.maxHosts || 6;
 		const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 		const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 		const STEPS = [
-			{ n: 1, title: 'Couple details', sub: 'Names of the bride, groom and their parents' },
-			{ n: 2, title: 'Your events', sub: 'Choose the cards you want' },
-			{ n: 3, title: 'Reception hosts', sub: 'Optional, you can skip' },
-			{ n: 4, title: 'Share links', sub: 'One link, or one per group of guests' },
-			{ n: 5, title: 'Review and preview', sub: 'See your cards before paying' },
+			{ n: 1, d: 1, title: 'Couple details', sub: 'Names of the bride, groom and their parents' },
+			{ n: 2, d: 2, title: 'Your events', sub: 'Choose the cards you want' },
+			{ n: 4, d: 3, title: 'Share links', sub: 'Groups are included. Greeting cards are optional' },
+			{ n: 5, d: 4, title: 'Review and preview', sub: 'See your cards before paying' },
 		];
 
 		const $ = (s: string) => document.querySelector(s) as HTMLElement | null;
@@ -123,8 +122,8 @@ const MAX_HOSTS: number = tpl.maxHosts || 6;
 			active: tpl.events.find(e => e.label.toLowerCase().includes('nikah'))?.id || tpl.events[0].id,
 			couple: { brideName: '', brideParents: '', groomName: '', groomParents: '' },
 			events: {},
-			hosts: { want: null, list: [{ name: '', phone: '' }] },
-			links: { mode: '', list: [] },
+			hosts: { want: true, list: tpl.sampleHosts.map((h: D) => ({ name: h.name, phone: String(h.phone).replace(/x/gi, '1') })) },
+			links: { mode: 'one', list: [] },
 			guests: { on: false, one: '' },
 		});
 		let S: D = blank();
@@ -159,31 +158,21 @@ const save = () => {};
 		const hostCount = () => S.hosts.list.filter((h: D) => h.name.trim()).length;
 		/* ---------- personalized greetings (add-on) ---------- */
 		/* ---------- prices (change them here) ---------- */
-		const P_CARD = 1000; // each event card, the hosts card and the greeting card
-		const P_ENV = 1000; // the envelope
-		const P_ADDON = 1999; // personalized links add-on
+		const P_BASE = 6999; // the package (envelope, event cards, hosts card, groups)
+		const P_ADDON = 2999; // personalized greeting cards add-on
+		const P_FULL = P_BASE + P_ADDON; // 9,999, shown at the top of the form
 		const fmtRs = (n: number) => 'Rs. ' + n.toLocaleString('en-US');
 		const priceLines = (): { t: string; v: number }[] => {
-			const ev = selEvents().length;
 			const out: { t: string; v: number }[] = [];
 			if (!pkg().length) return out;
-			out.push({ t: 'Envelope', v: P_ENV });
-			if (ev) out.push({ t: `Event cards (${ev} x ${fmtRs(P_CARD)})`, v: ev * P_CARD });
-			if (S.hosts.want) out.push({ t: 'Reception hosts card', v: P_CARD });
-			if (S.guests.on && S.links.mode) {
-				out.push({ t: 'Greeting card', v: P_CARD });
-				out.push({ t: 'Personalized links add-on', v: P_ADDON });
-			}
+			out.push({ t: 'Invitation package', v: P_BASE });
+			if (S.guests.on) out.push({ t: 'Personalized greeting cards add-on', v: P_ADDON });
 			return out;
 		};
-		const rawTotal = () => priceLines().reduce((a, l) => a + l.v, 0);
-		// The total is always the real sum of the items (charm prices are only used in the catalogue labels)
-		const totalPrice = () => rawTotal();
+		const totalPrice = () => priceLines().reduce((a, l) => a + l.v, 0);
 		const updatePrice = () => {
 			const el = $('#cz-price');
-			if (!el) return;
-			const t = totalPrice();
-			el.textContent = t ? 'Total: ' + fmtRs(t) : 'Rs. 3,999 - Rs. 10,999+';
+			if (el) el.textContent = fmtRs(P_FULL);
 		};
 		const TEST = /[?&]test=1/.test(location.search);
 		const GUEST_MAX = 50;
@@ -195,16 +184,7 @@ const save = () => {};
 				.map((x) => x.trim())
 				.filter(Boolean);
 		const gDisplay = (raw: string): string => tc(raw);
-		const allGuests = (): D[] => {
-			if (!S.guests.on) return [];
-			const out: D[] = [];
-			if (S.links.mode === 'one') {
-				gNames(S.guests.one).forEach((n) => out.push({ raw: n, name: gDisplay(n), link: null, linkNo: 0 }));
-			} else {
-				S.links.list.forEach((lk: D, i: number) => gNames(lk.guests).forEach((n) => out.push({ raw: n, name: gDisplay(n), link: lk, linkNo: i + 1 })));
-			}
-			return out;
-		};
+		const allGuests = (): D[] => (S.guests.on ? [{ raw: 'Shaheer Aslam', name: 'Shaheer Aslam', link: null, linkNo: 0 }] : []);
 		const guestEvents = (g: D): string[] => {
 			const ids = g.link ? g.link.cards : selEvents().map((e: D) => e.id);
 			return selEvents().sort(byDate).map((e: D) => e.id).filter((id: string) => ids.indexOf(id) >= 0);
@@ -419,11 +399,6 @@ const save = () => {};
 				const v = S.events[e.id];
 				if (n(v.date) !== n(e.sample.date) || n(v.time) !== n(e.sample.time) || n(v.venue) !== n(tpl.sampleVenue)) return false;
 			}
-			if (S.hosts.want) {
-				const hs = S.hosts.list.filter((h: D) => n(h.name));
-				if (hs.length !== tpl.sampleHosts.length) return false;
-				for (let i = 0; i < hs.length; i++) if (n(hs[i].name) !== n(tpl.sampleHosts[i].name) || n(hs[i].phone) !== n(String(tpl.sampleHosts[i].phone).replace(/x/gi, '1'))) return false;
-			}
 			return true;
 		};
 
@@ -636,52 +611,37 @@ const save = () => {};
 			if (!cards.length) {
 				return `<p class="hint">Please choose your events in Step 2 first.</p><div class="acts"><button class="btn-o" type="button" data-open="2">Go to Step 2</button></div>`;
 			}
-			syncLinks();
-			const m = S.links.mode;
-			const evCards = cards.filter((c: string) => c !== 'hosts');
-			const hostNote = S.hosts.want ? '<p class="hint">Your Reception Hosts card is included in every link automatically.</p>' : '';
-			const opt = (mode: string, title: string, desc: string) =>
-				`<button type="button" class="opt${m === mode ? ' on' : ''}" data-mode="${mode}" aria-pressed="${m === mode}"><span class="cb"></span><span class="ot"><b>${title}</b><small>${desc}</small></span></button>`;
-			const gTotal = allGuests().length;
-			const personal = (what: string) => `<div class="subw"><button type="button" class="opt sub${S.guests.on ? ' on' : ''}" data-act="gtoggle" aria-pressed="${S.guests.on}"><span class="cb"></span><span class="ot"><b>Add personalized greeting cards <span style="color:#b8793c;white-space:nowrap">(+${fmtRs(P_ADDON)})</span></b><small><span style="color:#1a1a1a;font-weight:500">With this add-on, you receive:</span><br>A. ${what}<br>B. A personal link for each guest you list (up to ${GUEST_MAX}). Their first card greets them by name: "Dear Shaheer Aslam".</small></span></button>`;
-			const gBox = (key: string, text: string, title: string, sub?: string) =>
-				S.guests.on
-					? `<div class="f"><label><b>${title}</b></label>${sub ? `<p class="hint" style="margin:0 0 6px">${sub}</p>` : ''}<textarea data-gst="${key}" rows="4" maxlength="3000" placeholder="Hamza Chachu&#10;Mr. Ali &amp; Family&#10;Meer Alam" autocomplete="off">${esc(text)}</textarea><p class="hint" data-gtotal>${gTotal} of ${GUEST_MAX} guests added</p><p class="hint" data-gwarn style="color:#b3261e" hidden></p><p class="hint">One name per line. We add "Dear" for you, so Shaheer Aslam becomes "Dear Shaheer Aslam".</p></div>`
-					: '';
-			const oneOpt = '<div class="opts">' + opt('one', 'One link for everyone', 'All your cards in a single link.') + '</div>';
-			const manyOpt = '<div class="opts">' + opt('many', 'Different links for different guests', 'For example, close family see all cards and friends see only a few chosen cards.') + '</div>';
-			let one = oneOpt;
-			let many = manyOpt;
-			if (m === 'one') {
-				one = oneOpt + personal('One link with all your cards, for everyone.') + gBox('one', S.guests.one, 'Guests who get their own personalized link') + '</div>';
-				one += `<p class="hint">Your link will show: ${cards.map((c) => esc(label(c))).join(', ')}.</p>`;
-			}
-			if (m === 'many') {
-				many = manyOpt + personal('Separate links, each with the cards you chose for that group.') + '</div>';
-				many +=
-					S.links.list
-						.map(
-							(lk: D, i: number) => `
-						<div class="lk">
-							<div class="f"><label><b>Group ${i + 1} name</b></label><input data-lk="${lk.id}" data-k="label" value="${esc(lk.label)}" placeholder="e.g. ${['Nikkah &amp; Baraat only', 'Walima only', 'Close family', 'Friends'][i % 4]}" autocomplete="off"></div>
-							<p class="hint" style="margin:16px 0 8px;color:#1a1a1a"><b>Choose the events for Group ${i + 1}</b></p><p class="hint" style="margin:0 0 14px;line-height:1.5">Everyone in this group will receive these selected event cards only</p><div class="chips">${evCards
-								.map(
-									(c) =>
-										`<label class="chip ck${lk.cards.indexOf(c) >= 0 ? ' on' : ''}"><input type="checkbox" data-lk="${lk.id}" data-card-pick="${c}" ${lk.cards.indexOf(c) >= 0 ? 'checked' : ''}>${esc(label(c))}</label>`
-								)
-								.join('')}</div>
-							${gBox(lk.id, lk.guests || '', 'Guest names for Group ' + (i + 1), 'Each gets their own personalized link')}
-							<p class="hint" data-count="${lk.id}">${lk.cards.length} event${lk.cards.length === 1 ? '' : 's'} selected</p>
-							${S.links.list.length > 1 ? `<button type="button" class="lnk" data-act="rmlink" data-lk="${lk.id}">Remove this group</button>` : ''}
-						</div>`
-						)
-						.join('') + hostNote + `<button type="button" class="btn-o" data-act="addlink">Add another group</button>`;
-			}
-			// the option that is not chosen stays visible just above the Continue button
-			const out = m === 'many' ? many + one : one + many;
-			return `${out}<div class="err" data-err="4"></div><div class="acts"><button class="btn-g" type="button" data-act="next" data-n="4">Continue to Step 5</button></div>`;
+			const ex = (g: string, t: string) => `<div class="exg"><b>${g}</b><span>${t}</span></div>`;
+			return `
+				<style>.ihx{border:1px solid #e6d9bd;border-radius:14px;background:#fffdf7;padding:14px 14px 12px;margin:0 0 14px}.ihx h4{margin:0 0 8px;font:700 12px Poppins,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#b8793c}.ihx p{margin:5px 0;font-size:14px;line-height:1.5;color:#1a1a1a}.ihx .sub2{color:#5a5a5a;margin-left:2px}.exr{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0 4px}.exg{border:1px solid #e6d9bd;border-radius:10px;padding:8px 9px;background:#fff;font-size:12.5px;line-height:1.4;color:#5a5a5a}.exg b{display:block;color:#1a1a1a;font-size:13px}@media(max-width:520px){.exg{padding:7px;font-size:11.5px}.exg b{font-size:12px}}.hw-bg{position:fixed;inset:0;background:rgba(26,26,26,.55);z-index:90;display:flex;align-items:center;justify-content:center;padding:16px}.hw{font-family:Poppins,sans-serif;background:#fcf9f1;border-radius:18px;max-width:560px;width:100%;max-height:88vh;overflow:auto;padding:20px 18px;box-shadow:0 20px 60px rgba(0,0,0,.3)}.hw h3{margin:0 0 4px;font:700 22px "Playfair Display",serif;color:#1a1a1a}.hw p{font-size:14px;line-height:1.55;color:#5a5a5a;margin:6px 0}.hw .st1{display:flex;gap:10px;align-items:flex-start;margin:12px 0}.hw .st1 i{flex:none;width:26px;height:26px;border-radius:50%;background:#d4a276;color:#fff;font:600 13px Poppins,sans-serif;display:flex;align-items:center;justify-content:center;font-style:normal}.hw .lkb{display:block;margin-top:4px;padding:6px 9px;border-radius:8px;background:#fff;border:1px dashed #d4a276;font-size:12px;color:#1a1a1a;word-break:break-all}</style>
+				<div class="ihx">
+					<h4>Option 1 &middot; always provided</h4>
+					<p>\u2714\uFE0F One link for everyone with all cards</p>
+					<p>\u2714\uFE0F Separate links for each group</p>
+					<p class="sub2">&gt; Create your own groups with your selected events for each group</p>
+					<div class="exr">${ex('Group 1', 'Mehndi only card link')}${ex('Group 2', 'Baraat &amp; Walima only card link')}${ex('Group 3', 'Walima only card link')}</div>
+					<button type="button" class="lnk" data-act="howto">See how it works</button>
+					<p class="hint" style="margin-top:8px">You create your groups on your dashboard after payment. Your Reception Hosts card is added automatically (you can remove it later).</p>
+				</div>
+				<div class="ihx" style="padding:10px 10px 8px">
+					<h4>Option 2 &middot; optional add-on</h4>
+					<button type="button" class="opt${S.guests.on ? ' on' : ''}" data-act="gtoggle" aria-pressed="${S.guests.on}"><span class="cb"></span><span class="ot"><b>Add personalized greeting cards <span style="color:#b8793c;white-space:nowrap">(+${fmtRs(P_ADDON)})</span></b><small><span style="color:#1a1a1a;font-weight:500">With this add-on, you get:</span><br>A. Everything in Option 1<br>B. A personalized link for each guest, for example <span style="color:#1a1a1a">../maria-weds-ali/guest=shaheer-aslam/</span><br>C. A personalized greeting card for every guest you list (unlimited guests). The first card greets them by name: "Dear Shaheer Aslam! You are specially invited to..."</small></span></button>
+					${S.guests.on ? '<p class="hint" style="margin:8px 4px 0">You add guest names (inside each group) on your dashboard after payment. The preview shows a sample guest, Shaheer Aslam.</p>' : ''}
+				</div>
+				<div class="err" data-err="4"></div><div class="acts"><button class="btn-g" type="button" data-act="next" data-n="4">Continue to Step 4</button></div>`;
 		};
-
+		const howTo = () => {
+			const w = document.createElement('div');
+			w.className = 'hw-bg';
+			w.innerHTML = `<div class="hw" role="dialog" aria-modal="true"><h3>How groups work</h3><p>One order, as many links as you need. Each group sees only its own cards.</p>
+				<div class="st1"><i>1</i><div><b>Make groups</b><p>Name them anything, then tick the events each group should see.</p><div class="exr">${'Group 1|Mehndi only~Group 2|Baraat &amp; Walima only~Group 3|Walima only'.split('~').map((x) => ex2(x)).join('')}</div></div></div>
+				<div class="st1"><i>2</i><div><b>Each group gets its own link</b><span class="lkb">../maria-weds-ali/group=family/</span><span class="lkb">../maria-weds-ali/group=friends/</span></div></div>
+				<div class="st1"><i>3</i><div><b>Send on WhatsApp</b><p>Copy the link and send it. With the add-on, each guest in a group also gets a personal link and a greeting card with their name.</p></div></div>
+				<div class="acts"><button type="button" data-act="howclose" style="background:#d4a276;color:#fff;border:0;border-radius:999px;padding:10px 24px;font:600 14px Poppins,sans-serif;cursor:pointer">Got it</button></div></div>`;
+			w.addEventListener('click', (e) => { const t = e.target as HTMLElement; if (t === w || t.closest('[data-act="howclose"]')) w.remove(); });
+			document.body.appendChild(w);
+		};
+		const ex2 = (x: string) => { const [g, t] = x.split('|'); return `<div class="exg"><b>${g}</b><span>${t} card link</span></div>`; };
 		const body5 = (): string => {
 			const cards = pkg();
 			if (!cards.length) return '<p class="hint">Please complete the earlier steps first.</p>';
@@ -695,37 +655,15 @@ const save = () => {};
 					return `<p>${esc(e.label)}: ${esc(when)}, ${esc(fmtTime(v.time).replace('At ', ''))}, ${esc(String(v.venue).trim())}</p>`;
 				})
 				.join('');
-			const hostLine = S.hosts.want ? `${hostCount()} host${hostCount() === 1 ? '' : 's'} added` : 'Not included';
-			let linkLines = '';
-			if (S.links.mode === 'one') {
-				linkLines = `<p>One link with ${cards.length} card${cards.length === 1 ? '' : 's'}</p>`;
-			} else {
-				linkLines =
-					`<p>${S.links.list.length} group${S.links.list.length === 1 ? '' : 's'}</p>` +
-					S.links.list.map((lk: D) => `<p>${esc(lk.label || 'Untitled')}: ${lk.cards.map((k: string) => esc(label(k))).concat(S.hosts.want ? ['Reception Hosts'] : []).join(', ')}</p>`).join('');
-			}
-			let guestLines = '';
-			if (S.guests.on) {
-				const gs = allGuests();
-				guestLines =
-					`<p>${gs.length} personalized link${gs.length === 1 ? '' : 's'}. Tap a name to see exactly what that guest will open.</p>` +
-					(gMore ? gs : gs.slice(0, 10))
-						.map((g: D, i: number) => {
-							const evs = ['Greeting card'].concat(guestEvents(g).map((id: string) => esc(label(id))));
-							if (S.hosts.want) evs.push('Reception Hosts');
-							return `<p><button type="button" class="lnk" data-act="gpreview" data-gi="${i}">${esc(g.name)}</button> sees: ${evs.join(', ')}${g.link ? ' (' + esc(g.link.label || 'Group ' + g.linkNo) + ')' : ''}</p>`;
-						})
-						.join('') +
-					(gs.length > 10 ? `<p><button type="button" class="lnk" data-act="gmore">${gMore ? 'Show less' : '+' + (gs.length - 10) + ' more...'}</button></p>` : '');
-			}
+			const linkLines = '<p>One link for everyone, plus separate group links. You set up your groups on your dashboard.</p>';
+			const guestLines = '<p>Personal links and greeting cards for each guest. You add the guest names on your dashboard.</p>';
 			const row = (title: string, html: string, n: number) =>
 				`<div class="rv-row"><div><b>${title}</b>${html}</div><button class="lnk" type="button" data-open="${n}">Edit</button></div>`;
 			return `
 				<div class="rv">
 					${row('Couple', `<p>${esc(tc(c.brideName))}, D/O Mr &amp; Mrs ${esc(tc(cleanParents(c.brideParents)))}</p><p>${esc(tc(c.groomName))}, S/O Mr &amp; Mrs ${esc(tc(cleanParents(c.groomParents)))}</p>`, 1)}
 					${row('Events', evLines, 2)}
-					${row('Reception hosts', `<p>${hostLine}</p>`, 3)}
-					${row('Invitation links', linkLines, 4)}
+					${row('Share links', linkLines, 4)}
 					${S.guests.on ? row('Personalized greetings', guestLines, 4) : ''}
 				</div>
 				<div class="rv-row"><div><b>Price</b>${priceLines().map((l) => `<p>${esc(l.t)}: ${fmtRs(l.v)}</p>`).join('')}<p><b>Total: ${fmtRs(totalPrice())}</b></p></div></div>
@@ -755,9 +693,8 @@ const save = () => {};
 			const sum: D = {
 				1: S.done[1] ? `${tc(c.brideName)} and ${tc(c.groomName)}` : STEPS[0].sub,
 				2: S.done[2] ? `${evN} event${evN === 1 ? '' : 's'} chosen` : STEPS[1].sub,
-				3: S.done[3] ? (S.hosts.want ? `${hostCount()} host${hostCount() === 1 ? '' : 's'} added` : 'Skipped') : STEPS[2].sub,
-				4: S.done[4] ? (S.links.mode === 'one' ? 'One link for everyone' : `${S.links.list.length} group${S.links.list.length === 1 ? '' : 's'}`) + (S.guests.on ? `, ${allGuests().length} personalized` : '') : STEPS[3].sub,
-				5: STEPS[4].sub,
+				4: S.done[4] ? (S.guests.on ? 'Groups and personalized greeting cards' : 'Groups included') : STEPS[2].sub,
+				5: STEPS[3].sub,
 			};
 			STEPS.forEach((s) => {
 				const el = $(`[data-sum="${s.n}"]`);
@@ -769,8 +706,8 @@ const save = () => {};
 		const updateProgress = () => {
 			const fill = $('#cz-fill');
 			const lab = $('#cz-lab');
-			if (fill) fill.style.width = (S.open / 5) * 100 + '%';
-			if (lab) lab.textContent = S.open ? `Step ${S.open} of 5` : 'All steps closed';
+			if (fill) fill.style.width = (Math.max(0, STEPS.findIndex((x) => x.n === S.open) + 1) / STEPS.length) * 100 + '%';
+			if (lab) lab.textContent = S.open ? `Step ${STEPS.findIndex((x) => x.n === S.open) + 1} of ${STEPS.length}` : 'All steps closed';
 		};
 
 		const closeStep = () => { 			S.open = 0; 			save(); 			document.querySelectorAll<HTMLElement>('.st').forEach((el) => { 				el.classList.remove('open'); 				const h = el.querySelector('.st-h'); 				if (h) h.setAttribute('aria-expanded', 'false'); 			}); 			updateProgress(); 		}; 		const openStep = (n: number, scroll = false) => {
@@ -817,40 +754,6 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 					if (!String(v.venue).trim()) er.push(`${e.label}: please enter the venue.`);
 				});
 			}
-			if (n === 3) {
-				if (S.hosts.want === null) er.push('Please choose Yes or No.');
-				if (S.hosts.want) {
-					const rows = S.hosts.list.filter((h: D) => h.name.trim() || h.phone.trim());
-					if (!rows.length) er.push('Please add at least one host, or choose No.');
-					rows.forEach((h: D, i: number) => {
-						if (!h.name.trim()) er.push(`Host ${i + 1}: please enter a name.`);
-						if (digits(h.phone).length < 10) er.push(`Host ${i + 1}: please enter a valid phone number.`);
-					});
-				}
-			}
-			if (n === 4 && !S.links.mode) er.push('Please choose one option: one link for everyone, or different links for different groups.');
-			if (n === 4 && S.guests.on) {
-				const gs = allGuests();
-				if (!gs.length) er.push('Please add at least one guest name, or turn off personalized greetings.');
-				if (gs.length > GUEST_MAX) er.push(`You can add up to ${GUEST_MAX} guests (you added ${gs.length}).`);
-				gs.forEach((g: D) => {
-					if (g.raw.length > GUEST_NAME_MAX) er.push(`"${g.raw.slice(0, 20)}..." is too long. Please keep each name under ${GUEST_NAME_MAX} characters.`);
-				});
-				const seen: D = {};
-				gs.forEach((g: D) => {
-					const k = g.name.toLowerCase();
-					if (seen[k]) er.push(`"${g.name}" is added more than once. Each guest needs a different name.`);
-					seen[k] = true;
-				});
-			}
-			if (n === 4 && S.links.mode === 'many') {
-				syncLinks();
-				if (!S.links.list.length) er.push('Please add at least one group.');
-				S.links.list.forEach((lk: D, i: number) => {
-					if (!lk.label.trim()) er.push(`Group ${i + 1}: please give it a name.`);
-					if (!lk.cards.length) er.push(`Group ${i + 1}: please choose at least one event.`);
-				});
-			}
 			return er;
 		};
 
@@ -865,7 +768,7 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 			if (n === 3 && S.hosts.want) S.hosts.list = S.hosts.list.filter((h: D) => h.name.trim() || h.phone.trim());
 			S.done[n] = true;
 			save();
-			openStep(n + 1, true);
+			openStep(n === 2 ? 4 : n + 1, true);
 		};
 
 		/* ---------- actions ---------- */
@@ -895,15 +798,7 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 				S.events[e.id] = { on: true, date: e.sample.date, time: e.sample.time, venue: tpl.sampleVenue };
 			});
 			S.hosts = { want: true, list: tpl.sampleHosts.map((h: D) => ({ name: h.name, phone: String(h.phone).replace(/x/gi, '1') })) };
-			// option 2 (different links) with the personalized add-on, so the whole experience can be tried
-			const evIds = tpl.events.map((e: D) => e.id);
-			S.links = {
-				mode: 'many',
-				list: [
-					{ id: uid(), label: 'Family', cards: evIds.slice(), guests: 'Hamza Chachu\nMr. Ali & Family\nMeer Alam' },
-					{ id: uid(), label: 'Friends', cards: evIds.slice(0, Math.max(1, Math.ceil(evIds.length / 2))), guests: 'Shaheer Aslam' },
-				],
-			};
+			S.links = { mode: 'one', list: [] };
 			S.guests = { on: true, one: '' };
 			S.done = {};
 			S.active = pkg()[0];
@@ -965,9 +860,6 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 			n.textContent = 'Creating your order...';
 			n.scrollIntoView({ behavior: 'smooth', block: 'center' });
 			try {
-				const gs = allGuests();
-				const mode = S.guests.on && !S.links.mode ? 'one' : S.links.mode || 'one';
-				const links = mode === 'many' ? S.links.list.map((lk: D) => ({ id: String(lk.id), label: lk.label || '', cards: lk.cards.filter((k: string) => k !== 'hosts') })) : [];
 				const payload = {
 					pin: pinA,
 					couple: {
@@ -977,11 +869,11 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 						groomParents: tc(cleanParents(S.couple.groomParents)),
 					},
 					events: selEvents().sort(byDate).map((e: D) => ({ id: e.id, date: S.events[e.id].date, time: S.events[e.id].time, venue: String(S.events[e.id].venue).trim(), ...(e.custom ? { custom: true, label: e.label, title: e.title } : {}) })),
-					hosts: S.hosts.want ? S.hosts.list.filter((h: D) => h.name.trim()).map((h: D) => ({ name: tc(h.name), phone: h.phone })) : [],
-					mode,
-					links,
-					guestsOn: S.guests.on && gs.length > 0,
-					guests: gs.map((g: D) => ({ name: g.name, linkId: g.link ? String(g.link.id) : 'all' })),
+					hosts: [],
+					mode: 'one',
+					links: [],
+					guestsOn: !!S.guests.on,
+					guests: [],
 				};
 				const r = await fetch('/api/order', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) });
 				if (!r.ok) throw new Error('x');
@@ -1214,6 +1106,9 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 					scheduleDraw();
 					updateSummaries();
 					break;
+				case 'howto':
+					howTo();
+					break;
 				case 'gpreview':
 					openInEnvelope(Number(d.gi));
 					break;
@@ -1263,7 +1158,7 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 		const buildSteps = () => {
 			($('#cz-steps') as HTMLElement).innerHTML = STEPS.map(
 				(s) =>
-					`<section class="st" data-n="${s.n}"><button class="st-h" type="button" data-open="${s.n}" aria-expanded="false"><span class="st-n">${s.n}</span><span class="st-t"><b>${s.title}</b><small data-sum="${s.n}">${s.sub}</small></span><svg class="chev" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button><div class="st-b" data-body="${s.n}"></div></section>`
+					`<section class="st" data-n="${s.n}"><button class="st-h" type="button" data-open="${s.n}" aria-expanded="false"><span class="st-n">${s.d}</span><span class="st-t"><b>${s.title}</b><small data-sum="${s.n}">${s.sub}</small></span><svg class="chev" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button><div class="st-b" data-body="${s.n}"></div></section>`
 			).join('');
 		};
 		const restoreDraft = () => {
@@ -1289,7 +1184,7 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 
 		/* ---------- start ---------- */
 		($('#cz-name') as HTMLElement).textContent = tpl.name;
-		($('#cz-price') as HTMLElement).textContent = price;
+		($('#cz-price') as HTMLElement).textContent = fmtRs(P_FULL);
 		buildSteps();
 		try {
 			if (localStorage.getItem(DRAFT_KEY)) ($('#cz-draftbox') as HTMLElement).hidden = false;

@@ -29,8 +29,8 @@ export const products: Record<string, Product> = {
 		image: '/haya-cover.jpg',
 		demo: '/demo-haya',
 		designId: 'envelope-haya',
-		priceRange: 'Rs. 3,999 - Rs. 10,999+',
-		priceNote: 'Starts with 1 event + up to 50 personalized guest invitations',
+		priceRange: 'Rs. 9,999',
+		priceNote: 'Includes the personalized greeting cards add-on (Rs. 6,999 without it)',
 		about:
 			'Haya turns your invitation into a small moment of joy. Your guest taps the envelope, the flap opens, and your event cards rise out and line up, ready to swipe through. Everything lives in a single link that is easy to share on WhatsApp.',
 		features: [
@@ -52,7 +52,7 @@ export const products: Record<string, Product> = {
 			},
 			{
 				title: 'Personalized for each guest',
-				text: 'With the personalized add-on, up to 50 guests each get their own link. Their first card is a warm greeting with their name: "Dear Shaheer Aslam".',
+				text: 'With the personalized add-on, every guest you list gets their own link. Their first card is a warm greeting with their name: "Dear Shaheer Aslam".',
 			},
 			{
 				title: 'Made for phones',
@@ -69,7 +69,7 @@ export const products: Record<string, Product> = {
 		linkOptions: [
 			{ title: 'One link for everyone', text: 'All your chosen cards in a single link. The simplest way to invite everyone.' },
 			{ title: 'Different links for different groups', text: 'For example, close family see all your events, and friends see only a few chosen cards.' },
-			{ title: 'Personalized links (add-on)', text: 'A separate link for each guest you list, up to 50. Each opens with a greeting card carrying that guest\'s name.' },
+			{ title: 'Personalized links (add-on)', text: 'A separate link for each guest you list, with no limit on guests. Each opens with a greeting card carrying that guest\'s name.' },
 		],
 		prices: [
 			{ item: 'Envelope', price: 'Rs. 1,000' },

@@ -106,8 +106,8 @@ export const hayaEnvelope = {
 
 	// Other times in milliseconds
 	timing: {
-		entrance: 1100, trayRise: 1900, envDelay: 1.15, // text, tray and envelope rising in
-		hintDelay: 3000, // when the "tap" hint appears
+		entrance: 1100, trayRise: 1200, envDelay: 0.4, // text, tray and envelope rising in
+		hintDelay: 2000, // when the "tap" hint appears
 		peek: 900, // the strip rising from the bottom
 		peekDelay: 1200, // when it starts after the tap
 		viewerIn: 450, // reading screen opening

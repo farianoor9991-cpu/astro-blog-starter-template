@@ -59,7 +59,7 @@ const SAMPLE = '/sample-design.jpg';
 ------------------------------------------------------------------- */
 
 const envelopes: Design[] = [
-	{ name: 'Haya', image: '/haya-cover.jpg', occasion: 'Wedding', link: '/products/haya', demo: '/demo-haya', price: 'Rs. 3,999 - Rs. 10,999+', note: 'Starts with 1 event + upto 50 personalized guest invitations' },
+	{ name: 'Haya', image: '/haya-cover.jpg', occasion: 'Wedding', link: '/products/haya', demo: '/demo-haya', price: 'Rs. 9,999', note: 'Includes the personalized greeting cards add-on' },
 ];
 
 const websites: Design[] = [

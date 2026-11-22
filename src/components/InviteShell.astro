@@ -23,7 +23,12 @@ const config = {
 			href="https://fonts.googleapis.com/css2?family=Berkshire+Swash&family=Unna:wght@400;700&family=Playfair+Display:wght@700&display=swap"
 			rel="stylesheet"
 		/>
-		<link rel="stylesheet" href="/envelope.css?v=22" />
+		<link rel="stylesheet" href="/envelope.css?v=23" />
+		<link rel="preload" as="image" href="/haya-tray-m.webp" media="(max-width: 699px), (orientation: portrait)" />
+		<link rel="preload" as="image" href="/haya-tray.webp" media="(min-width: 700px) and (orientation: landscape)" />
+		<link rel="preload" as="image" href="/haya3-closed.webp?v=2" />
+		<link rel="preload" as="image" href="/haya3-body.webp" />
+		<link rel="preload" as="image" href="/haya-bg.jpg?v=4" media="(max-width: 699px), (orientation: portrait)" />
 	</head>
 	<body>
 		<div id="env-root"></div>
@@ -69,7 +74,7 @@ const config = {
 						el.textContent = JSON.stringify(cfg);
 						document.title = d.couple.brideName.split(' ')[0] + ' & ' + d.couple.groomName.split(' ')[0] + ' | Invitation';
 						load('/gsap.min.js', function () {
-							load('/envelope-engine.js?v=26');
+							load('/envelope-engine.js?v=27');
 						});
 					})
 					.catch(function (e) {

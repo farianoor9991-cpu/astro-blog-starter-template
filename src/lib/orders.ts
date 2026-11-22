@@ -4,7 +4,7 @@ export const MAX_GUESTS = 500;
 export const STANDARD_EVENTS = ['nikkah', 'dholki', 'qawaali', 'mehndi', 'baraat', 'walima'];
 const MAX_EVENTS = 20;
 const MAX_HOSTS = 6;
-const MAX_LINKS = 10;
+const MAX_LINKS = 30;
 
 export const DEFAULT_TEMPLATE =
 	'Assalam-o-Alaikum {name},\n\n{couple} warmly invite you to their celebration. We have prepared a personal invitation for you. Please tap the link below to open it:\n\n{link}\n\nWe would be honoured to have you with us.';
@@ -86,21 +86,27 @@ export const BRAND = 'inviteheaven';
 
 export const cleanLinks = (input: any, events: any[], existing?: any[]) => {
 	const valid = new Set(events.map((e) => e.id));
+	const allIds = events.map((e) => e.id);
 	const used = new Set<string>();
-	let list = (Array.isArray(input) ? input : []).slice(0, MAX_LINKS).map((l: any, i: number) => {
-		let id = /^[a-z0-9]{1,20}$/.test(String(l?.id)) ? String(l.id) : rid(5);
-		while (used.has(id)) id = rid(5);
-		used.add(id);
-		return {
-			id,
-			label: str(l?.label, 40) || 'Group ' + (i + 1),
-			cards: (Array.isArray(l?.cards) ? l.cards : []).map((c: any) => str(c, 40)).filter((c: string) => valid.has(c)),
-		};
-	});
-	if (list.length <= 1) {
-		const only = list[0] || { id: 'all', label: 'All events' };
-		list = [{ id: only.id, label: only.label || 'All events', cards: events.map((e) => e.id) }];
-	}
+	const raw = (Array.isArray(input) ? input : []).slice(0, MAX_LINKS);
+	// the main link ("Everyone", all cards) always exists and always shows every card
+	const given = raw.find((l: any) => l?.id === 'all') || (raw.length === 1 ? raw[0] : null);
+	const mainId = given ? String(given.id).slice(0, 20) || 'all' : 'all';
+	const main: any = { id: mainId, label: 'Everyone', cards: allIds, main: true };
+	used.add(mainId);
+	const groups = raw
+		.filter((l: any) => l && l.id !== mainId)
+		.map((l: any, i: number) => {
+			let id = /^[a-z0-9]{1,20}$/.test(String(l?.id)) ? String(l.id) : rid(5);
+			while (used.has(id)) id = rid(5);
+			used.add(id);
+			return {
+				id,
+				label: str(l?.label, 40) || 'Group ' + (i + 1),
+				cards: (Array.isArray(l?.cards) ? l.cards : []).map((c: any) => str(c, 40)).filter((c: string) => valid.has(c)),
+			};
+		});
+	const list: any[] = [main, ...groups];
 	// every group gets a short readable name for its link; it stays the same even if the group is renamed later
 	const usedS = new Set<string>();
 	const kept = new Map<string, string>();
