@@ -81,7 +81,8 @@ const MAX_HOSTS: number = tpl.maxHosts || 6;
 			{ n: 1, d: 1, title: 'Couple details', sub: 'Names of the bride, groom and their parents' },
 			{ n: 2, d: 2, title: 'Your events', sub: 'Choose the cards you want' },
 			{ n: 4, d: 3, title: 'Share links', sub: 'Groups are included. Greeting cards are optional' },
-			{ n: 5, d: 4, title: 'Review and preview', sub: 'See your cards before paying' },
+			{ n: 6, d: 4, title: 'Who sets it up?', sub: 'Do it yourself for free, or let our team do it' },
+			{ n: 5, d: 5, title: 'Review and preview', sub: 'See your cards before paying' },
 		];
 
 		const $ = (s: string) => document.querySelector(s) as HTMLElement | null;
@@ -124,6 +125,7 @@ const MAX_HOSTS: number = tpl.maxHosts || 6;
 			events: {},
 			hosts: { want: true, list: tpl.sampleHosts.map((h: D) => ({ name: h.name, phone: String(h.phone).replace(/x/gi, '1') })) },
 			links: { mode: 'one', list: [] },
+			setup: 'self',
 			guests: { on: false, one: '' },
 		});
 		let S: D = blank();
@@ -158,8 +160,9 @@ const save = () => {};
 		const hostCount = () => S.hosts.list.filter((h: D) => h.name.trim()).length;
 		/* ---------- personalized greetings (add-on) ---------- */
 		/* ---------- prices (change them here) ---------- */
-		const P_BASE = 6999; // the package (envelope, event cards, hosts card, groups)
+		const P_BASE = 7000; // the package (envelope, event cards, hosts card, groups)
 		const P_ADDON = 2999; // personalized greeting cards add-on
+		const P_TEAM = 1999; // our team sets everything up
 		const P_FULL = P_BASE + P_ADDON; // 9,999, shown at the top of the form
 		const fmtRs = (n: number) => 'Rs. ' + n.toLocaleString('en-US');
 		const priceLines = (): { t: string; v: number }[] => {
@@ -167,6 +170,7 @@ const save = () => {};
 			if (!pkg().length) return out;
 			out.push({ t: 'Invitation package', v: P_BASE });
 			if (S.guests.on) out.push({ t: 'Personalized greeting cards add-on', v: P_ADDON });
+			if (S.setup === 'team') out.push({ t: 'Set-up by our team', v: P_TEAM });
 			return out;
 		};
 		const totalPrice = () => priceLines().reduce((a, l) => a + l.v, 0);
@@ -619,24 +623,32 @@ const save = () => {};
 					<p>\u2714\uFE0F One link for everyone with all cards</p>
 					<p>\u2714\uFE0F Separate links for each group</p>
 					<p class="sub2">&gt; Create your own groups with your selected events for each group</p>
-					<div class="exr">${ex('Group 1', 'Mehndi only card link')}${ex('Group 2', 'Baraat &amp; Walima only card link')}${ex('Group 3', 'Walima only card link')}</div>
+					<p class="sub2" style="margin-top:10px">e.g.</p><div class="exr" style="margin-top:4px">${ex('Group 1', 'Mehndi only card link')}${ex('Group 2', 'Baraat &amp; Walima only card link')}${ex('Group 3', 'Walima only card link')}</div>
 					<button type="button" class="lnk" data-act="howto">See how it works</button>
-					<p class="hint" style="margin-top:8px">You create your groups on your dashboard after payment. Your Reception Hosts card is added automatically (you can remove it later).</p>
 				</div>
 				<div class="ihx" style="padding:10px 10px 8px">
 					<h4>Option 2 &middot; optional add-on</h4>
-					<button type="button" class="opt${S.guests.on ? ' on' : ''}" data-act="gtoggle" aria-pressed="${S.guests.on}"><span class="cb"></span><span class="ot"><b>Add personalized greeting cards <span style="color:#b8793c;white-space:nowrap">(+${fmtRs(P_ADDON)})</span></b><small><span style="color:#1a1a1a;font-weight:500">With this add-on, you get:</span><br>A. Everything in Option 1<br>B. A personalized link for each guest, for example <span style="color:#1a1a1a">../maria-weds-ali/guest=shaheer-aslam/</span><br>C. A personalized greeting card for every guest you list (unlimited guests). The first card greets them by name: "Dear Shaheer Aslam! You are specially invited to..."</small></span></button>
-					${S.guests.on ? '<p class="hint" style="margin:8px 4px 0">You add guest names (inside each group) on your dashboard after payment. The preview shows a sample guest, Shaheer Aslam.</p>' : ''}
+					<button type="button" class="opt${S.guests.on ? ' on' : ''}" data-act="gtoggle" aria-pressed="${S.guests.on}"><span class="cb"></span><span class="ot"><b>Add personalized greeting cards <span style="color:#b8793c;white-space:nowrap">(+${fmtRs(P_ADDON)})</span></b><small><span style="color:#1a1a1a;font-weight:500">With this add-on, you receive:</span><br>\u2714\uFE0F Everything in Option 1<br>\u2714\uFE0F A personalized greeting card for each guest you list (unlimited guests). Their first card greets them by name: "Dear Shaheer Aslam! You are specially invited to..."</small></span></button>
 				</div>
 				<div class="err" data-err="4"></div><div class="acts"><button class="btn-g" type="button" data-act="next" data-n="4">Continue to Step 4</button></div>`;
+		};
+		const body6 = (): string => {
+			const card = (v: string, title: string, price: string, lines: string[]) =>
+				`<button type="button" class="opt${S.setup === v ? ' on' : ''}" data-act="setup" data-v="${v}" aria-pressed="${S.setup === v}"><span class="cb"></span><span class="ot"><b>${title} <span style="color:#b8793c;white-space:nowrap">${price}</span></b><small>${lines.map((l) => '\u2714\uFE0F ' + l).join('<br>')}</small></span></button>`;
+			return `
+				<div class="ihx" style="padding:10px 10px 8px">
+					${card('self', 'A) I\u2019ll manage it \u2014', 'FREE', ['You get your own Guest Management Panel.', 'Make groups, add guests, and edit anything anytime.', 'Short video guide for every step.'])}
+					${card('team', 'B) Let our team handle it \u2014', '+Rs. 1,999', ['Send us everything on WhatsApp and we set it all up for you. You can change anything later.'])}
+				</div>
+				<div class="err" data-err="6"></div><div class="acts"><button class="btn-g" type="button" data-act="next" data-n="6">Continue to Step 5</button></div>`;
 		};
 		const howTo = () => {
 			const w = document.createElement('div');
 			w.className = 'hw-bg';
-			w.innerHTML = `<div class="hw" role="dialog" aria-modal="true"><h3>How groups work</h3><p>One order, as many links as you need. Each group sees only its own cards.</p>
+			w.innerHTML = `<div class="hw" role="dialog" aria-modal="true"><h3>How groups work</h3><p>Create as many groups as you like. Each group gets its own link and sees only its own cards.</p>
 				<div class="st1"><i>1</i><div><b>Make groups</b><p>Name them anything, then tick the events each group should see.</p><div class="exr">${'Group 1|Mehndi only~Group 2|Baraat &amp; Walima only~Group 3|Walima only'.split('~').map((x) => ex2(x)).join('')}</div></div></div>
 				<div class="st1"><i>2</i><div><b>Each group gets its own link</b><span class="lkb">../maria-weds-ali/group=family/</span><span class="lkb">../maria-weds-ali/group=friends/</span></div></div>
-				<div class="st1"><i>3</i><div><b>Send on WhatsApp</b><p>Copy the link and send it. With the add-on, each guest in a group also gets a personal link and a greeting card with their name.</p></div></div>
+				<div class="st1"><i>3</i><div><b>Send on WhatsApp</b><p>Copy each group's link and send it to that group.</p></div></div>
 				<div class="acts"><button type="button" data-act="howclose" style="background:#d4a276;color:#fff;border:0;border-radius:999px;padding:10px 24px;font:600 14px Poppins,sans-serif;cursor:pointer">Got it</button></div></div>`;
 			w.addEventListener('click', (e) => { const t = e.target as HTMLElement; if (t === w || t.closest('[data-act="howclose"]')) w.remove(); });
 			document.body.appendChild(w);
@@ -664,6 +676,7 @@ const save = () => {};
 					${row('Couple', `<p>${esc(tc(c.brideName))}, D/O Mr &amp; Mrs ${esc(tc(cleanParents(c.brideParents)))}</p><p>${esc(tc(c.groomName))}, S/O Mr &amp; Mrs ${esc(tc(cleanParents(c.groomParents)))}</p>`, 1)}
 					${row('Events', evLines, 2)}
 					${row('Share links', linkLines, 4)}
+					${row('Set-up', S.setup === 'team' ? '<p>Our team sets everything up for you.</p>' : '<p>You manage it yourself with your own dashboard.</p>', 6)}
 					${S.guests.on ? row('Personalized greetings', guestLines, 4) : ''}
 				</div>
 				<div class="rv-row"><div><b>Price</b>${priceLines().map((l) => `<p>${esc(l.t)}: ${fmtRs(l.v)}</p>`).join('')}<p><b>Total: ${fmtRs(totalPrice())}</b></p></div></div>
@@ -677,7 +690,7 @@ const save = () => {};
 				<div class="ok" id="finish-note" hidden></div>`;
 		};
 
-		const renderBody = (n: number): string => (n === 1 ? body1() : n === 2 ? body2() : n === 3 ? body3() : n === 4 ? body4() : body5());
+		const renderBody = (n: number): string => (n === 1 ? body1() : n === 2 ? body2() : n === 3 ? body3() : n === 4 ? body4() : n === 6 ? body6() : body5());
 		const refreshBody = (n: number) => {
 			const el = $(`[data-body="${n}"]`);
 			if (el) el.innerHTML = renderBody(n);
@@ -694,7 +707,8 @@ const save = () => {};
 				1: S.done[1] ? `${tc(c.brideName)} and ${tc(c.groomName)}` : STEPS[0].sub,
 				2: S.done[2] ? `${evN} event${evN === 1 ? '' : 's'} chosen` : STEPS[1].sub,
 				4: S.done[4] ? (S.guests.on ? 'Groups and personalized greeting cards' : 'Groups included') : STEPS[2].sub,
-				5: STEPS[3].sub,
+				6: S.done[6] ? (S.setup === 'team' ? 'Our team sets it up (+Rs. 1,999)' : 'I will manage it (free)') : STEPS[3].sub,
+				5: STEPS[4].sub,
 			};
 			STEPS.forEach((s) => {
 				const el = $(`[data-sum="${s.n}"]`);
@@ -768,7 +782,8 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 			if (n === 3 && S.hosts.want) S.hosts.list = S.hosts.list.filter((h: D) => h.name.trim() || h.phone.trim());
 			S.done[n] = true;
 			save();
-			openStep(n === 2 ? 4 : n + 1, true);
+			const ix = STEPS.findIndex((x) => x.n === n);
+			openStep(STEPS[Math.min(STEPS.length - 1, ix + 1)].n, true);
 		};
 
 		/* ---------- actions ---------- */
@@ -873,6 +888,7 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 					mode: 'one',
 					links: [],
 					guestsOn: !!S.guests.on,
+					setupTeam: S.setup === 'team',
 					guests: [],
 				};
 				const r = await fetch('/api/order', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) });
@@ -1105,6 +1121,12 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 					renderTabs();
 					scheduleDraw();
 					updateSummaries();
+					break;
+				case 'setup':
+					S.setup = (b.dataset.v as string) === 'team' ? 'team' : 'self';
+					save();
+					refreshBody(6);
+					updatePrice();
 					break;
 				case 'howto':
 					howTo();

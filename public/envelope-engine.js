@@ -590,10 +590,11 @@
 			? '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>'
 			: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H3v6h3l5 4z"/><path d="M22 9l-6 6M16 9l6 6"/></svg>';
 	};
-	if (S.music && S.music.src) {
-		audio = new Audio(S.music.src);
+	var MU = INV && INV.musicSrc ? (INV.musicSrc === 'none' ? null : { src: INV.musicSrc, volume: (S.music && S.music.volume) || 0.6 }) : S.music;
+	if (MU && MU.src) {
+		audio = new Audio(MU.src);
 		audio.loop = true;
-		audio.volume = S.music.volume || 0.6;
+		audio.volume = MU.volume || 0.6;
 		audio.preload = 'auto';
 		musicBtn.hidden = false;
 		musicBtn.innerHTML = musicIcon(false);

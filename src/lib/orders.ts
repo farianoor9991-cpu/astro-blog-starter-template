@@ -140,7 +140,8 @@ export const cleanGuests = (input: any, links: any[], existing?: any[]) => {
 		const linkId = ok.has(g?.linkId) ? g.linkId : links[0]?.id;
 		const name = str(g?.name, 45);
 		const slug = prev && kept.get(prev.id) ? kept.get(prev.id) : name ? uniqueSlug(guestSlugOf(name), usedS) : '';
-		return { id, name, linkId, slug };
+		const phone = String(g?.phone ?? prev?.phone ?? '').replace(/[^0-9+]/g, '').slice(0, 16);
+		return { id, name, linkId, slug, phone };
 	}).filter((g: any) => g.name);
 };
 

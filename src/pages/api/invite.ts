@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { hayaEnvelope } from '../../data/haya-envelope';
 import { eventsForLink, expiresAt, guestSlugOf, json } from '../../lib/orders';
 
 export const prerender = false;
@@ -49,6 +50,7 @@ const build = async (kv: any, q: URLSearchParams): Promise<Response> => {
 		}),
 		hosts: o.hosts,
 		guest: guest ? guest.name : '',
+		musicSrc: o.music === 'none' ? 'none' : (((hayaEnvelope as any).musicLibrary || []).find((m: any) => m.id === o.music) || {}).src || '',
 	});
 };
 

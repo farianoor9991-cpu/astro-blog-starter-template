@@ -64,6 +64,8 @@ export const hayaEnvelope = {
 
 	// Optional background music. Put the file in the public folder and write its name, e.g. '/haya-music.mp3'. Empty = no music.
 	music: { src: '', volume: 0.6 },
+	// Songs the customer can choose from on the dashboard (Add/Remove music). Put each file in the public folder, e.g. { id: 'soft-piano', name: 'Soft piano', src: '/music/soft-piano.mp3' }
+	musicLibrary: [] as { id: string; name: string; src: string }[],
 
 	// Where the tray is inside the background pictures (fractions of the picture): centre x/y and size. maxColByH limits how big the invitation gets on a laptop.
 	trayInBg: {

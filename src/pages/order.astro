@@ -33,6 +33,8 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 		var O = null;
 		var dirty = false;
 		var openAc = { preview: true, preview2: true };
+		var CFG = {};
+		try { CFG = JSON.parse(document.getElementById('env-config').textContent); } catch (e) {}
 		var shown = 10;
 		var query = '';
 		var gfilter = '';
@@ -99,8 +101,20 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 				.replace(/\{link\}/g, link)
 				.replace(/ +,/g, ',');
 		}
-		function waUrl(text) {
-			return 'https://wa.me/?text=' + encodeURIComponent(text);
+		// a guest's number -> international digits (03xx... is treated as a Pakistani number)
+		function waNumber(p) {
+			var raw = String(p || '').trim();
+			if (!raw) return '';
+			var plus = raw.charAt(0) === '+';
+			var d = raw.replace(/\D/g, '');
+			if (!d) return '';
+			if (plus) return d;
+			if (d.slice(0, 2) === '00') return d.slice(2);
+			if (d.charAt(0) === '0') return '92' + d.slice(1);
+			return d;
+		}
+		function waUrl(text, phone) {
+			return 'https://wa.me/' + waNumber(phone) + '?text=' + encodeURIComponent(text);
 		}
 		var saving = false;
 		var rev = 0; // goes up with every change, so a save knows if the customer typed while it was running
@@ -108,7 +122,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 		var draftT = null;
 		function draftKey() { return 'ih-draft-' + T; }
 		function editable(o) {
-			return JSON.stringify({ events: o.events, hosts: o.hosts, links: o.links, guests: o.guests, template: o.template });
+			return JSON.stringify({ couple: o.couple, events: o.events, hosts: o.hosts, hostsOn: o.hostsOn, links: o.links, guests: o.guests, template: o.template, music: o.music });
 		}
 		function writeDraft() {
 			try { localStorage.setItem(draftKey(), editable(O)); } catch (e) {}
@@ -255,8 +269,8 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			return '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + p + '</svg>';
 		}
 		var WA = '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M12.04 2a9.9 9.9 0 00-8.46 15.04L2 22l5.1-1.34A9.9 9.9 0 1012.04 2zm0 1.8a8.1 8.1 0 11-4.2 15.04l-.3-.18-3.03.8.81-2.95-.2-.31A8.1 8.1 0 0112.04 3.8zM8.7 7.6c-.2 0-.5.07-.75.35-.25.27-.97.95-.97 2.3s1 2.7 1.14 2.88c.14.18 1.93 3.07 4.77 4.18 2.36.93 2.84.75 3.35.7.52-.05 1.66-.68 1.9-1.33.23-.66.23-1.22.16-1.33-.07-.12-.25-.18-.52-.32s-1.66-.82-1.92-.91c-.25-.1-.44-.14-.62.14-.19.27-.72.9-.88 1.1-.16.18-.32.2-.6.07-.27-.14-1.17-.43-2.22-1.37-.82-.73-1.37-1.63-1.53-1.9-.16-.28-.02-.43.12-.57.12-.12.27-.32.41-.48.14-.16.18-.28.27-.46.1-.19.05-.35-.02-.49-.07-.14-.62-1.5-.85-2.05-.22-.54-.45-.46-.62-.47h-.53z"/></svg>';
-		function waCell(msg) {
-			return '<div class="tb-c tb-ic" data-l="WhatsApp"><a class="wa ic" target="_blank" rel="noopener" href="' + esc(waUrl(msg)) + '" title="Send on WhatsApp" aria-label="Send on WhatsApp">' + WA + '</a></div>';
+		function waCell(msg, phone) {
+			return '<div class="tb-c tb-ic" data-l="WhatsApp"><a class="wa ic" target="_blank" rel="noopener" href="' + esc(waUrl(msg, phone)) + '" title="Send on WhatsApp" aria-label="Send on WhatsApp">' + WA + '</a></div>';
 		}
 		function openCell(link) {
 			return '<div class="tb-c tb-op" data-l="Open"><a class="op qa" target="_blank" rel="noopener" href="' + esc(link) + '">' + icon('open') + '<span>Open</span></a></div>';
@@ -278,7 +292,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			return '<div class="stats">' + box('cards', O.events.length + (hostsOn() ? 1 : 0), 'Cards') + box('users', groups, groups === 1 ? 'Group' : 'Groups') + box('link', O.links.length, O.links.length === 1 ? 'Invitation link' : 'Invitation links') + '</div>';
 		}
 		function groupsHtml() {
-			var h = '<section class="od-sec"><div class="sec-h"><div><h2>Group links</h2><p class="hint">' + (many() ? 'Send each link to the group it is meant for. Everyone sees only their group\'s cards.' : 'This link has all your cards. Create groups to send some guests only some cards.') + '</p></div><button type="button" class="btn-p" data-newgroup="1">+ Create group</button></div>';
+			var h = '<section class="od-sec"><div class="sec-h"><div><h2>Group links</h2><p class="hint">' + (many() ? 'Send each link to the group it is meant for. Everyone sees only their group\'s cards.' : 'This link has all your cards. Create groups to send some guests only some cards.') + '</p></div>' + (page === 'groups' ? '' : '<button type="button" class="btn-p" data-newgroup="1">+ Create group</button>') + '</div>';
 			h += '<div class="tb tb-g"><div class="tb-head"><span>Group</span><span>Invitation message</span><span>Url</span><span>Copy</span><span>WhatsApp</span><span>Open</span></div>';
 			O.links.forEach(function (l, i) {
 				var cards = O.events.filter(function (e) { return l.cards.indexOf(e.id) >= 0; }).map(evLabel);
@@ -299,13 +313,13 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 				: '<span class="tb-t">Everyone</span>';
 			var title = '<span class="gn"><input class="lbl" data-gname="' + i + '" value="' + esc(g.name) + '" aria-label="Guest name" maxlength="45" readonly><span class="gtxt">' + esc(g.name) + '</span><button type="button" class="pen" data-gedit="' + i + '" aria-label="Edit name" title="Edit name">' + PENCIL + '</button></span>';
 			var rm = '<button type="button" class="rm-i" data-grm="' + i + '" aria-label="Remove this guest" title="Remove this guest">&times;</button>';
-			var name = '<div class="tb-c tb-name" data-l="Name">' + title + rm + '</div><div class="tb-c tb-grp" data-l="Group">' + sel + '</div>';
+			var name = '<div class="tb-c tb-name" data-l="Name">' + title + rm + '</div><div class="tb-c tb-ph" data-l="Phone number"><input type="tel" inputmode="tel" class="phin" data-gphone="' + i + '" value="' + esc(g.phone || '') + '" placeholder="03XX XXXXXXX" maxlength="16" aria-label="Phone number"></div><div class="tb-c tb-grp" data-l="Group">' + sel + '</div>';
 			if (g.id) {
 				var link = guestLink(g);
 				var msg = message(g.name, link);
-				return '<div class="tb-row" data-gi="' + i + '">' + name + msgCell(msg) + urlCell(link) + waCell(msg) + openCell(link) + '</div>';
+				return '<div class="tb-row" data-gi="' + i + '">' + name + msgCell(msg) + urlCell(link) + waCell(msg, g.phone) + openCell(link) + '</div>';
 			}
-			return '<div class="tb-row tb-new" data-gi="' + i + '">' + name + '<div class="tb-c tb-span"><small class="gd-note">New guest. Press Save and the personal link, message and buttons appear here.</small></div></div>';
+			return '<div class="tb-row tb-new" data-gi="' + i + '">' + name + '<div class="tb-c tb-span"><small class="gd-note">New guest. Saving, then the personal link, message and buttons appear here.</small></div></div>';
 		}
 		function guestsListHtml() {
 			var q = query.trim().toLowerCase();
@@ -319,7 +333,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			O.links.forEach(function (l, k) { order[l.id] = k; });
 			idx.sort(function (a, b) { return (order[O.guests[a].linkId] || 0) - (order[O.guests[b].linkId] || 0) || a - b; });
 			if (!idx.length) return '<p class="hint">' + (q || gfilter ? 'No guest matches.' : 'No guests yet. Press "+ Add guests" and choose a group.') + '</p>';
-			return '<div class="tb"><div class="tb-head"><span>Name</span><span>Group</span><span>Invitation message</span><span>Url</span><span>WhatsApp</span><span>Open</span></div>' + idx.map(guestRow).join('') + '</div>';
+			return '<div class="tb"><div class="tb-head"><span>Name</span><span>Phone number</span><span>Group</span><span>Invitation message</span><span>Url</span><span>WhatsApp</span><span>Open</span></div>' + idx.map(guestRow).join('') + '</div>';
 		}
 		function guestsHtml() {
 			if (!O.guestsOn) return '';
@@ -327,10 +341,6 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			h += '<div class="od-tools"><input type="search" id="od-q" placeholder="Search guests by name..." value="' + esc(query) + '" aria-label="Search guests">';
 			if (many()) h += '<select id="od-gf" aria-label="Show group"><option value="">All groups</option>' + O.links.map(function (l) { return '<option value="' + esc(l.id) + '"' + (gfilter === l.id ? ' selected' : '') + '>' + esc(l.main ? 'Everyone' : gl(l)) + '</option>'; }).join('') + '</select>';
 			h += '<button type="button" class="btn-p" data-ac-open="addguests">+ Add guests</button></div>';
-			h += '<div class="od-add" id="od-addbox" hidden>';
-			if (many()) h += '<label for="od-newgroup">Which group are these guests in?</label><select id="od-newgroup"><option value="">Choose a group...</option>' + O.links.map(function (l) { return '<option value="' + esc(l.id) + '">' + esc(l.main ? 'Everyone' : gl(l)) + '</option>'; }).join('') + '</select><div style="height:10px"></div>';
-			h += '<label for="od-new">One name per line (unlimited guests)</label><textarea id="od-new" rows="4" placeholder="Hamza Chachu\nMr. Ali &amp; Family"></textarea>';
-			h += '<button type="button" class="btn-p" id="od-addg">Add guests</button></div>';
 			h += '<div id="od-glist">' + guestsListHtml() + '</div></section>';
 			return h;
 		}
@@ -386,24 +396,24 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			}).join('') + '</div>';
 		}
 		function linksBody() {
-			var h = '<p class="hint">Create as many groups as you like. Each group gets its own link with only the cards you tick.</p>';
+			var h = '';
 			O.links.forEach(function (l, i) {
 				if (l.main) return;
 				h += '<div class="od-ev"><div class="od-ev-h"><input class="lbl" data-link="' + i + '" value="' + esc(l.label) + '" maxlength="40" aria-label="Group name"><button type="button" class="rm" data-lrm="' + i + '">Remove</button></div>';
 				h += cardsChecks(l.cards, 'data-lcard="' + i + '" data-id') + '</div>';
 			});
 			if (addGroup) {
-				h += '<div class="od-ev"><b>New group</b><div class="f"><label>Group name</label><input id="od-gname" value="' + esc(addGroup.label) + '" maxlength="40" placeholder="e.g. Friends"></div>';
+				h += '<div class="od-ev"><b>New group</b><div class="f"><label>Group name</label><input id="od-gname" value="' + esc(addGroup.label) + '" maxlength="40" placeholder="e.g. Mehndi &amp; Baraat only guests"></div>';
 				h += '<label class="lab">Cards for this group</label>' + cardsChecks(addGroup.cards, 'data-ncard') + '<div class="od-inline"><button type="button" class="btn-p" id="od-gcreate">Create group</button><button type="button" class="lnk" id="od-gcancel">Cancel</button></div></div>';
 			} else {
-				h += '<button type="button" class="btn-s" id="od-gnew">+ Create a group link</button>';
+				h += '<button type="button" class="btn-p" id="od-gnew">' + (O.links.length > 1 ? '+ Create another group' : '+ Create a group') + '</button>';
 			}
 			return h;
 		}
 
 
 		/* ---------- card preview ---------- */
-		var pv = { guestId: '', timer: null, a: { sig: '', cards: null }, b: { sig: '', cards: null } };
+		var pv = { guestId: '', groupId: '', timer: null, a: { sig: '', cards: null }, b: { sig: '', cards: null } };
 		var pvQ = Promise.resolve(); // the card maker is shared, so previews take turns
 		function pvInvitation() {
 			var g = null;
@@ -425,9 +435,10 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 		}
 		// every event card plus the host card (no guest greeting card)
 		function pvInvitationAll() {
+			var lk = many() ? O.links.filter(function (l) { return l.id === pv.groupId; })[0] : null;
 			return {
 				couple: O.couple,
-				events: O.events,
+				events: lk ? O.events.filter(function (e) { return lk.cards.indexOf(e.id) >= 0; }) : O.events,
 				hosts: hostsOn() ? O.hosts.filter(function (h) { return String(h.name || '').trim(); }) : [],
 				guest: '',
 				gid: '',
@@ -444,7 +455,13 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			return h;
 		}
 		function previewAllBody() {
-			return '<p class="hint">All your event cards' + (hostsOn() ? ' and the reception hosts card' : '') + ', exactly as every guest sees them. Change a date, time or venue above and the cards update here.</p><div class="pv" id="od-pv2"><p class="hint">Loading preview...</p></div>';
+			var h = '<p class="hint">Your event cards' + (hostsOn() ? ' and the reception hosts card' : '') + ', exactly as guests see them. Change a date, time or venue and the cards update here.</p>';
+			if (many()) {
+				h += '<label class="lab" for="od-pvgroup">Show cards for</label><select id="od-pvgroup"><option value="">Everyone (all cards)</option>' + O.links.filter(function (l) { return !l.main; }).map(function (l) {
+					return '<option value="' + esc(l.id) + '"' + (l.id === pv.groupId ? ' selected' : '') + '>' + esc(gl(l)) + '</option>';
+				}).join('') + '</select><div style="height:10px"></div>';
+			}
+			return h + '<div class="pv" id="od-pv2"><p class="hint">Loading preview...</p></div>';
 		}
 		function pvPaint(kind) {
 			var sfx = kind === 'b' ? '2' : '';
@@ -477,7 +494,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 				if (window.__ihCards) return res();
 				window.__ihCardsReady = res;
 				var sc = document.createElement('script');
-				sc.src = '/envelope-engine.js?v=24';
+				sc.src = '/envelope-engine.js?v=28';
 				sc.onerror = rej;
 				document.head.appendChild(sc);
 			});
@@ -512,29 +529,116 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			}, 350);
 		}
 
+		/* ---------- pages (left menu) ---------- */
+		var page = (location.hash || '').replace('#', '') || 'dash';
+		function navItems() {
+			var a = [{ k: 'dash', t: 'Dashboard' }];
+			var n = 0;
+			var add = function (k, t) { n++; a.push({ k: k, t: t, n: n }); };
+			add('couple', 'Couple details');
+			add('events', 'Add events');
+			add('groups', 'Create groups & group links');
+			if (O.guestsOn) add('guests', 'Add/remove guests');
+			add('hosts', 'Add reception hosts card');
+			add('music', 'Add/remove music');
+			add('message', 'Edit WhatsApp message');
+			add('preview', 'Preview');
+			return a;
+		}
+		function musicBody() {
+			var lib = (CFG.design && CFG.design.musicLibrary) || [];
+			var cur = O.music || '';
+			var opt = function (v, title, sub, src) {
+				return '<button type="button" class="mz' + (cur === v ? ' on' : '') + '" data-music="' + esc(v) + '"><span class="cb"></span><span><b>' + esc(title) + '</b>' + (sub ? '<small>' + esc(sub) + '</small>' : '') + '</span></button>' + (src ? '<audio controls preload="none" src="' + esc(src) + '"></audio>' : '');
+			};
+			var h = '<p class="hint">Choose the music your guests hear when they open the invitation. They can switch it off with the small music button.</p>';
+			h += '<div class="mzs">' + opt('', 'Standard music', 'The music that comes with your design', '');
+			lib.forEach(function (m) { h += opt(m.id, m.name, '', m.src); });
+			h += opt('none', 'No music', 'The invitation opens in silence', '') + '</div>';
+			if (!lib.length) h += '<p class="hint" style="margin-top:12px">More songs to choose from are being added soon.</p>';
+			return h;
+		}
+		var PAGE_INFO = {
+			couple: ['Couple details', 'These names appear on all your cards.'],
+			events: ['Add events', 'Change the date, time and venue, remove an event, or add a new one. New cards are made for you automatically.'],
+			groups: ['Create groups & group links', 'Create as many groups as you like. Each group gets its own link and sees only the cards you tick. Every group link is ready to copy below.'],
+			guests: ['Add/remove guests', 'Add each guest with their phone number. Everyone gets a personal link and a greeting card with their name.'],
+			hosts: ['Add reception hosts card', 'Add the hosts\' names and phone numbers, or remove the card.'],
+			music: ['Add/remove music', ''],
+			message: ['Edit WhatsApp message', ''],
+			preview: ['Preview', 'See exactly what your guests will see.'],
+		};
+		function wrapSec(body) { return '<section class="od-sec od-narrow">' + body + '</section>'; }
+		function pageHtml(items) {
+			var it = items.filter(function (x) { return x.k === page; })[0];
+			if (!it) { page = 'dash'; it = items[0]; }
+			if (page === 'dash') {
+				var h = '<div class="pg-h"><h2>Dashboard</h2><p>' + (O.guestsOn ? 'Your guest list. Copy each guest\'s link or send it on WhatsApp.' : 'Your invitation links. Copy a link or send it on WhatsApp.') + '</p></div>' + stats();
+				return h + (O.guestsOn ? guestsHtml() : groupsHtml());
+			}
+			var info = PAGE_INFO[page];
+			var head = '<div class="pg-h"><span class="pg-step">Step ' + it.n + '</span><h2>' + info[0] + '</h2>' + (info[1] ? '<p>' + info[1] + '</p>' : '') + '</div>';
+			if (page === 'couple') return head + wrapSec(coupleBody());
+			if (page === 'events') return head + wrapSec(eventsBody());
+			if (page === 'groups') return head + wrapSec(linksBody()) + groupsHtml();
+			if (page === 'guests') return head + guestsHtml();
+			if (page === 'hosts') return head + wrapSec(hostsBody());
+			if (page === 'music') return head + wrapSec(musicBody());
+			if (page === 'message') return head + wrapSec(messageBody());
+			var ph = head;
+			if (O.guestsOn) ph += '<section class="od-sec od-narrow"><h3 class="sec-t">Preview by guest</h3>' + previewBody() + '</section>';
+			return ph + '<section class="od-sec od-narrow"><h3 class="sec-t">Preview event cards</h3>' + previewAllBody() + '</section>';
+		}
 		function render() {
 			var y = window.scrollY;
-			var h = '<div class="od-head"><span class="od-no">Order No. ' + esc(O.orderNo) + '</span><h1>' + esc(coupleTitle()) + '</h1>';
-			h += '<p>Everything for your invitation is here: your links, your WhatsApp messages and your card details.</p>';
+			var items = navItems();
+			var cur = items.filter(function (x) { return x.k === page; })[0] || items[0];
+			var h = '<div class="od-shell"><aside class="od-nav' + (navOpen ? ' open' : '') + '"><div class="nv-brand"><span>Invite</span><b>Heaven</b></div><div class="nv-cap">Edit your invitation</div>';
+			h += '<button type="button" class="nv-tog" data-navtog="1" aria-expanded="' + navOpen + '"><span>' + (cur.n ? 'Step ' + cur.n + ': ' : '') + esc(cur.t) + '</span>' + CHEV + '</button><nav class="nv-list">';
+			items.forEach(function (x) {
+				h += '<button type="button" class="nv-i' + (x.k === cur.k ? ' on' : '') + '" data-nav="' + x.k + '">' + (x.n ? '<i>' + x.n + '</i>' : '<i class="nv-d">' + icon('cards') + '</i>') + '<span>' + esc(x.t) + '</span></button>';
+			});
+			h += '</nav><div class="nv-foot">Order No. ' + esc(O.orderNo) + '</div></aside>';
+			h += '<main class="od-content"><div class="od-top"><span class="od-no">Order No. ' + esc(O.orderNo) + '</span><h1>' + esc(coupleTitle()) + '</h1>';
 			var ex = expiry();
-			h += '<p class="od-exp">Your invitation links are live until <b>' + ex.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) + '</b>' + (Date.now() > ex.getTime() ? ' (expired)' : ' (3 months from your order)') + '. After this date they stop showing the invitation.</p>';
-			h += '</div>';
-			h += '<div class="od-cols"><div class="od-main"><div class="dash-h"><h2>Guest Dashboard</h2><p>Share your invitations and keep track of every guest in one place.</p></div>' + stats() + groupsHtml() + guestsHtml() + '</div>';
-			h += '<aside class="od-side"><h3>Edit your invitation</h3>';
-			h += acPanel('couple', 'Couple details', coupleBody());
-			h += acPanel('events', 'Events', eventsBody());
-			h += acPanel('hosts', 'Reception hosts card', hostsBody());
-			h += acPanel('links', 'Groups and their cards', linksBody());
-			h += acPanel('message', 'WhatsApp message', messageBody());
-			h += acPanel('preview', 'Preview by guest', previewBody());
-			h += acPanel('preview2', 'Preview event cards', previewAllBody());
-			h += '</aside></div>';
+			h += '<p class="od-exp">Your invitation links are live until <b>' + ex.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) + '</b>' + (Date.now() > ex.getTime() ? ' (expired)' : ' (3 months from your order)') + '.</p></div>';
+			h += pageHtml(items) + '</main></div>';
 			root.innerHTML = h;
 			root.classList.toggle('od-view', !editing);
 			applyView();
 			pvRefresh();
 			document.title = coupleTitle() + ' | Order ' + O.orderNo;
 			window.scrollTo(0, y);
+		}
+		var navOpen = false;
+		function openAddGuests() {
+			if (!editing) { askPin(); return; }
+			var m = popup('<h3>Add guests</h3>' +
+				(many() ? '<label class="lab" for="ag-group">Which group are these guests in?</label><select id="ag-group"><option value="">Choose a group...</option>' + O.links.map(function (l) { return '<option value="' + esc(l.id) + '">' + esc(l.main ? 'Everyone' : gl(l)) + '</option>'; }).join('') + '</select><div style="height:12px"></div>' : '') +
+				'<label class="lab" for="ag-text">One guest per line: name, then phone number</label><div class="ag-cols"><span>Name</span><span>Phone number</span></div><textarea id="ag-text" rows="6" placeholder="Hamza Chachu   03331111111\\nMr. Ali &amp; Family   03001234567"></textarea><p class="hint" style="margin-top:6px">The phone number is optional. You can add or change it later in the table.</p><div class="ag-err" id="ag-err" hidden></div><div class="od-inline"><button type="button" class="btn-p" id="ag-go">Add guests</button><button type="button" class="lnk" id="ag-cancel">Cancel</button></div>');
+			m.querySelector('.od-modal-in').classList.add('wide');
+			m.querySelector('#ag-cancel').onclick = function () { m.close(); };
+			m.querySelector('#ag-go').onclick = function () {
+				var err = m.querySelector('#ag-err');
+				var fail = function (t) { err.textContent = t; err.hidden = false; };
+				var gs = m.querySelector('#ag-group');
+				if (gs && !gs.value) return fail('Please choose which group these guests are in.');
+				var rows = m.querySelector('#ag-text').value.split(/\n/).map(function (x) { return x.trim(); }).filter(Boolean).map(function (ln) {
+					var mt = ln.match(/^(.*?)[\s,|:\-]*((?:\+|00)?\d[\d\s\-]{6,17}\d)\s*$/);
+					return mt && mt[1].trim() ? { name: mt[1].trim(), phone: mt[2].replace(/[^0-9+]/g, '') } : { name: ln, phone: '' };
+				});
+				if (!rows.length) return fail('Please write at least one guest name.');
+				var longName = rows.filter(function (r) { return r.name.length > 45; })[0];
+				if (longName) return fail('"' + longName.name.slice(0, 20) + '..." is too long. Please keep each name within 45 characters.');
+				if (O.guests.length + rows.length > 500) return fail('You can add up to 500 guests.');
+				var lid = gs && gs.value ? gs.value : O.links[0].id;
+				rows.forEach(function (r) { O.guests.push({ id: '', name: tc(r.name), linkId: lid, phone: r.phone }); });
+				m.close();
+				setDirty(true);
+				render();
+				save(null, true); // the guests get their links right away
+			};
+			m.querySelector('#ag-text').focus();
 		}
 		function applyView() {}
 		// nothing is locked on screen: the first time someone tries to change something, the PIN is asked (once)
@@ -543,7 +647,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			var t = ev.target;
 			if (!t.closest) return;
 			var c = t.closest('input, textarea, select');
-			if (!c || c.id === 'od-q' || c.id === 'od-gf' || c.id === 'od-pvguest' || c.id === 'od-pin' || c.closest('.od-modal')) return;
+			if (!c || c.id === 'od-q' || c.id === 'od-gf' || c.id === 'od-pvguest' || c.id === 'od-pvgroup' || c.id === 'od-pin' || c.closest('.od-modal')) return;
 			ev.preventDefault();
 			if (c.blur) c.blur();
 			askPin();
@@ -644,7 +748,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			var cm = row.querySelector('[data-msg]');
 			if (cm) cm.dataset.copy = msg;
 			var wa = row.querySelector('.wa');
-			if (wa) wa.href = waUrl(msg);
+			if (wa) wa.href = waUrl(msg, gi !== undefined && O.guests[Number(gi)] ? O.guests[Number(gi)].phone : '');
 		}
 		function refreshMessages() {
 			root.querySelectorAll('.tb-row').forEach(rowMessage);
@@ -664,6 +768,10 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 				shown = 10;
 				renderGuestList();
 				return;
+			} else if (d.gphone !== undefined) {
+				O.guests[Number(d.gphone)].phone = t.value.replace(/[^0-9+ ]/g, '');
+				var prw = t.closest('.tb-row');
+				if (prw) rowMessage(prw);
 			} else if (d.c !== undefined) {
 				O.couple[d.c] = t.value;
 				var hh = document.querySelector('.od h1');
@@ -722,7 +830,11 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 		root.addEventListener('change', function (ev) {
 			var t = ev.target;
 			var d = t.dataset;
-			if (t.id === 'od-pvguest') {
+			if (t.id === 'od-pvgroup') {
+				pv.groupId = t.value;
+				pv.b.reset = true;
+				pvRefresh();
+			} else if (t.id === 'od-pvguest') {
 				pv.guestId = t.value;
 				pv.a.reset = true; // a newly chosen guest always starts at their first card
 				pvRefresh();
@@ -751,10 +863,10 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			if (!editing && (d.erm !== undefined || d.addstd !== undefined || d.htoggle !== undefined || d.newgroup !== undefined || b.id === 'od-addcustom' || b.id === 'od-gnew' || d.grm !== undefined || d.acOpen === 'addguests' || b.id === 'od-addg' || b.id === 'od-reset' || b.id === 'od-addh')) { askPin(); return; }
 			if (d.newgroup !== undefined) {
 				addGroup = addGroup || { label: '', cards: [] };
-				openAc.links = true;
+				page = 'groups';
+				try { history.replaceState(null, '', '#groups'); } catch (e) {}
 				render();
-				var lp = document.querySelector('.ac-h[data-ac="links"]');
-				if (lp) lp.scrollIntoView({ behavior: 'smooth', block: 'center' });
+				window.scrollTo(0, 0);
 				return;
 			}
 			if (d.erm !== undefined) {
@@ -780,16 +892,14 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 				}
 				O.events.push(ne);
 				O.links.forEach(function (l) { if (l.main) l.cards.push(ne.id); });
-				openAc.events = true;
-				setDirty(true);
+								setDirty(true);
 				render();
 				return;
 			}
 			if (d.htoggle !== undefined) {
 				O.hostsOn = d.htoggle === '1';
 				if (O.hostsOn && !O.hosts.length) O.hosts.push({ name: '', phone: '' });
-				openAc.hosts = true;
-				setDirty(true);
+								setDirty(true);
 				render();
 				return;
 			}
@@ -850,9 +960,23 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 				sec.classList.toggle('open', !!openAc[d.ac]);
 				b.setAttribute('aria-expanded', String(!!openAc[d.ac]));
 			} else if (d.acOpen === 'addguests') {
-				var box = document.getElementById('od-addbox');
-				box.hidden = !box.hidden;
-				if (!box.hidden) document.getElementById('od-new').focus();
+				openAddGuests();
+			} else if (d.nav) {
+				page = d.nav;
+				navOpen = false;
+				try { history.replaceState(null, '', '#' + page); } catch (e) {}
+				render();
+				window.scrollTo(0, 0);
+			} else if (d.navtog) {
+				navOpen = !navOpen;
+				var nvEl = root.querySelector('.od-nav');
+				if (nvEl) nvEl.classList.toggle('open', navOpen);
+				b.setAttribute('aria-expanded', String(navOpen));
+			} else if (d.music !== undefined) {
+				if (!editing) { askPin(); return; }
+				O.music = d.music;
+				setDirty(true);
+				render();
 			} else if (b.id === 'od-more') {
 				shown += 10;
 				renderGuestList();
@@ -898,6 +1022,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 				addGroup = null;
 				setDirty(true);
 				render();
+				save(null, true); // the new group's link is made right away
 			} else if (d.lrm !== undefined) {
 				var li = Number(d.lrm);
 				if (confirm('Remove the group "' + O.links[li].label + '"? Its guests will move to the first group.')) {
@@ -1108,7 +1233,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 	.od-tools select { flex: 0 0 auto; width: auto; border-radius: 999px; padding: 10px 16px; }
 	.tb { border: 1px solid #EBDDC3; border-radius: 12px; overflow: hidden; background: #fff; }
 	.tb-head, .tb-row { display: grid; column-gap: 0; align-items: stretch; }
-	.tb { --cols: minmax(170px, 1.1fr) 130px minmax(240px, 2.4fr) minmax(150px, 1.3fr) 92px 92px; }
+	.tb { --cols: minmax(130px, 1fr) 134px 150px minmax(190px, 2.2fr) minmax(120px, 1.1fr) 90px 92px; }
 	.tb-g { --cols: minmax(160px, 1fr) minmax(240px, 2.4fr) minmax(150px, 1.3fr) 112px 92px 92px; }
 	.tb-head, .tb-row { grid-template-columns: var(--cols); }
 	.tb-head { background: #F7EEDF; font: 600 11px 'Poppins', sans-serif; letter-spacing: 0.09em; text-transform: uppercase; color: #9A6A36; border-bottom: 1px solid #EBDDC3; }
@@ -1141,7 +1266,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 	.urlb:hover { background: #F7EEDF; border-style: solid; }
 	.urlb .url { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.tb-ic, .tb-op, .tb-cp { justify-content: center; }
-	.tb-span { grid-column: 3 / -1; }
+	.tb-span { grid-column: 4 / -1; }
 	.od .ic { display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: #25D366; color: #fff; text-decoration: none; }
 	.od .ic:hover { background: #1fb558; }
 	.od .qa { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid #E4D2B2; color: #5A5A5A; background: #fff; border-radius: 999px; padding: 7px 12px; font: 500 12.5px 'Poppins', sans-serif; text-decoration: none; cursor: pointer; white-space: nowrap; }
@@ -1158,8 +1283,9 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 		.tb-grp { grid-column: 1 / -1; }
 		.tb-g .tb-name { grid-column: 1 / -1; }
 		.tb-msg, .tb-url, .tb-cp { grid-column: 1 / -1; }
-		.tb-msg, .tb-url, .tb-grp { flex-direction: column; align-items: stretch; }
-		.tb-msg::before, .tb-url::before, .tb-grp::before { content: attr(data-l); font: 600 10.5px 'Poppins', sans-serif; letter-spacing: 0.08em; text-transform: uppercase; color: #9A6A36; margin-bottom: 4px; }
+		.tb-msg, .tb-url, .tb-grp, .tb-ph { flex-direction: column; align-items: stretch; }
+		.tb-ph { grid-column: 1 / -1; }
+		.tb-msg::before, .tb-url::before, .tb-grp::before, .tb-ph::before { content: attr(data-l); font: 600 10.5px 'Poppins', sans-serif; letter-spacing: 0.08em; text-transform: uppercase; color: #9A6A36; margin-bottom: 4px; }
 		.tb-ic, .tb-op { justify-content: stretch; }
 		.od .ic { width: 100%; border-radius: 999px; height: 38px; }
 		.od .ic::after { content: 'WhatsApp'; font: 600 12.5px 'Poppins', sans-serif; margin-left: 6px; }
@@ -1180,5 +1306,57 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 		/* the Edit panel sits on the right, next to the wide tables, and scrolls on its own */
 		.od-side { grid-column: 2; grid-row: 1; position: sticky; top: 12px; max-height: calc(100vh - 100px); overflow-y: auto; overscroll-behavior: contain; padding-right: 4px; scrollbar-width: thin; scrollbar-color: #D4A276 transparent; }
 		.od-main { grid-column: 1; grid-row: 1; }
+	}
+	/* ---------- left menu + one page per step ---------- */
+	.od { max-width: 1640px; padding-left: 20px; padding-right: 20px; }
+	.od-shell { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; align-items: start; }
+	.od-nav { background: #fff; border: 1px solid #EBDDC3; border-radius: 16px; padding: 18px 12px 14px; }
+	.nv-brand { font: 700 22px 'Playfair Display', serif; color: #1A1A1A; padding: 0 8px; }
+	.nv-brand b { color: #D4A276; font-weight: 700; }
+	.nv-cap { font: 600 10.5px 'Poppins', sans-serif; letter-spacing: 0.14em; text-transform: uppercase; color: #9A6A36; margin: 16px 8px 8px; }
+	.nv-list { display: none; flex-direction: column; gap: 4px; }
+	.od-nav.open .nv-list { display: flex; }
+	.nv-tog { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 8px; background: #F7EEDF; border: 1px solid #EBD9BC; border-radius: 12px; padding: 12px 14px; font: 600 14px 'Poppins', sans-serif; color: #1A1A1A; cursor: pointer; margin-bottom: 8px; }
+	.nv-i { display: flex; align-items: center; gap: 11px; width: 100%; text-align: left; background: transparent; border: 0; border-radius: 12px; padding: 11px 12px; font: 500 14px 'Poppins', sans-serif; color: #5A5A5A; cursor: pointer; line-height: 1.3; }
+	.nv-i:hover { background: #F7EEDF; color: #1A1A1A; }
+	.nv-i.on { background: #D4A276; color: #1A1A1A; font-weight: 600; box-shadow: 0 2px 8px rgba(176, 125, 70, 0.25); }
+	.nv-i i { flex: 0 0 auto; width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid #D4A276; display: grid; place-items: center; font: 600 12px 'Poppins', sans-serif; font-style: normal; color: #9A6A36; background: #fff; }
+	.nv-i.on i { background: #1A1A1A; border-color: #1A1A1A; color: #fff; }
+	.nv-i i.nv-d { border: 0; background: transparent; color: inherit; }
+	.nv-i i.nv-d svg { width: 18px; height: 18px; }
+	.nv-foot { display: none; margin: 18px 8px 0; padding-top: 12px; border-top: 1px solid #F0E6D2; font-size: 12px; color: #7a6a58; }
+	.od-content { min-width: 0; container-type: inline-size; container-name: dash; }
+	.od-top { margin: 0 0 14px; }
+	.od-top .od-no { font: 600 11px 'Poppins', sans-serif; letter-spacing: 0.14em; text-transform: uppercase; color: #D4A276; }
+	.od-top h1 { font: 700 clamp(1.6rem, 3.4vw, 2.2rem) 'Playfair Display', serif; color: #1A1A1A; margin: 2px 0 4px; }
+	.od-top .od-exp { font-size: 13px; color: #5A5A5A; margin: 0; }
+	.pg-h { margin: 0 0 16px; padding-bottom: 12px; border-bottom: 1px solid #EBDDC3; }
+	.pg-h h2 { font: 700 clamp(1.4rem, 2.6vw, 1.8rem) 'Playfair Display', serif; color: #1A1A1A; margin: 0 0 4px; }
+	.pg-h p { margin: 0; font-size: 14px; color: #5A5A5A; line-height: 1.55; max-width: 760px; }
+	.pg-step { display: inline-block; font: 600 11px 'Poppins', sans-serif; letter-spacing: 0.12em; text-transform: uppercase; color: #9A6A36; background: #F7EEDF; border-radius: 999px; padding: 3px 11px; margin-bottom: 8px; }
+	.od-narrow { max-width: 680px; }
+	.sec-t { font: 700 1.1rem 'Playfair Display', serif; margin: 0 0 8px; color: #1A1A1A; }
+	.od input[type=checkbox] { accent-color: #D4A276; }
+	.od .phin { padding: 7px 9px; font-size: 12.5px; border-radius: 8px; }
+	.tb-ph { padding-left: 8px; padding-right: 8px; }
+	.mzs { display: grid; gap: 8px; }
+	.mz { display: flex; gap: 12px; align-items: flex-start; text-align: left; width: 100%; background: #FFFDF7; border: 1.5px solid #E6D9BD; border-radius: 12px; padding: 12px 14px; font: 500 14px 'Poppins', sans-serif; color: #1A1A1A; cursor: pointer; }
+	.mz small { display: block; font-weight: 400; color: #5A5A5A; font-size: 12.5px; margin-top: 2px; }
+	.mz .cb { flex: 0 0 auto; width: 18px; height: 18px; border-radius: 50%; border: 2px solid #D4A276; margin-top: 2px; }
+	.mz.on { border-color: #D4A276; background: #FBF3E4; }
+	.mz.on .cb { background: #D4A276; box-shadow: inset 0 0 0 3px #FBF3E4; }
+	.mzs audio { width: 100%; height: 34px; margin: -2px 0 4px; }
+	.od-modal-in.wide { max-width: 480px; }
+	.od-modal-in .lab { display: block; font: 600 13px 'Poppins', sans-serif; color: #1A1A1A; margin: 0 0 6px; }
+	.od-modal-in select, .od-modal-in textarea { width: 100%; box-sizing: border-box; border: 1px solid #d9c8a6; border-radius: 10px; padding: 10px 12px; font: 14px 'Poppins', sans-serif; letter-spacing: 0; color: #1A1A1A; background: #fff; }
+	.od-modal-in textarea { resize: vertical; line-height: 1.6; }
+	.ag-cols { display: grid; grid-template-columns: 1fr 1fr; font: 600 10.5px 'Poppins', sans-serif; letter-spacing: 0.1em; text-transform: uppercase; color: #9A6A36; padding: 0 4px 4px; }
+	.ag-err { color: #b3261e; font-size: 13px; margin-top: 8px; }
+	@media (min-width: 1000px) {
+		.od-shell { grid-template-columns: 250px minmax(0, 1fr); gap: 24px; }
+		.od-nav { position: sticky; top: 12px; padding-bottom: 18px; min-height: calc(100vh - 140px); }
+		.nv-tog { display: none; }
+		.nv-list { display: flex; }
+		.nv-foot { display: block; }
 	}
 </style>

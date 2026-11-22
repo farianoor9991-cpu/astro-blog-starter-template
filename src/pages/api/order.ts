@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { hayaEnvelope } from '../../data/haya-envelope';
 import { clean, cleanGuests, cleanLinks, coupleSlugOf, DEFAULT_TEMPLATE, expiryOpts, json, loadByToken, rid, saveOrder } from '../../lib/orders';
 
 export const prerender = false;
@@ -69,6 +70,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
 		links,
 		hostsOn: true, // the reception hosts card is part of every package; the customer can remove it on the order page
 		guestsOn: !!body.guestsOn, // the personalized greeting cards add-on
+		setupTeam: !!body.setupTeam, // the customer asked our team to set everything up (+Rs. 1,999)
+		music: '',
 		guests,
 		template: DEFAULT_TEMPLATE,
 		paid: false,
@@ -153,8 +156,11 @@ export const PUT: APIRoute = async ({ request, url, locals }) => {
 	const empty = links.find((l: any) => !l.cards.length);
 	if (empty) return json({ error: 'The group "' + empty.label + '" needs at least one event.' }, 400);
 	const guests = order.guestsOn ? cleanGuests(body.guests, links, order.guests) : [];
+	const musicIds = ((hayaEnvelope as any).musicLibrary || []).map((m: any) => m.id);
+	const music = typeof body.music === 'string' && (body.music === 'none' || body.music === '' || musicIds.includes(body.music)) ? body.music : order.music || '';
 	const next = {
 		...order,
+		music,
 		couple: base.couple,
 		events: base.events,
 		hosts: base.hosts,
@@ -164,7 +170,7 @@ export const PUT: APIRoute = async ({ request, url, locals }) => {
 		guests,
 		template: typeof body.template === 'string' && body.template.trim() ? body.template.slice(0, 1500) : order.template,
 	};
-	const part = (o: any) => JSON.stringify([o.couple, o.events, o.hosts, o.hostsOn, o.mode, o.links, o.guests, o.template]);
+	const part = (o: any) => JSON.stringify([o.couple, o.events, o.hosts, o.hostsOn, o.mode, o.links, o.guests, o.template, o.music]);
 	if (part(next) === part(order) && !pinChanged) return json(publicView(order)); // nothing changed: no write
 	L.o = { ...next, updatedAt: new Date().toISOString() };
 	await saveOrder(kv, L);
