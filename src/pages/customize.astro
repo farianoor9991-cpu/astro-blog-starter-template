@@ -79,9 +79,9 @@ const MAX_HOSTS: number = tpl.maxHosts || 6;
 		const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 		const STEPS = [
 			{ n: 1, d: 1, title: 'Couple details', sub: 'Names of the bride, groom and their parents' },
-			{ n: 2, d: 2, title: 'Your events', sub: 'Choose the cards you want' },
-			{ n: 4, d: 3, title: 'Share links', sub: 'Groups are included. Greeting cards are optional' },
-			{ n: 6, d: 4, title: 'Who sets it up?', sub: 'Do it yourself for free, or let our team do it' },
+			{ n: 2, d: 2, title: 'Your events', sub: 'Choose your events' },
+			{ n: 4, d: 3, title: 'Share links', sub: 'Get links for each event. Greeting cards are optional.' },
+			{ n: 6, d: 4, title: 'Who fills card details?', sub: 'Do it yourself for free, or let our team do it' },
 			{ n: 5, d: 5, title: 'Review and preview', sub: 'See your cards before paying' },
 		];
 
@@ -148,7 +148,8 @@ const save = () => {};
 			return ids;
 		};
 		const tabs = (): string[] => {
-			const p = pkg();
+			let p = pkg();
+			if (!selEvents().length) p = [tpl.events[0].id].concat(p); // nothing chosen yet: the preview shows the first event card, never the hosts card
 			return S.guests.on && S.links.mode ? ['guest'].concat(p) : p;
 		};
 		const label = (id: string) => (id === 'hosts' ? 'Reception Hosts' : id === 'guest' ? 'Greeting card' : evDef(id).label);
@@ -617,18 +618,21 @@ const save = () => {};
 			}
 			const ex = (g: string, t: string) => `<div class="exg"><b>${g}</b><span>${t}</span></div>`;
 			return `
-				<style>.ihx{border:1px solid #e6d9bd;border-radius:14px;background:#fffdf7;padding:14px 14px 12px;margin:0 0 14px}.ihx h4{margin:0 0 8px;font:700 12px Poppins,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#b8793c}.ihx p{margin:5px 0;font-size:14px;line-height:1.5;color:#1a1a1a}.ihx .sub2{color:#5a5a5a;margin-left:2px}.exr{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0 4px}.exg{border:1px solid #e6d9bd;border-radius:10px;padding:8px 9px;background:#fff;font-size:12.5px;line-height:1.4;color:#5a5a5a}.exg b{display:block;color:#1a1a1a;font-size:13px}@media(max-width:520px){.exg{padding:7px;font-size:11.5px}.exg b{font-size:12px}}.hw-bg{position:fixed;inset:0;background:rgba(26,26,26,.55);z-index:90;display:flex;align-items:center;justify-content:center;padding:16px}.hw{font-family:Poppins,sans-serif;background:#fcf9f1;border-radius:18px;max-width:560px;width:100%;max-height:88vh;overflow:auto;padding:20px 18px;box-shadow:0 20px 60px rgba(0,0,0,.3)}.hw h3{margin:0 0 4px;font:700 22px "Playfair Display",serif;color:#1a1a1a}.hw p{font-size:14px;line-height:1.55;color:#5a5a5a;margin:6px 0}.hw .st1{display:flex;gap:10px;align-items:flex-start;margin:12px 0}.hw .st1 i{flex:none;width:26px;height:26px;border-radius:50%;background:#d4a276;color:#fff;font:600 13px Poppins,sans-serif;display:flex;align-items:center;justify-content:center;font-style:normal}.hw .lkb{display:block;margin-top:4px;padding:6px 9px;border-radius:8px;background:#fff;border:1px dashed #d4a276;font-size:12px;color:#1a1a1a;word-break:break-all}</style>
+				<style>.ihx{border:1px solid #e6d9bd;border-radius:14px;background:#fffdf7;padding:14px 14px 12px;margin:0 0 12px}.ihx p{margin:5px 0;font-size:14px;line-height:1.5;color:#1a1a1a}.ihx .sub2{color:#5a5a5a;margin-left:2px}.ckh{display:flex;align-items:center;gap:11px;width:100%;background:none;border:0;padding:0;font:inherit;text-align:left;cursor:pointer;color:#1a1a1a}.ckh b{flex:1;font:600 15px Poppins,sans-serif}.ckh .pr{font:600 14px Poppins,sans-serif;color:#b8793c;white-space:nowrap}.ckb{flex:0 0 auto;width:22px;height:22px;border-radius:6px;border:2px solid #d4a276;background:#fff;display:grid;place-items:center;color:#fff;font-size:14px;line-height:1}.ckb.on{background:#d4a276}.ckx{margin-top:10px;padding-top:8px;border-top:1px solid #efe3cb}.exr{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:4px 0}.exg{border:1px solid #e6d9bd;border-radius:10px;padding:8px 9px;background:#fff;font-size:12.5px;line-height:1.4;color:#5a5a5a}.exg b{display:block;color:#1a1a1a;font-size:13px}@media(max-width:520px){.exg{padding:7px;font-size:11.5px}.exg b{font-size:12px}}.hw-bg{position:fixed;inset:0;background:rgba(26,26,26,.55);z-index:90;display:flex;align-items:center;justify-content:center;padding:16px}.hw{font-family:Poppins,sans-serif;background:#fcf9f1;border-radius:18px;max-width:560px;width:100%;max-height:88vh;overflow:auto;padding:20px 18px;box-shadow:0 20px 60px rgba(0,0,0,.3)}.hw h3{margin:0 0 4px;font:700 22px "Playfair Display",serif;color:#1a1a1a}.hw p{font-size:14px;line-height:1.55;color:#5a5a5a;margin:6px 0}.hw .st1{display:flex;gap:10px;align-items:flex-start;margin:12px 0}.hw .st1 i{flex:none;width:26px;height:26px;border-radius:50%;background:#d4a276;color:#fff;font:600 13px Poppins,sans-serif;display:flex;align-items:center;justify-content:center;font-style:normal}.hw .lkb{display:block;margin-top:4px;padding:6px 9px;border-radius:8px;background:#fff;border:1px dashed #d4a276;font-size:12px;color:#1a1a1a;word-break:break-all}</style>
 				<div class="ihx">
-					<h4>Option 1 &middot; always provided</h4>
-					<p>\u2714\uFE0F One link for everyone with all cards</p>
-					<p>\u2714\uFE0F Separate links for each group</p>
-					<p class="sub2">&gt; Create your own groups with your selected events for each group</p>
-					<p class="sub2" style="margin-top:10px">e.g.</p><div class="exr" style="margin-top:4px">${ex('Group 1', 'Mehndi only card link')}${ex('Group 2', 'Baraat &amp; Walima only card link')}${ex('Group 3', 'Walima only card link')}</div>
-					<button type="button" class="lnk" data-act="howto">See how it works</button>
+					<div class="ckh" aria-disabled="true"><span class="ckb on">✓</span><b>Invitation links</b><span class="pr">${fmtRs(P_BASE)}</span></div>
+					<div class="ckx">
+						<p>✔️ One link for everyone with all cards</p>
+						<p>✔️ Separate links for each group</p>
+						<p class="sub2">&gt; Create your own groups with your selected events for each group</p>
+						<p class="sub2" style="margin-top:10px">e.g.</p>
+						<div class="exr">${ex('Group 1', 'Mehndi &amp; Baraat only guests')}${ex('Group 2', 'Walima only guests')}${ex('Group 3', 'Baraat &amp; Walima only guests')}</div>
+						<button type="button" class="lnk" data-act="howto">See how it works</button>
+					</div>
 				</div>
-				<div class="ihx" style="padding:10px 10px 8px">
-					<h4>Option 2 &middot; optional add-on</h4>
-					<button type="button" class="opt${S.guests.on ? ' on' : ''}" data-act="gtoggle" aria-pressed="${S.guests.on}"><span class="cb"></span><span class="ot"><b>Add personalized greeting cards <span style="color:#b8793c;white-space:nowrap">(+${fmtRs(P_ADDON)})</span></b><small><span style="color:#1a1a1a;font-weight:500">With this add-on, you receive:</span><br>\u2714\uFE0F Everything in Option 1<br>\u2714\uFE0F A personalized greeting card for each guest you list (unlimited guests). Their first card greets them by name: "Dear Shaheer Aslam! You are specially invited to..."</small></span></button>
+				<div class="ihx">
+					<button type="button" class="ckh" data-act="gtoggle" aria-pressed="${S.guests.on}"><span class="ckb${S.guests.on ? ' on' : ''}">${S.guests.on ? '✓' : ''}</span><b>Guest name greeting cards</b><span class="pr">${fmtRs(P_FULL)}</span></button>
+					${S.guests.on ? `<div class="ckx"><p>✔️ Everything in Invitation links</p><p>✔️ A personalized greeting card for each guest you list (unlimited guests). Their first card greets them by name: "Dear Shaheer Aslam! You are specially invited to..."</p></div>` : ''}
 				</div>
 				<div class="err" data-err="4"></div><div class="acts"><button class="btn-g" type="button" data-act="next" data-n="4">Continue to Step 4</button></div>`;
 		};
@@ -645,15 +649,15 @@ const save = () => {};
 		const howTo = () => {
 			const w = document.createElement('div');
 			w.className = 'hw-bg';
-			w.innerHTML = `<div class="hw" role="dialog" aria-modal="true"><h3>How groups work</h3><p>Create as many groups as you like. Each group gets its own link and sees only its own cards.</p>
-				<div class="st1"><i>1</i><div><b>Make groups</b><p>Name them anything, then tick the events each group should see.</p><div class="exr">${'Group 1|Mehndi only~Group 2|Baraat &amp; Walima only~Group 3|Walima only'.split('~').map((x) => ex2(x)).join('')}</div></div></div>
-				<div class="st1"><i>2</i><div><b>Each group gets its own link</b><span class="lkb">../maria-weds-ali/group=family/</span><span class="lkb">../maria-weds-ali/group=friends/</span></div></div>
-				<div class="st1"><i>3</i><div><b>Send on WhatsApp</b><p>Copy each group's link and send it to that group.</p></div></div>
+			w.innerHTML = `<div class="hw" role="dialog" aria-modal="true"><h3>How groups work</h3><p>Create as many groups as you like. Send a different link to each group, so guests only see the cards for the events they're invited to.</p>
+				<div class="st1"><i>1</i><div><b>Make groups</b><p>Name them anything, then tick the events each group should see.</p><div class="exr">${'Group 1|Mehndi &amp; Baraat only guests~Group 2|Walima only guests~Group 3|Baraat &amp; Walima only guests'.split('~').map((x) => ex2(x)).join('')}</div></div></div>
+				<div class="st1"><i>2</i><div><b>Each group gets its own link</b><span class="lkb">../maria-weds-ali/group=baraat-&amp;-mehndi-guests/</span><span class="lkb">../maria-weds-ali/group=walima-guests/</span></div></div>
+				<div class="st1"><i>3</i><div><b>Send on WhatsApp</b><p>Copy each group's link and send it to a specific group of guests, so those guests only see the cards for the events they're invited to.</p></div></div>
 				<div class="acts"><button type="button" data-act="howclose" style="background:#d4a276;color:#fff;border:0;border-radius:999px;padding:10px 24px;font:600 14px Poppins,sans-serif;cursor:pointer">Got it</button></div></div>`;
 			w.addEventListener('click', (e) => { const t = e.target as HTMLElement; if (t === w || t.closest('[data-act="howclose"]')) w.remove(); });
 			document.body.appendChild(w);
 		};
-		const ex2 = (x: string) => { const [g, t] = x.split('|'); return `<div class="exg"><b>${g}</b><span>${t} card link</span></div>`; };
+		const ex2 = (x: string) => { const [g, t] = x.split('|'); return `<div class="exg"><b>${g}</b><span>${t}</span></div>`; };
 		const body5 = (): string => {
 			const cards = pkg();
 			if (!cards.length) return '<p class="hint">Please complete the earlier steps first.</p>';
