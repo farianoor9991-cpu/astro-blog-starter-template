@@ -1509,6 +1509,9 @@
 			if (sc) sc.remove();
 			return;
 		}
+		// the top of the green footer peeks above the bottom edge, so the guest knows there is more below
+		stage.style.height = 'calc(100vh - 40px)';
+		stage.style.height = 'calc(100svh - 40px)';
 		var onScroll = function () {
 			if (sc) sc.classList.toggle('gone', (window.pageYOffset || document.documentElement.scrollTop) > 40);
 		};
@@ -1542,10 +1545,35 @@
 	// the tray and envelope rise as soon as THEIR pictures are here (not after every picture and font)
 	var firstImgs = Promise.all(
 		[S.images.trayPhone && !wide0() ? S.images.trayPhone : S.images.tray, S.images.closed, S.images.body].filter(Boolean).map(function (s) {
-			return loadOne(s).catch(function () {});
+			return loadOne(s)
+				.then(function (im) {
+					return im && im.decode ? im.decode().catch(function () {}) : im;
+				})
+				.catch(function () {});
 		})
 	);
-	Promise.race([firstImgs, wait(1800)]).then(function () {
+	// First visit: the phone is busy downloading, drawing and decoding the big cards. We do all of that BEFORE the
+	// entrance starts (behind a quiet "preparing" line), so the tray, envelope and cards then move without stuttering.
+	var cardsDecoded = cardsReady
+		.then(function () {
+			return Promise.all(
+				cards.map(function (c) {
+					return c.el && c.el.decode ? c.el.decode().catch(function () {}) : null;
+				})
+			);
+		})
+		.catch(function () {});
+	var loadEl = document.createElement('div');
+	loadEl.className = 'ev-loading';
+	loadEl.textContent = 'Preparing your invitation\u2026';
+	document.body.appendChild(loadEl);
+	Promise.race([Promise.all([firstImgs, cardsDecoded]), wait(6000)]).then(function () {
+		return wait(150);
+	}).then(function () {
+		loadEl.classList.add('gone');
+		setTimeout(function () {
+			if (loadEl.parentNode) loadEl.parentNode.removeChild(loadEl);
+		}, 500);
 		stage.classList.add('ev-in');
 		fireConfetti(); // confetti falls as soon as the invitation opens, once
 		wait((TM.hintDelay || 0) + 900).then(function () {

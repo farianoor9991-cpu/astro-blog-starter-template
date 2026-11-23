@@ -616,3 +616,22 @@ body {
 	will-change: transform;
 	user-select: none;
 }
+
+/* quiet line shown while the first visit prepares the cards (so the entrance can run smoothly) */
+.ev-loading {
+	position: fixed;
+	left: 0;
+	right: 0;
+	top: 46%;
+	z-index: 5;
+	text-align: center;
+	font: 400 1.05rem / 1.4 'Unna', serif;
+	letter-spacing: 0.04em;
+	color: #276041;
+	opacity: 0.85;
+	pointer-events: none;
+	transition: opacity 0.4s ease;
+	animation: ev-pulse 1.6s ease-in-out infinite;
+}
+.ev-loading.gone { opacity: 0 !important; animation: none; }
+@keyframes ev-pulse { 0%, 100% { opacity: 0.45; } 50% { opacity: 0.95; } }

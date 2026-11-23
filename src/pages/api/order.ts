@@ -32,7 +32,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
 	const base = clean(body);
 	if (!base.events.length || !base.couple.brideName || !base.couple.groomName) return json({ error: 'Missing details' }, 400);
 	// groups and guest lists are made later, on the order page; the order starts with the one main link
-	const links = cleanLinks([], base.events);
+	const links = cleanLinks(body.links, base.events);
 	const guests: any[] = [];
 	// private link = 10 characters that find the order + 14 secret characters
 	const pid = rid(10);

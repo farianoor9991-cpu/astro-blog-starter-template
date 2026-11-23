@@ -4,7 +4,7 @@ export const MAX_GUESTS = 500;
 export const STANDARD_EVENTS = ['nikkah', 'dholki', 'qawaali', 'mehndi', 'baraat', 'walima'];
 const MAX_EVENTS = 20;
 const MAX_HOSTS = 6;
-const MAX_LINKS = 30;
+const MAX_LINKS = 120;
 
 export const DEFAULT_TEMPLATE =
 	'Assalam-o-Alaikum {name},\n\n{couple} warmly invite you to their celebration. We have prepared a personal invitation for you. Please tap the link below to open it:\n\n{link}\n\nWe would be honoured to have you with us.';
@@ -102,7 +102,7 @@ export const cleanLinks = (input: any, events: any[], existing?: any[]) => {
 			used.add(id);
 			return {
 				id,
-				label: str(l?.label, 40) || 'Group ' + (i + 1),
+				label: str(l?.label, 120) || 'Combo ' + (i + 2),
 				cards: (Array.isArray(l?.cards) ? l.cards : []).map((c: any) => str(c, 40)).filter((c: string) => valid.has(c)),
 			};
 		});

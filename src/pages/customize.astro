@@ -3,6 +3,7 @@ import PageLayout from '../layouts/PageLayout.astro';
 ---
 
 <PageLayout title="Customize" description="Personalize your invitation cards." showReviews={false}>
+	<script is:inline src="/ih-combos.js?v=1"></script>
 	<div class="cz" id="cz">
 		<div id="cz-main">
 			<header class="cz-head">
@@ -22,13 +23,17 @@ import PageLayout from '../layouts/PageLayout.astro';
 						<canvas data-preview></canvas>
 						<div class="ptabs" data-tabs></div>
 						<p class="wm-note">Preview only. Your final cards will not have the watermark.</p>
+						<div class="cz-asidebar">
+							<button class="btn-o" type="button" data-act="envelope">See it in the envelope</button>
+							<span class="pr" data-price></span>
+						</div>
 					</div>
 				</aside>
 			</div>
 
 			<div class="cz-bar">
-				<button class="btn-g" type="button" data-act="envelope" style="flex:1;padding:12px 14px">See it in the envelope</button>
-				<span class="pr" id="cz-price"></span>
+				<button class="btn-o" type="button" data-act="envelope" style="flex:1;padding:12px 14px">See it in the envelope</button>
+				<span class="pr" data-price></span>
 			</div>
 
 			<div class="cz-modal" id="cz-modal">
@@ -79,9 +84,10 @@ const MAX_HOSTS: number = tpl.maxHosts || 6;
 		const STEPS = [
 			{ n: 1, d: 1, title: 'Couple details', sub: 'Names of the bride, groom and their parents' },
 			{ n: 2, d: 2, title: 'Your events', sub: 'Choose your events' },
-			{ n: 4, d: 3, title: 'Share links', sub: 'Get links for each event. Greeting cards are optional.' },
-			{ n: 6, d: 4, title: 'Who fills card details?', sub: 'Do it yourself for free, or let our team do it' },
-			{ n: 5, d: 5, title: 'Review and preview', sub: 'See your cards before paying' },
+			{ n: 7, d: 3, title: 'Create card combinations', sub: 'Choose which cards each guest receives' },
+			{ n: 4, d: 4, title: 'Share links', sub: 'Get links for each event. Greeting cards are optional.' },
+			{ n: 6, d: 5, title: 'Who fills card details?', sub: 'Do it yourself for free, or let our team do it' },
+			{ n: 5, d: 6, title: 'Review and preview', sub: 'See your cards before paying' },
 		];
 
 		const $ = (s: string) => document.querySelector(s) as HTMLElement | null;
@@ -175,8 +181,7 @@ const save = () => {};
 		};
 		const totalPrice = () => priceLines().reduce((a, l) => a + l.v, 0);
 		const updatePrice = () => {
-			const el = $('#cz-price');
-			if (el) el.textContent = fmtRs(totalPrice() || P_BASE);
+			document.querySelectorAll('[data-price]').forEach((el) => (el.textContent = fmtRs(totalPrice() || P_BASE)));
 		};
 		const TEST = /[?&]test=1/.test(location.search);
 		const GUEST_MAX = 50;
@@ -197,6 +202,14 @@ const save = () => {};
 			const ok = pkg();
 			S.links.list.forEach((lk: D) => {
 				lk.cards = lk.cards.filter((k: string) => ok.indexOf(k) >= 0);
+			});
+			const seen = new Set<string>();
+			S.links.list = S.links.list.filter((lk: D) => {
+				const k = lk.cards.slice().sort().join('+');
+				const all = selEvents().length;
+				if (!lk.cards.length || lk.cards.length >= all || seen.has(k)) return false;
+				seen.add(k);
+				return true;
 			});
 		};
 
@@ -617,18 +630,51 @@ const save = () => {};
 			if (!cards.length) {
 				return `<p class="hint">Please choose your events in Step 2 first.</p><div class="acts"><button class="btn-o" type="button" data-open="2">Go to Step 2</button></div>`;
 			}
-			const ex = (g: string, t: string) => `<div class="exg"><b>${g}</b><span>${t}</span></div>`;
-			const opt1 = `<div class="opt on" role="checkbox" aria-checked="true" style="cursor:default"><span class="cb"></span><span class="ot">${optHead('Invitation links', fmtRs(P_BASE))}<small>✔️ One link for everyone with all cards<br>✔️ Separate links for each group<br>&gt; Create your own groups with your selected events for each group (personal dashboard provided)</small>
-				<button type="button" class="lnk" data-act="howto" style="font-size:12px;margin-top:6px">See how it works</button></span></div>`;
-			const opt2 = `<div class="opt${S.guests.on ? ' on' : ''}" role="checkbox" aria-checked="${S.guests.on}" tabindex="0" data-act="gtoggle"><span class="cb"></span><span class="ot">${optHead('Invitation links + Guest name greeting cards', fmtRs(P_FULL))}${
-				S.guests.on
-					? `<small>✔️ One link for everyone with all cards<br>✔️ Separate links for each group (personal dashboard provided)<br>✔️ A personalized greeting card for each guest you list (unlimited guests). Their first card greets them by name: "Dear Shaheer Aslam! You are specially invited to..."</small>`
+			const g = S.guests.on;
+			const opt1 = `<div class="opt${g ? '' : ' on'}" role="checkbox" aria-checked="${!g}" tabindex="0" data-act="ltoggle"><span class="cb"></span><span class="ot">${optHead('Invitation links', fmtRs(P_BASE))}${
+				g ? '' : `<small>\u2714\uFE0F One link for everyone with all cards<br>\u2714\uFE0F Separate links for each card combinations</small>`
+			}</span></div>`;
+			const opt2 = `<div class="opt${g ? ' on' : ''}" role="checkbox" aria-checked="${g}" tabindex="0" data-act="gtoggle"><span class="cb"></span><span class="ot">${optHead('Invitation links + Guest name greeting cards', fmtRs(P_FULL))}${
+				g
+					? `<small>\u2714\uFE0F One link for everyone with all cards<br>\u2714\uFE0F Separate links for each card combinations<br>\u2714\uFE0F A personalized greeting card for each guest you list (unlimited guests). Their first card greets them by name: "Dear Shaheer Aslam! You are specially invited to..."</small>`
 					: ''
 			}</span></div>`;
 			return `
-				<style>.ihx{border:1px solid #e6d9bd;border-radius:14px;background:#fffdf7;padding:10px 10px 8px;margin:0 0 14px}.ihx .opt{margin-bottom:8px}.exr{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:4px 0 6px}.exg{border:1px solid #e6d9bd;border-radius:10px;padding:8px 9px;background:#fff;font-size:12px;line-height:1.4;color:#5a5a5a}.exg b{display:block;color:#1a1a1a;font-size:12.5px}@media(max-width:520px){.exg{padding:7px;font-size:11.5px}.exg b{font-size:12px}}.hw-bg{position:fixed;inset:0;background:rgba(26,26,26,.55);z-index:90;display:flex;align-items:center;justify-content:center;padding:16px}.hw{font-family:Poppins,sans-serif;background:#fcf9f1;border-radius:18px;max-width:560px;width:100%;max-height:88vh;overflow:auto;padding:20px 18px;box-shadow:0 20px 60px rgba(0,0,0,.3)}.hw h3{margin:0 0 4px;font:700 22px "Playfair Display",serif;color:#1a1a1a}.hw p{font-size:14px;line-height:1.55;color:#5a5a5a;margin:6px 0}.hw .st1{display:flex;gap:10px;align-items:flex-start;margin:12px 0}.hw .st1 i{flex:none;width:26px;height:26px;border-radius:50%;background:#d4a276;color:#fff;font:600 13px Poppins,sans-serif;display:flex;align-items:center;justify-content:center;font-style:normal}.hw .lkb{display:block;margin-top:4px;padding:6px 9px;border-radius:8px;background:#fff;border:1px dashed #d4a276;font-size:12px;color:#1a1a1a;word-break:break-all}</style>
-				<div class="ihx">${S.guests.on ? '' : opt1}${opt2}</div>
-				<div class="err" data-err="4"></div><div class="acts"><button class="btn-g" type="button" data-act="next" data-n="4">Continue to Step 4</button></div>`;
+				<style>.ihx{border:1px solid #e6d9bd;border-radius:14px;background:#fffdf7;padding:10px 10px 8px;margin:0 0 14px}.ihx .opt{margin-bottom:8px}</style>
+				<div class="ihx">${opt1}${opt2}</div>
+				<div class="err" data-err="4"></div><div class="acts"><button class="btn-g" type="button" data-act="next" data-n="4">Continue to Step 5</button></div>`;
+		};
+		/* ---------- card combinations ---------- */
+		const comboEvents = (): D[] => selEvents().sort(byDate).map((e: D) => ({ id: e.id, label: e.label }));
+		const comboKey = (cards: string[]) => cards.slice().sort().join('+');
+		const comboChosen = (): string[][] => S.links.list.map((l: D) => l.cards.slice()).filter((c: string[]) => c.length);
+		const toggleCombo = (cards: string[]) => {
+			const k = comboKey(cards);
+			const ix = S.links.list.findIndex((l: D) => comboKey(l.cards) === k);
+			if (ix >= 0) S.links.list.splice(ix, 1);
+			else S.links.list.push({ id: uid(), label: '', cards: cards.slice() });
+			save();
+			const sm = $('[data-sum="7"]');
+			updateSummaries();
+		};
+		const mountCombos = () => {
+			const m = $('[data-cmb]') as HTMLElement | null;
+			if (!m || !(window as any).IHCombos) return;
+			(window as any).IHCombos.create({
+				mount: m,
+				getEvents: comboEvents,
+				getChosen: comboChosen,
+				isSelected: (k: string) => S.links.list.some((l: D) => comboKey(l.cards) === comboKey(k.split('+'))),
+				toggle: toggleCombo,
+			});
+		};
+		const body7 = (): string => {
+			if (selEvents().length < 1) return `<p class="hint">Please choose your events in Step 2 first.</p><div class="acts"><button class="btn-o" type="button" data-open="2">Go to Step 2</button></div>`;
+			return `
+				<p class="hint" style="margin:0 0 4px">Choose which event cards each guest will receive. Each combination will have its own link.</p>
+				<button type="button" class="lnk" data-act="cmbhow" style="font-size:13px;margin:0 0 12px">See how it works</button>
+				<div data-cmb></div>
+				<div class="err" data-err="7"></div><div class="acts"><button class="btn-g" type="button" data-act="next" data-n="7">Continue to Step 4</button></div>`;
 		};
 		const body6 = (): string => {
 			const card = (v: string, title: string, price: string, lines: string[]) =>
@@ -638,7 +684,7 @@ const save = () => {};
 					${card('self', 'A) I\u2019ll manage it', 'FREE', ['You get your own Guest Management Panel.', 'Make groups, add guests, and edit anything anytime.', 'Short video guide for every step.'])}
 					${card('team', 'B) Let our team handle it', '+Rs. 1,999', ['Send us everything on WhatsApp and we set it all up for you. You can change anything later.'])}
 				</div>
-				<div class="err" data-err="6"></div><div class="acts"><button class="btn-g" type="button" data-act="next" data-n="6">Continue to Step 5</button></div>`;
+				<div class="err" data-err="6"></div><div class="acts"><button class="btn-g" type="button" data-act="next" data-n="6">Continue to Step 6</button></div>`;
 		};
 		const howTo = () => {
 			const w = document.createElement('div');
@@ -670,11 +716,12 @@ const save = () => {};
 				<div class="ok" id="finish-note" hidden></div>`;
 		};
 
-		const renderBody = (n: number): string => (n === 1 ? body1() : n === 2 ? body2() : n === 3 ? body3() : n === 4 ? body4() : n === 6 ? body6() : body5());
+		const renderBody = (n: number): string => (n === 1 ? body1() : n === 2 ? body2() : n === 3 ? body3() : n === 4 ? body4() : n === 6 ? body6() : n === 7 ? body7() : body5());
 		const refreshBody = (n: number) => {
 			const el = $(`[data-body="${n}"]`);
 			if (el) el.innerHTML = renderBody(n);
 			if (n === 5) renderGallery();
+			if (n === 7) mountCombos();
 			updatePrice();
 		};
 
@@ -686,15 +733,16 @@ const save = () => {};
 			const sum: D = {
 				1: S.done[1] ? `${tc(c.brideName)} and ${tc(c.groomName)}` : STEPS[0].sub,
 				2: S.done[2] ? `${evN} event${evN === 1 ? '' : 's'} chosen` : STEPS[1].sub,
-				4: S.done[4] ? (S.guests.on ? 'Groups and personalized greeting cards' : 'Groups included') : STEPS[2].sub,
-				6: S.done[6] ? (S.setup === 'team' ? 'Our team sets it up (+Rs. 1,999)' : 'I will manage it (free)') : STEPS[3].sub,
-				5: STEPS[4].sub,
+				7: S.done[7] ? `${S.links.list.length + 1} combination${S.links.list.length ? 's' : ''} (including all events)` : STEPS[2].sub,
+				4: S.done[4] ? (S.guests.on ? 'Links and personalized greeting cards' : 'Invitation links') : STEPS[3].sub,
+				6: S.done[6] ? (S.setup === 'team' ? 'Our team sets it up (+Rs. 1,999)' : 'I will manage it (free)') : STEPS[4].sub,
+				5: STEPS[5].sub,
 			};
 			STEPS.forEach((s) => {
 				const el = $(`[data-sum="${s.n}"]`);
 				if (el) el.textContent = sum[s.n];
 				const sec = $(`.st[data-n="${s.n}"]`);
-				if (sec) sec.classList.toggle('done', !!S.done[s.n] && s.n < 5);
+				if (sec) sec.classList.toggle('done', !!S.done[s.n] && s.n !== 5);
 			});
 		};
 		const updateProgress = () => {
@@ -789,16 +837,18 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 		const fillSample = () => {
 			const sm = tpl.sample;
 			S.couple = { brideName: sm.brideName, brideParents: sm.brideParents, groomName: sm.groomName, groomParents: sm.groomParents };
+			const SAMPLE_ON = ['mehndi', 'baraat', 'walima'];
 			tpl.events.forEach((e: D) => {
-				S.events[e.id] = { on: true, date: e.sample.date, time: e.sample.time, venue: tpl.sampleVenue };
+				S.events[e.id] = SAMPLE_ON.indexOf(e.id) >= 0 ? { on: true, date: e.sample.date, time: e.sample.time, venue: tpl.sampleVenue } : { on: false, date: '', time: '', venue: '' };
 			});
 			S.hosts = { want: true, list: tpl.sampleHosts.map((h: D) => ({ name: h.name, phone: String(h.phone).replace(/x/gi, '1') })) };
-			S.links = { mode: 'one', list: [] };
+			S.links = { mode: 'many', list: [{ id: uid(), label: '', cards: ['mehndi', 'baraat'] }] };
 			S.guests = { on: true, one: '' };
-			S.done = {};
+			S.done = { 1: true, 2: true, 7: true, 4: true, 6: true };
 			S.active = pkg()[0];
 			save();
-			openStep(1);
+			openStep(5);
+			updateSummaries();
 		};
 		const openInEnvelope = (gi?: number) => {
 			const evData = (id: string) => ({ id, date: S.events[id].date, time: S.events[id].time, venue: String(S.events[id].venue).trim(), ...(evDef(id).custom ? { custom: true, label: evDef(id).label, title: evDef(id).title } : {}) });
@@ -866,7 +916,7 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 					events: selEvents().sort(byDate).map((e: D) => ({ id: e.id, date: S.events[e.id].date, time: S.events[e.id].time, venue: String(S.events[e.id].venue).trim(), ...(e.custom ? { custom: true, label: e.label, title: e.title } : {}) })),
 					hosts: [],
 					mode: 'one',
-					links: [],
+					links: S.links.list.map((l: D) => ({ id: l.id, label: (window as any).IHCombos ? (window as any).IHCombos.label(l.cards, comboEvents()) : '', cards: l.cards })),
 					guestsOn: !!S.guests.on,
 					setupTeam: S.setup === 'team',
 					guests: [],
@@ -985,7 +1035,7 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 		});
 
 		root.addEventListener('click', (ev) => {
-			const b = (ev.target as HTMLElement).closest('button,[data-act="gtoggle"]') as HTMLElement | null;
+			const b = (ev.target as HTMLElement).closest('button,[data-act="gtoggle"],[data-act="ltoggle"]') as HTMLElement | null;
 			if (!b) return;
 			const d = b.dataset;
 			if (d.open) { 				if (b.classList.contains('st-h') && S.open === Number(d.open)) return closeStep(); 				return openStep(Number(d.open), true); 			}
@@ -1095,6 +1145,20 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 					gMore = !gMore;
 					refreshBody(5);
 					break;
+				case 'ltoggle':
+					if (S.guests.on) {
+						S.guests.on = false;
+						save();
+						updatePrice();
+						refreshBody(4);
+						renderTabs();
+						scheduleDraw();
+						updateSummaries();
+					}
+					break;
+				case 'cmbhow':
+					(window as any).IHCombos && (window as any).IHCombos.howItWorks();
+					break;
 				case 'gtoggle':
 					S.guests.on = !S.guests.on;
 					save();
@@ -1142,7 +1206,7 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 			if (ev.target === modal) closeModal();
 		});
 		document.addEventListener('keydown', (e) => {
-			const gt = (e.target as HTMLElement).closest ? (e.target as HTMLElement).closest('[data-act="gtoggle"]') as HTMLElement | null : null;
+			const gt = (e.target as HTMLElement).closest ? (e.target as HTMLElement).closest('[data-act="gtoggle"],[data-act="ltoggle"]') as HTMLElement | null : null;
 			if (gt && gt.getAttribute('role') === 'checkbox' && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); gt.click(); return; }
 			if (e.key === 'Escape') closeModal(); 			if (modal.classList.contains('open')) { 				if (e.key === 'ArrowLeft') go(-1); 				if (e.key === 'ArrowRight') go(1); 			}
 		});
@@ -1811,5 +1875,23 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 		.cz .cz-bar {
 			display: none;
 		}
+		.cz .cz-asidebar {
+			display: flex;
+		}
+	}
+	.cz .cz-asidebar {
+		display: none;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+		margin-top: 14px;
+	}
+	.cz .cz-asidebar .btn-o {
+		flex: 1;
+	}
+	.cz .cz-asidebar .pr {
+		font: 700 17px 'Poppins', sans-serif;
+		color: #1a1a1a;
+		white-space: nowrap;
 	}
 </style>
