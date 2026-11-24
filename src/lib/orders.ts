@@ -1,7 +1,7 @@
 // Shared helpers for orders. Orders are kept in Cloudflare KV (binding name: ORDERS).
 
 export const MAX_GUESTS = 500;
-export const STANDARD_EVENTS = ['nikkah', 'dholki', 'qawaali', 'mehndi', 'baraat', 'walima'];
+export const STANDARD_EVENTS = ['nikkah', 'mehndi', 'qawaali', 'baraat', 'walima', 'dholki', 'mayun', 'rukhsati', 'shalima', 'shendi', 'bridalshower', 'engagement', 'baatpakki'];
 const MAX_EVENTS = 20;
 const MAX_HOSTS = 6;
 const MAX_LINKS = 120;
@@ -74,7 +74,8 @@ export const plainSlugOf = (name: string): string =>
 		.slice(0, 40);
 export const coupleSlugOf = (couple: any): string => {
 	const f = (n: string) => plainSlugOf(String(n || '').trim().split(/\s+/)[0]);
-	return (f(couple?.brideName) || 'bride') + '-weds-' + (f(couple?.groomName) || 'groom');
+	// groom first, then bride
+	return (f(couple?.groomName) || 'groom') + '-weds-' + (f(couple?.brideName) || 'bride');
 };
 const uniqueSlug = (base: string, used: Set<string>): string => {
 	let s = base;
@@ -145,7 +146,17 @@ export const cleanGuests = (input: any, links: any[], existing?: any[]) => {
 		const rawSeats = g?.seats !== undefined ? g.seats : prev?.seats;
 		const sn = Math.floor(Number(rawSeats));
 		const seats = sn >= 1 && sn <= 50 ? sn : 0;
-		return { id, name, linkId, slug, phone, seats };
+		// seatMap: event id -> 0 (full family) or 1..50 seats, one entry per event of the guest's group
+		const rawMap = g?.seatMap !== undefined ? g.seatMap : prev?.seatMap;
+		const seatMap: Record<string, number> = {};
+		if (rawMap && typeof rawMap === 'object') {
+			Object.keys(rawMap).slice(0, 30).forEach((k) => {
+				if (!/^[a-z0-9_-]{1,40}$/i.test(k)) return;
+				const v = Math.floor(Number(rawMap[k]));
+				seatMap[k] = v >= 1 && v <= 50 ? v : 0;
+			});
+		}
+		return { id, name, linkId, slug, phone, seats, seatMap };
 	}).filter((g: any) => g.name);
 };
 
@@ -202,3 +213,11 @@ export const cleanFooter = (input: any, prev?: any) => {
 	const family = String(src.family ?? '').replace(/[<>]/g, '').trim().slice(0, 40);
 	return { mode, family };
 };
+
+// Seats of one guest, event by event (only the events of the guest's own group).
+// An event without its own entry uses the older single "seats" number. 0 = the full family.
+export const seatRowsOf = (guest: any, events: any[]) =>
+	(events || []).map((e: any) => {
+		const m = guest && guest.seatMap && guest.seatMap[e.id] !== undefined ? guest.seatMap[e.id] : guest && guest.seats ? guest.seats : 0;
+		return { id: e.id, n: Math.floor(Number(m)) || 0 };
+	});

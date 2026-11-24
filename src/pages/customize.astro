@@ -3,7 +3,7 @@ import PageLayout from '../layouts/PageLayout.astro';
 ---
 
 <PageLayout title="Customize" description="Personalize your invitation cards." showReviews={false}>
-	<script is:inline src="/ih-combos.js?v=1"></script>
+	<script is:inline src="/ih-combos.js?v=4"></script>
 	<div class="cz" id="cz">
 		<div id="cz-main">
 			<header class="cz-head">
@@ -21,7 +21,7 @@ import PageLayout from '../layouts/PageLayout.astro';
 				<aside class="cz-aside">
 					<div class="cz-aside-in">
 						<canvas data-preview></canvas>
-						<div class="ptabs" data-tabs></div>
+						<div class="pcombo" data-pcombo></div><div class="ptabs" data-tabs></div>
 						<p class="wm-note">Preview only. Your final cards will not have the watermark.</p>
 						<div class="cz-asidebar">
 							<button class="btn-o" type="button" data-act="envelope">See it in the envelope</button>
@@ -40,7 +40,7 @@ import PageLayout from '../layouts/PageLayout.astro';
 				<div class="cz-sheet" role="dialog" aria-label="Card preview">
 					<div class="cz-sheet-h"><b>Preview</b><button class="lnk" type="button" data-act="close">Close</button></div>
 					<canvas data-preview></canvas>
-					<div class="ptabs" data-tabs></div>
+					<div class="pcombo" data-pcombo></div><div class="ptabs" data-tabs></div>
 					<p class="wm-note">Preview only. Your final cards will not have the watermark.</p>
 				</div>
 			</div>
@@ -84,7 +84,7 @@ const MAX_HOSTS: number = tpl.maxHosts || 6;
 		const STEPS = [
 			{ n: 1, d: 1, title: 'Couple details', sub: 'Names of the bride, groom and their parents' },
 			{ n: 2, d: 2, title: 'Your events', sub: 'Choose your events' },
-			{ n: 7, d: 3, title: 'Create card combinations', sub: 'Choose which cards each guest receives' },
+			{ n: 7, d: 3, title: 'Create invitation links', sub: 'Choose which event cards each guest receives' },
 			{ n: 4, d: 4, title: 'Share links', sub: 'Get links for each event. Greeting cards are optional.' },
 			{ n: 6, d: 5, title: 'Who fills card details?', sub: 'Do it yourself for free, or let our team do it' },
 			{ n: 5, d: 6, title: 'Review and preview', sub: 'See your cards before paying' },
@@ -152,10 +152,19 @@ const save = () => {};
 			if (S.hosts.want) ids.push('hosts');
 			return ids;
 		};
-		const tabs = (): string[] => {
+		const tabsAll = (): string[] => {
 			let p = pkg();
 			if (!selEvents().length) p = [tpl.events[0].id].concat(p); // nothing chosen yet: the preview shows the first event card, never the hosts card
 			return S.guests.on ? ['guest'].concat(p) : p;
+		};
+		// the preview can be limited to one card combination (the cards that link would show)
+		const pvLink = (): D | null => (S.pvCombo ? S.links.list.find((l: D) => l.id === S.pvCombo && l.cards.length) || null : null);
+		const tabs = (): string[] => {
+			const all = tabsAll();
+			const lk = pvLink();
+			if (!lk) return all;
+			const some = all.filter((id) => id === 'guest' || id === 'hosts' || lk.cards.indexOf(id) >= 0);
+			return some.filter((id) => id !== 'guest' && id !== 'hosts').length ? some : all;
 		};
 		const label = (id: string) => (id === 'hosts' ? 'Reception Hosts' : id === 'guest' ? 'Greeting card' : evDef(id).label);
 		const ensureActive = () => {
@@ -507,13 +516,22 @@ const save = () => {};
 			const html = tabs()
 				.map((id) => `<button type="button" class="pt${id === S.active ? ' on' : ''}" data-card="${id}">${esc(label(id))}</button>`)
 				.join('');
+			const lks = S.links.list.filter((l: D) => l.cards.length);
+			if (S.pvCombo && !lks.some((l: D) => l.id === S.pvCombo)) S.pvCombo = '';
+			const IH = (window as any).IHCombos;
+			const chtml = lks.length
+				? `<label>Preview by invitation link</label><select data-pvcombo><option value="">Link 1: All events</option>${lks
+						.map((l: D, i: number) => `<option value="${l.id}"${S.pvCombo === l.id ? ' selected' : ''}>Link ${i + 2}: ${esc(IH ? IH.label(l.cards, comboEvents()) : '')}</option>`)
+						.join('')}</select>`
+				: '';
+			document.querySelectorAll('[data-pcombo]').forEach((el) => (el.innerHTML = chtml));
 			document.querySelectorAll('[data-tabs]').forEach((el) => (el.innerHTML = html)); 			modal.classList.toggle('single', tabs().length < 2);
 		};
 		const renderGallery = () => {
 			const g = document.getElementById('gal');
 			if (g) {
 				g.innerHTML = '';
-				tabs().filter((id) => id !== 'guest').forEach((id) => {
+				tabsAll().filter((id) => id !== 'guest').forEach((id) => {
 					const fig = document.createElement('figure');
 					fig.className = 'gal-i';
 					const c = document.createElement('canvas');
@@ -550,15 +568,21 @@ const save = () => {};
 			const c = S.couple;
 			const sm = tpl.sample;
 			return `
-				<div class="f"><label>Bride's name</label>${inp('data-couple="brideName"', c.brideName, sm.brideName)}</div>
-				<div class="f"><label>Bride's parents</label><div class="pre"><span>D/O Mr &amp; Mrs</span>${inp('data-couple="brideParents"', c.brideParents, sm.brideParents)}</div><p class="hint">Type only the names, like the examples. We add "D/O Mr &amp; Mrs" and "S/O Mr &amp; Mrs" for you.</p></div>
 				<div class="f"><label>Groom's name</label>${inp('data-couple="groomName"', c.groomName, sm.groomName)}</div>
-				<div class="f"><label>Groom's parents</label><div class="pre"><span>S/O Mr &amp; Mrs</span>${inp('data-couple="groomParents"', c.groomParents, sm.groomParents)}</div></div>
+				<div class="f"><label>Groom's parents</label><div class="pre"><span>S/O Mr &amp; Mrs</span>${inp('data-couple="groomParents"', c.groomParents, sm.groomParents)}</div><p class="hint">Type only the names, like the examples. We add "S/O Mr &amp; Mrs" and "D/O Mr &amp; Mrs" for you.</p></div>
+				<div class="f"><label>Bride's name</label>${inp('data-couple="brideName"', c.brideName, sm.brideName)}</div>
+				<div class="f"><label>Bride's parents</label><div class="pre"><span>D/O Mr &amp; Mrs</span>${inp('data-couple="brideParents"', c.brideParents, sm.brideParents)}</div></div>
 				<div class="err" data-err="1"></div>
 				<div class="acts" style="margin:0 0 10px"><button class="btn-o" type="button" data-act="sample">Fill with sample details</button></div><div class="acts"><button class="btn-g" type="button" data-act="next" data-n="1">Continue to Step 2</button></div>`;
 		};
 
-		const partsOf = (v: D): D => { 			if (v.p) return v.p; 			const d = parseDate(v.date); 			const t = /^(\d{2}):(\d{2})$/.exec(v.time || ''); 			return { 				day: d ? String(d.getDate()) : '', 				month: d ? String(d.getMonth() + 1) : '', 				year: d ? String(d.getFullYear()) : '', 				hour: t ? String(Number(t[1]) % 12 || 12) : '', 				minute: t ? t[2] : '', 				ampm: t ? (Number(t[1]) >= 12 ? 'PM' : 'AM') : '', 			}; 		};  		const setPart = (id: string, part: string, val: string) => { 			const v = S.events[id]; 			v.p = Object.assign(partsOf(v), { [part]: val }); 			const p = v.p; 			v.date = ''; 			if (p.day && p.month && p.year) { 				const iso = `${p.year}-${String(p.month).padStart(2, '0')}-${String(p.day).padStart(2, '0')}`; 				const d = parseDate(iso); 				if (d && d.getMonth() + 1 === Number(p.month)) v.date = iso; 			} 			v.time = ''; 			if (p.hour && p.minute && p.ampm) { 				const h = (Number(p.hour) % 12) + (p.ampm === 'PM' ? 12 : 0); 				v.time = `${String(h).padStart(2, '0')}:${p.minute}`; 			} 			S.active = id; 			const tag = $(`[data-day="${id}"]`); 			if (tag) tag.textContent = v.date ? DAYS[(parseDate(v.date) as Date).getDay()] : p.day && p.month && p.year ? 'Please check the date' : ''; 			renderTabs(); 		};  		const body2 = (): string => { 			const chips = tpl.events 				.map( 					(e: D) => 						`<button type="button" class="chip${S.events[e.id].on ? ' on' : ''}" data-ev-toggle="${e.id}" aria-pressed="${S.events[e.id].on}">${esc(e.label)}</button>` 				) 				.join(''); 			const sel = selEvents(); 			const yr = new Date().getFullYear(); 			const opt = (val: string, text: string, cur: string) => `<option value="${val}"${String(cur) === String(val) ? ' selected' : ''}>${text}</option>`; 			const mk = (id: string, part: string, ph: string, opts: string) => 				`<select data-ev="${id}" data-part="${part}" aria-label="${ph}"><option value="">${ph}</option>${opts}</select>`; 			const blocks = sel 				.map((e: D, i: number) => { 					const v = S.events[e.id]; 					const p = partsOf(v); 					const d = parseDate(v.date); 					const days = Array.from({ length: 31 }, (_, k) => opt(String(k + 1), String(k + 1), p.day)).join(''); 					const months = MONTHS.map((m, k) => opt(String(k + 1), m, p.month)).join(''); 					const years = Array.from({ length: 4 }, (_, k) => opt(String(yr + k), String(yr + k), p.year)).join(''); 					const hours = Array.from({ length: 12 }, (_, k) => opt(String(k + 1), String(k + 1), p.hour)).join(''); 					const mins = Array.from({ length: 12 }, (_, k) => opt(String(k * 5).padStart(2, '0'), String(k * 5).padStart(2, '0'), p.minute)).join(''); 					const aps = opt('AM', 'AM', p.ampm) + opt('PM', 'PM', p.ampm); 					return ` 					<div class="ev"> 						<div class="ev-h"><b>${esc(e.label)}</b><span class="tag" data-day="${e.id}">${d ? DAYS[d.getDay()] : ''}</span></div> 						<div class="f"><label>Date</label><div class="three">${mk(e.id, 'day', 'Day', days)}${mk(e.id, 'month', 'Month', months)}${mk(e.id, 'year', 'Year', years)}</div></div> 						<div class="f"><label>Time</label><div class="three">${mk(e.id, 'hour', 'Hour', hours)}${mk(e.id, 'minute', 'Min', mins)}${mk(e.id, 'ampm', 'AM/PM', aps)}</div></div> 						<div class="f"><label>Venue</label>${inp(`data-ev="${e.id}" data-k="venue"`, v.venue, tpl.sampleVenue)}</div> 						${i > 0 ? `<button type="button" class="lnk" data-act="samevenue" data-ev="${e.id}">Same venue as the event above</button>` : ''}${e.custom ? ` <button type="button" class="lnk" data-act="rmev" data-ev="${e.id}">Remove this event</button>` : ''} 					</div>`; 				}) 				.join(''); 			return ` 				<p class="hint">Tap the events you want cards for.</p> 				<div class="chips">${chips}<button type="button" class="chip" data-act="addev-open">+ Add event</button></div> ${S.addOpen ? '<div class="addev"><input data-addev maxlength="24" placeholder="Event name, e.g. Rukhsati" autocomplete="off"><button class="btn-o" type="button" data-act="addev">Add</button></div><p class="hint">The name appears on the card exactly as you write it.</p>' : ''} 				${blocks || '<p class="hint">Choose at least one event to continue.</p>'} 				<div class="err" data-err="2"></div> 				<div class="acts"><button class="btn-g" type="button" data-act="next" data-n="2">Continue to Step 3</button></div>`; 		};  		const body2Old = (): string => {
+		const partsOf = (v: D): D => { 			if (v.p) return v.p; 			const d = parseDate(v.date); 			const t = /^(\d{2}):(\d{2})$/.exec(v.time || ''); 			return { 				day: d ? String(d.getDate()) : '', 				month: d ? String(d.getMonth() + 1) : '', 				year: d ? String(d.getFullYear()) : '', 				hour: t ? String(Number(t[1]) % 12 || 12) : '', 				minute: t ? t[2] : '', 				ampm: t ? (Number(t[1]) >= 12 ? 'PM' : 'AM') : '', 			}; 		};  		const setPart = (id: string, part: string, val: string) => { 			const v = S.events[id]; 			v.p = Object.assign(partsOf(v), { [part]: val }); 			const p = v.p; 			v.date = ''; 			if (p.day && p.month && p.year) { 				const iso = `${p.year}-${String(p.month).padStart(2, '0')}-${String(p.day).padStart(2, '0')}`; 				const d = parseDate(iso); 				if (d && d.getMonth() + 1 === Number(p.month)) v.date = iso; 			} 			v.time = ''; 			if (p.hour && p.minute && p.ampm) { 				const h = (Number(p.hour) % 12) + (p.ampm === 'PM' ? 12 : 0); 				v.time = `${String(h).padStart(2, '0')}:${p.minute}`; 			} 			S.active = id; 			const tag = $(`[data-day="${id}"]`); 			if (tag) tag.textContent = v.date ? DAYS[(parseDate(v.date) as Date).getDay()] : p.day && p.month && p.year ? 'Please check the date' : ''; 			renderTabs(); 		};  		const body2 = (): string => { 			const shown = tpl.events.filter((e: D, ix: number) => ix < 6 || S.moreOpen || S.events[e.id].on);
+			const hiddenN = tpl.events.length - shown.length;
+			const chips =
+				shown
+					.map((e: D) => `<button type="button" class="chip${S.events[e.id].on ? ' on' : ''}" data-ev-toggle="${e.id}" aria-pressed="${S.events[e.id].on}">${esc(e.label)}</button>`)
+					.join('') +
+				(hiddenN > 0 ? `<button type="button" class="chip" data-act="moreev">+ More events (${hiddenN})</button>` : S.moreOpen && tpl.events.length > 6 ? `<button type="button" class="chip" data-act="moreev">Show fewer</button>` : ''); 			const sel = selEvents(); 			const yr = new Date().getFullYear(); 			const opt = (val: string, text: string, cur: string) => `<option value="${val}"${String(cur) === String(val) ? ' selected' : ''}>${text}</option>`; 			const mk = (id: string, part: string, ph: string, opts: string) => 				`<select data-ev="${id}" data-part="${part}" aria-label="${ph}"><option value="">${ph}</option>${opts}</select>`; 			const blocks = sel 				.map((e: D, i: number) => { 					const v = S.events[e.id]; 					const p = partsOf(v); 					const d = parseDate(v.date); 					const days = Array.from({ length: 31 }, (_, k) => opt(String(k + 1), String(k + 1), p.day)).join(''); 					const months = MONTHS.map((m, k) => opt(String(k + 1), m, p.month)).join(''); 					const years = Array.from({ length: 4 }, (_, k) => opt(String(yr + k), String(yr + k), p.year)).join(''); 					const hours = Array.from({ length: 12 }, (_, k) => opt(String(k + 1), String(k + 1), p.hour)).join(''); 					const mins = Array.from({ length: 12 }, (_, k) => opt(String(k * 5).padStart(2, '0'), String(k * 5).padStart(2, '0'), p.minute)).join(''); 					const aps = opt('AM', 'AM', p.ampm) + opt('PM', 'PM', p.ampm); 					return ` 					<div class="ev"> 						<div class="ev-h"><b>${esc(e.label)}</b><span class="tag" data-day="${e.id}">${d ? DAYS[d.getDay()] : ''}</span></div> 						<div class="f"><label>Date</label><div class="three">${mk(e.id, 'day', 'Day', days)}${mk(e.id, 'month', 'Month', months)}${mk(e.id, 'year', 'Year', years)}</div></div> 						<div class="f"><label>Time</label><div class="three">${mk(e.id, 'hour', 'Hour', hours)}${mk(e.id, 'minute', 'Min', mins)}${mk(e.id, 'ampm', 'AM/PM', aps)}</div></div> 						<div class="f"><label>Venue</label>${inp(`data-ev="${e.id}" data-k="venue"`, v.venue, tpl.sampleVenue)}</div> 						${i > 0 ? `<button type="button" class="lnk" data-act="samevenue" data-ev="${e.id}">Same venue as the event above</button>` : ''}${e.custom ? ` <button type="button" class="lnk" data-act="rmev" data-ev="${e.id}">Remove this event</button>` : ''} 					</div>`; 				}) 				.join(''); 			return ` 				<p class="hint">Tap the events you want cards for.</p> 				<div class="chips">${chips}<button type="button" class="chip" data-act="addev-open">+ Add event</button></div> ${S.addOpen ? '<div class="addev"><input data-addev maxlength="24" placeholder="Event name, e.g. Rukhsati" autocomplete="off"><button class="btn-o" type="button" data-act="addev">Add</button></div><p class="hint">The name appears on the card exactly as you write it.</p>' : ''} 				${blocks || '<p class="hint">Choose at least one event to continue.</p>'} 				<div class="err" data-err="2"></div> 				<div class="acts"><button class="btn-g" type="button" data-act="next" data-n="2">Continue to Step 3</button></div>`; 		};  		const body2Old = (): string => {
 			const chips = tpl.events
 				.map(
 					(e: D) =>
@@ -648,31 +672,23 @@ const save = () => {};
 		const comboEvents = (): D[] => selEvents().sort(byDate).map((e: D) => ({ id: e.id, label: e.label }));
 		const comboKey = (cards: string[]) => cards.slice().sort().join('+');
 		const comboChosen = (): string[][] => S.links.list.map((l: D) => l.cards.slice()).filter((c: string[]) => c.length);
-		const toggleCombo = (cards: string[]) => {
-			const k = comboKey(cards);
-			const ix = S.links.list.findIndex((l: D) => comboKey(l.cards) === k);
-			if (ix >= 0) S.links.list.splice(ix, 1);
-			else S.links.list.push({ id: uid(), label: '', cards: cards.slice() });
-			save();
-			const sm = $('[data-sum="7"]');
-			updateSummaries();
-		};
+		const lkDone = () => { save(); updateSummaries(); renderTabs(); };
 		const mountCombos = () => {
 			const m = $('[data-cmb]') as HTMLElement | null;
 			if (!m || !(window as any).IHCombos) return;
-			(window as any).IHCombos.create({
+			(window as any).IHCombos.createLinks({
 				mount: m,
+				doneNote: 'You will get the links after payment',
 				getEvents: comboEvents,
-				getChosen: comboChosen,
-				isSelected: (k: string) => S.links.list.some((l: D) => comboKey(l.cards) === comboKey(k.split('+'))),
-				toggle: toggleCombo,
+				getLinks: () => S.links.list.filter((l: D) => l.cards.length).map((l: D) => ({ id: l.id, cards: l.cards.slice() })),
+				add: (cards: string[]) => { const id = uid(); S.links.list.push({ id, label: '', cards: cards.slice() }); lkDone(); return id; },
+				update: (id: string, cards: string[]) => { const l = S.links.list.find((x: D) => x.id === id); if (l) l.cards = cards.slice(); lkDone(); },
+				remove: (id: string) => { S.links.list = S.links.list.filter((x: D) => x.id !== id); lkDone(); return true; },
 			});
 		};
 		const body7 = (): string => {
 			if (selEvents().length < 1) return `<p class="hint">Please choose your events in Step 2 first.</p><div class="acts"><button class="btn-o" type="button" data-open="2">Go to Step 2</button></div>`;
 			return `
-				<p class="hint" style="margin:0 0 4px">Choose which event cards each guest will receive. Each combination will have its own link.</p>
-				<button type="button" class="lnk" data-act="cmbhow" style="font-size:13px;margin:0 0 12px">See how it works</button>
 				<div data-cmb></div>
 				<div class="err" data-err="7"></div><div class="acts"><button class="btn-g" type="button" data-act="next" data-n="7">Continue to Step 4</button></div>`;
 		};
@@ -731,9 +747,9 @@ const save = () => {};
 			const c = S.couple;
 			const evN = selEvents().length;
 			const sum: D = {
-				1: S.done[1] ? `${tc(c.brideName)} and ${tc(c.groomName)}` : STEPS[0].sub,
+				1: S.done[1] ? `${tc(c.groomName)} and ${tc(c.brideName)}` : STEPS[0].sub,
 				2: S.done[2] ? `${evN} event${evN === 1 ? '' : 's'} chosen` : STEPS[1].sub,
-				7: S.done[7] ? `${S.links.list.length + 1} combination${S.links.list.length ? 's' : ''} (including all events)` : STEPS[2].sub,
+				7: S.done[7] ? `${S.links.list.length + 1} invitation link${S.links.list.length ? 's' : ''} (including all events)` : STEPS[2].sub,
 				4: S.done[4] ? (S.guests.on ? 'Links and personalized greeting cards' : 'Invitation links') : STEPS[3].sub,
 				6: S.done[6] ? (S.setup === 'team' ? 'Our team sets it up (+Rs. 1,999)' : 'I will manage it (free)') : STEPS[4].sub,
 				5: STEPS[5].sub,
@@ -781,10 +797,10 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 			const er: string[] = [];
 			if (n === 1) {
 				const c = S.couple;
-				if (!c.brideName.trim()) er.push("Please enter the bride's name.");
-				if (!cleanParents(c.brideParents)) er.push("Please enter the bride's parents' names.");
 				if (!c.groomName.trim()) er.push("Please enter the groom's name.");
 				if (!cleanParents(c.groomParents)) er.push("Please enter the groom's parents' names.");
+				if (!c.brideName.trim()) er.push("Please enter the bride's name.");
+				if (!cleanParents(c.brideParents)) er.push("Please enter the bride's parents' names.");
 			}
 			if (n === 2) {
 				const sel = selEvents();
@@ -925,7 +941,7 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 				if (!r.ok) throw new Error('x');
 				const o = await r.json();
 				const nm = (x: string) => tc(String(x).trim().split(/\s+/)[0] || '');
-				const title = `${nm(S.couple.brideName)} & ${nm(S.couple.groomName)}`;
+				const title = `${nm(S.couple.groomName)} & ${nm(S.couple.brideName)}`;
 				try {
 					const list = JSON.parse(localStorage.getItem('ih-orders') || '[]');
 					list.unshift({ token: o.token, no: o.orderNo, title });
@@ -1017,6 +1033,14 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 			scheduleDraw();
 		});
 
+		document.addEventListener('change', (ev) => {
+			const sel = ev.target as HTMLSelectElement;
+			if (!sel || !sel.hasAttribute || !sel.hasAttribute('data-pvcombo')) return;
+			S.pvCombo = sel.value;
+			S.active = tabs()[0] || S.active;
+			renderTabs();
+			scheduleDraw();
+		});
 		root.addEventListener('change', (ev) => {
 			const t = ev.target as HTMLInputElement;
 			if (!t.dataset.cardPick) return;
@@ -1065,6 +1089,10 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 					break;
 				case 'sample':
 					fillSample();
+					break;
+				case 'moreev':
+					S.moreOpen = !S.moreOpen;
+					refreshBody(2);
 					break;
 				case 'addev-open':
 					S.addOpen = !S.addOpen;
@@ -1894,4 +1922,8 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 		color: #1a1a1a;
 		white-space: nowrap;
 	}
+
+	.cz .pcombo { margin: 8px 0 4px; }
+	.cz .pcombo label { display: block; font: 500 12px Poppins, sans-serif; color: #5a5a5a; margin: 0 0 4px; }
+	.cz .pcombo select { width: 100%; padding: 9px 12px; border: 1px solid #e0d2b4; border-radius: 10px; background: #fff; font: 500 13px Poppins, sans-serif; color: #1a1a1a; }
 </style>

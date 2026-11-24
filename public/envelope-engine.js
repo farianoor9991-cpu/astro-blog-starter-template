@@ -118,7 +118,7 @@
 		'</div>' +
 		'</div>' +
 		(window.IHFooter && !cfg.cardsOnly
-			? '<section class="ev-foot" id="ev-foot">' + window.IHFooter.html({ bride: INV.couple && INV.couple.brideName, groom: INV.couple && INV.couple.groomName, mode: INV.footer && INV.footer.mode, family: INV.footer && INV.footer.family, seats: INV.seats }) + '</section>'
+			? '<section class="ev-foot" id="ev-foot">' + window.IHFooter.html({ bride: INV.couple && INV.couple.brideName, groom: INV.couple && INV.couple.groomName, mode: INV.footer && INV.footer.mode, family: INV.footer && INV.footer.family, seatRows: (INV.seatRows || []).map(function (r) { var d = (T.events || []).filter(function (x) { return x.id === r.id; })[0] || (INV.events || []).filter(function (x) { return x.id === r.id; })[0] || {}; return { label: d.label || d.title || '', n: r.n }; }) }) + '</section>'
 			: '') +
 		'<div class="ev-flyers" id="ev-flyers"></div>' +
 		'<div class="ev-vw" id="ev-vw" aria-hidden="true">' +
@@ -783,17 +783,19 @@
 	};
 
 	/* --- 2. luminous rings from the centre of the wax seal --- */
-	var fireRipple = function () {
+	// warm = a silent rehearsal (invisible) done while the envelope waits, so the real one on the first tap is already "warmed up"
+	var fireRipple = function (warm) {
 		var Rp = S.ripple;
 		if (reduceMotion || !Rp || !Rp.enabled) return;
 		var f = fxCanvas();
+		if (warm) f.c.style.opacity = '0';
 		var o = sealPoint();
 		// the ring stops at the edge of the tray (an oval), nothing beyond it
 		var TL = trayLive || (function () { var e = envEl.getBoundingClientRect(); return { cx: o.x, cy: o.y, rx: e.width * 0.7, ry: e.height * 0.9 }; })();
 		var R = TL.rx;
 		var r0 = Math.max(8, closedEl.getBoundingClientRect().width * ENV.sealR / 100 * 0.8); // starts inside the wax seal
 		var yk = TL.ry / TL.rx;
-		var dur = Rp.duration;
+		var dur = warm ? 450 : Rp.duration;
 		var t0 = null;
 		var rings = [
 			{ d: 0, k: 1, ang: rnd(0, 6.28), dots: [] },
@@ -1173,9 +1175,13 @@
 		tl.to(liftEl, { scale: 1, y: 0, duration: 1.0, ease: 'power1.inOut' }, tf0 + D.flap * 0.35);
 	}
 
+	var tlReadySig = ''; // the screen size the waiting (not yet played) timeline was built for
+	var sigNow = function () { return window.innerWidth + 'x' + window.innerHeight; };
 	var openAll = function () {
 		if (state !== 'idle') return;
-		buildTimeline();
+		// the timeline was already built while the envelope was waiting, so the first tap has nothing to prepare
+		if (!(tl && tlReadySig === sigNow())) buildTimeline();
+		tlReadySig = '';
 		if (!tl) return;
 		state = 'opening';
 		hintEl.classList.remove('show');
@@ -1510,8 +1516,8 @@
 			return;
 		}
 		// the top of the green footer peeks above the bottom edge, so the guest knows there is more below
-		stage.style.height = 'calc(100vh - 40px)';
-		stage.style.height = 'calc(100svh - 40px)';
+		stage.style.height = 'calc(100vh - 92px)';
+		stage.style.height = 'calc(100svh - 92px)';
 		var onScroll = function () {
 			if (sc) sc.classList.toggle('gone', (window.pageYOffset || document.documentElement.scrollTop) > 40);
 		};
@@ -1578,6 +1584,17 @@
 		fireConfetti(); // confetti falls as soon as the invitation opens, once
 		wait((TM.hintDelay || 0) + 900).then(function () {
 			if (window.__evShowScroll) window.__evShowScroll();
+		});
+		// once the entrance has settled, build the opening timeline now (not at the tap)
+		wait((TM.hintDelay || 0) + 1200).then(function () {
+			if (state === 'idle') { buildTimeline(); tlReadySig = sigNow(); }
+		});
+		// while the envelope waits for the first tap, rehearse the ring invisibly (twice) so nothing has to be prepared at the tap
+		wait((TM.hintDelay || 0) + 1600).then(function () {
+			if (state === 'idle') fireRipple(true);
+		});
+		wait((TM.hintDelay || 0) + 2600).then(function () {
+			if (state === 'idle') fireRipple(true);
 		});
 		wait(TM.hintDelay).then(function () {
 			hintEl.classList.add('show');

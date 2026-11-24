@@ -12,9 +12,9 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 		<p class="od-state" id="od-state">Loading your order...</p>
 	</div>
 	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Berkshire+Swash&family=Unna:ital,wght@0,400;0,700;1,600&family=Playfair+Display:wght@600;700&family=Poppins:wght@400;500;600&family=Pinyon+Script&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&display=swap" />
-	<link rel="stylesheet" href="/ih-footer.css?v=2" />
-	<script is:inline src="/ih-footer.js?v=1"></script>
-	<script is:inline src="/ih-combos.js?v=2"></script>
+	<link rel="stylesheet" href="/ih-footer.css?v=3" />
+	<script is:inline src="/ih-footer.js?v=3"></script>
+	<script is:inline src="/ih-combos.js?v=4"></script>
 	<div id="env-root" hidden></div>
 	<script is:inline id="env-config" type="application/json" set:html={JSON.stringify(previewConfig)} />
 	<div class="od-bar" id="od-bar" hidden>
@@ -44,11 +44,16 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 		var openG = {}; // which guest groups are expanded
 		var openR = {}; // which rows show their details
 		var gcol = {}; // combos whose guest table is folded
+		var gsort = 'recent'; // recent | az | za
+		var gpage = 1; // mobile list page
+		var GPER = 20;
+		var mobOpen = null; // guest (index) whose mobile bottom sheet is open
+		var newLink = ''; // group chosen in the entry row
 		var openD = {}; // guests whose details box is open
 		var addOpen = {}; // combos whose add-guests box is open
 		var finderSt = { q: '', size: 0, open: {} };
 		var addGroup = null; // a group being created: { label, cards: [] }
-		var LABELS = { nikkah: 'Nikkah', dholki: 'Dholki', qawaali: 'Qawali Night', mehndi: 'Mehndi', baraat: 'Baraat', walima: 'Walima' };
+		var LABELS = { nikkah: 'Nikah', mehndi: 'Mehndi', qawaali: 'Qawali Night', baraat: 'Baraat', walima: 'Walima', dholki: 'Dholki', mayun: 'Mayun', rukhsati: 'Rukhsati', shalima: 'Shalima', shendi: 'Shendi', bridalshower: 'Bridal Shower', engagement: 'Engagement', baatpakki: 'Baat Pakki' };
 		var DEFAULT_TEMPLATE =
 			'Assalam-o-Alaikum {name},\n\n{couple} warmly invite you to their celebration. We have prepared a personal invitation for you. Please tap the link below to open it:\n\n{link}\n\nWe would be honoured to have you with us.';
 		var TPLS = [
@@ -74,7 +79,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			});
 		}
 		function coupleTitle() {
-			return tc(first(O.couple.brideName)) + ' & ' + tc(first(O.couple.groomName));
+			return tc(first(O.couple.groomName)) + ' & ' + tc(first(O.couple.brideName));
 		}
 		function evLabel(e) {
 			return e.label || LABELS[e.id] || e.id;
@@ -172,7 +177,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 		function saveSoon(ms) { clearTimeout(autoT); autoT = setTimeout(autoSave, ms || 1200); }
 		function autoSave() {
 			if (!editing || !dirty || saving || !O) return;
-			if (problem()) { autoT = setTimeout(autoSave, 45000); return; }
+			if (problem()) { statusEl.textContent = problem(); autoT = setTimeout(autoSave, 3000); return; }
 			save(null, true);
 		}
 		// Leaving or switching away: keep a copy here, and send the changes if possible
@@ -276,7 +281,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			var n = evNames(l);
 			return n.length === 1 ? n[0] + ' only' : n.join(' + ');
 		}
-		function comboTitle(l) { return 'Combo ' + (O.links.indexOf(l) + 1) + ': ' + comboLabel(l); }
+		function comboTitle(l) { return 'Link ' + (O.links.indexOf(l) + 1) + ': ' + comboLabel(l); }
 		function gl(l) { return comboLabel(l); }
 		function icon(n) {
 			var p = {
@@ -322,42 +327,124 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 				h += '<div class="cl" data-li="' + i + '"><div class="cl-h"><h3>' + esc(comboTitle(l)) + '</h3><small>' + esc(cards.join(', ')) + '</small></div>';
 				if (!link) { h += '<p class="hint" style="margin:0">Your link is being made. It appears here in a moment.</p></div>'; return; }
 				h += '<div class="cl-r"><button type="button" class="urlb" data-copy="' + esc(link) + '" title="Click to copy this link">' + icon('link') + '<span class="url">' + esc(link) + '</span></button>' +
-					'<div class="cl-b"><button type="button" class="qa" data-copy="' + esc(link) + '">' + icon('link') + '<span>Copy link</span></button><a class="qa wa2" target="_blank" rel="noopener" href="' + esc(waUrl(msg)) + '">' + WA + '<span>WhatsApp</span></a><a class="qa op" target="_blank" rel="noopener" href="' + esc(link) + '">' + icon('open') + '<span>Open</span></a></div></div></div>';
+					'<div class="cl-b">' + (l.main ? '' : '<button type="button" class="qa rmc" data-rmc="' + i + '">' + '<span>Remove combination</span></button>') + '<button type="button" class="qa" data-copy="' + esc(link) + '">' + icon('link') + '<span>Copy link</span></button><a class="qa wa2" target="_blank" rel="noopener" href="' + esc(waUrl(msg)) + '">' + WA + '<span>WhatsApp</span></a><a class="qa op" target="_blank" rel="noopener" href="' + esc(link) + '">' + icon('open') + '<span>Open</span></a></div></div></div>';
 			});
 			return h + '</div>';
 		}
 		function groupsHtml() {
 			return '<section class="od-sec"><div class="sec-h"><div><h2>Invitation links</h2><p class="hint">Send each link to the guests it is meant for. They see only the cards of their combination.</p></div>' + (page === 'groups' ? '' : '<button type="button" class="btn-p" data-nav="groups">+ Create combination</button>') + '</div>' + comboLinksHtml() + '</section>';
 		}
-		function seatSel(i) {
-			var cur = Number(O.guests[i].seats) || 0;
-			var h = '<select data-gseats="' + i + '" aria-label="Seats"><option value="0"' + (!cur ? ' selected' : '') + '>\u2705 Full family</option>';
-			var max = Math.max(12, cur);
-			for (var n = 1; n <= max; n++) h += '<option value="' + n + '"' + (cur === n ? ' selected' : '') + '>' + n + (n === 1 ? ' seat' : ' seats') + '</option>';
-			return h + '</select>';
+		/* ----- seats, event by event ----- */
+		var ABBR = { nikkah: 'N', mehndi: 'M', qawaali: 'Q', baraat: 'B', walima: 'W', dholki: 'D', mayun: 'My', rukhsati: 'R', shalima: 'S', shendi: 'Sh', bridalshower: 'BS', engagement: 'E', baatpakki: 'BP' };
+		function abbr(e) {
+			if (ABBR[e.id]) return ABBR[e.id];
+			var l = evLabel(e).trim();
+			return (l.charAt(0) || '?').toUpperCase();
+		}
+		function linkOfGuest(g) {
+			return O.links.filter(function (l) { return l.id === g.linkId; })[0] || O.links[0];
+		}
+		// the events of this guest's group, each with its seats (0 = full family)
+		function seatRowsFor(g) {
+			var l = linkOfGuest(g);
+			return O.events.filter(function (e) { return !l || l.cards.indexOf(e.id) >= 0; }).map(function (e) {
+				var m = g.seatMap && g.seatMap[e.id] !== undefined ? g.seatMap[e.id] : g.seats || 0;
+				return { id: e.id, label: evLabel(e), ab: abbr(e), n: Math.floor(Number(m)) || 0 };
+			});
+		}
+		// "1 B · 2 N · Full Family M, W"  (fewest seats first, same number grouped, Full Family always last)
+		function seatSummaryText(g) {
+			var rows = seatRowsFor(g);
+			var by = {};
+			var full = [];
+			rows.forEach(function (r) { if (r.n >= 1) (by[r.n] = by[r.n] || []).push(r.ab); else full.push(r.ab); });
+			var keys = Object.keys(by).map(Number).sort(function (a, b) { return a - b; });
+			if (!keys.length) return '';
+			var parts = keys.map(function (k) { return k + ' ' + by[k].join(', '); });
+			if (full.length) parts.push('Full Family ' + full.join(', '));
+			return parts.join(' · ');
+		}
+		function seatCell(i) {
+			var g = O.guests[i];
+			var t = seatSummaryText(g);
+			return '<div class="sd">' + (t ? '<span class="sd-t">' + esc(t) + '</span>' : '<span class="sd-t full">✅ Full family</span>') + '<button type="button" class="sd-b" data-seats="' + i + '">Edit seats</button></div>';
+		}
+		var SEAT_MAX = 20;
+		function seatDd(id, n) {
+			var lab = function (v) { return v === 0 ? 'Full Family' : v + (v === 1 ? ' Seat' : ' Seats'); };
+			var h = '<div class="sdd" data-sdd="' + esc(id) + '" data-v="' + n + '"><button type="button" class="sdd-b" data-sddb="1"><span>' + lab(n) + '</span>' + CHEV + '</button><div class="sdd-l" hidden>';
+			for (var v = 0; v <= SEAT_MAX; v++) h += '<button type="button" class="sdd-o' + (v === n ? ' on' : '') + '" data-sddo="' + v + '">' + lab(v) + '</button>';
+			return h + '</div></div>';
+		}
+		function openSeats(i) {
+			if (!editing) { askPin(); return; }
+			var g = O.guests[i];
+			var rows = seatRowsFor(g);
+			var m = popup('<h3>Edit seats</h3><p class="hint">' + esc(g.name) + '<br>Choose the seats reserved for each event.</p>' +
+				(rows.length ? '<div class="se-list">' + rows.map(function (r) { return '<div class="se-r"><span>' + esc(r.label) + '</span>' + seatDd(r.id, r.n) + '</div>'; }).join('') + '</div>' : '<p class="hint">This group has no events yet.</p>') +
+				'<div class="od-inline"><button type="button" class="btn-p" data-sesave="1">Save</button><button type="button" class="lnk" data-secancel="1">Cancel</button></div>');
+			m.classList.add('sheetm');
+			m.addEventListener('click', function (ev) {
+				var t = ev.target;
+				if (t === m) { m.close(); return; }
+				var b = t.closest ? t.closest('button') : null;
+				if (!b) { if (!t.closest || !t.closest('.sdd')) m.querySelectorAll('.sdd-l').forEach(function (x) { x.hidden = true; }); return; }
+				if (b.dataset.secancel !== undefined) { m.close(); return; }
+				if (b.dataset.sddb !== undefined) {
+					var l = b.parentNode.querySelector('.sdd-l');
+					var was = l.hidden;
+					m.querySelectorAll('.sdd-l').forEach(function (x) { x.hidden = true; });
+					l.hidden = !was;
+					if (!l.hidden) { var on = l.querySelector('.on'); if (on) l.scrollTop = Math.max(0, on.offsetTop - 4); }
+					return;
+				}
+				if (b.dataset.sddo !== undefined) {
+					var dd = b.closest('.sdd');
+					var v = Number(b.dataset.sddo);
+					dd.dataset.v = v;
+					dd.querySelector('.sdd-b span').textContent = v === 0 ? 'Full Family' : v + (v === 1 ? ' Seat' : ' Seats');
+					dd.querySelectorAll('.sdd-o').forEach(function (x) { x.classList.toggle('on', x === b); });
+					dd.querySelector('.sdd-l').hidden = true;
+					return;
+				}
+				if (b.dataset.sesave !== undefined) {
+					var map = {};
+					m.querySelectorAll('.sdd').forEach(function (x) { map[x.dataset.sdd] = Number(x.dataset.v) || 0; });
+					var old = g.seatMap || {};
+					Object.keys(old).forEach(function (k) { if (map[k] === undefined) map[k] = old[k]; });
+					g.seatMap = map;
+					g.seats = 0;
+					m.close();
+					setDirty(true);
+					renderGuestList();
+					renderSheet();
+					saveSoon(400);
+				}
+			});
 		}
 		function guestDetails(i) {
 			var g = O.guests[i];
 			var title = '<span class="gn"><input class="lbl" data-gname="' + i + '" value="' + esc(g.name) + '" aria-label="Guest name" maxlength="45" readonly><span class="gtxt">' + esc(g.name) + '</span><button type="button" class="pen" data-gedit="' + i + '" aria-label="Edit name" title="Edit name">' + PENCIL + '</button></span>';
-			if (!g.id) return '<div class="gr-dt tb-row" data-gi="' + i + '"><p class="hint" style="margin:0">New guest. Saving, then the personal link and message appear here.</p></div>';
+			if (!g.id) return '<div class="gr-dt tb-row" data-gi="' + i + '"><p class="hint" style="margin:0;padding:14px 18px">' + (navProblem() ? 'This guest cannot be saved yet. ' + esc(navProblem()) : 'Saving this guest. Their personal link and message will appear here in a moment.') + '</p></div>';
 			var link = guestLink(g);
 			var msg = message(g.name, link);
-			return '<div class="gr-dt tb-row" data-gi="' + i + '"><div class="gr-dl"><div class="gr-lab">Invitation message</div><div class="msg">' + msgHtml(msg) + '</div>' +
-				'<div class="gr-lab" style="margin-top:12px">' + icon('link') + ' Invitation URL</div><button type="button" class="urlb" data-copy="' + esc(link) + '" title="Click to copy">' + '<span class="url">' + esc(link) + '</span>' + icon('link') + '</button>' +
-				'<div class="gr-edit"><label>Guest name ' + title + '</label><label>Phone number <input type="tel" inputmode="tel" class="phin" data-gphone="' + i + '" value="' + esc(g.phone || '') + '" placeholder="03XX XXXXXXX" maxlength="16" aria-label="Phone number"></label><button type="button" class="rm-t" data-grm="' + i + '">Remove guest</button></div></div>' +
+			return '<div class="gr-dt tb-row" data-gi="' + i + '"><div class="gr-dl"><div class="gr-edit"><label>Guest name ' + title + '</label><label>Phone number <input type="tel" inputmode="tel" class="phin" data-gphone="' + i + '" value="' + esc(g.phone || '') + '" placeholder="03XX XXXXXXX" maxlength="16" aria-label="Phone number"></label><button type="button" class="rm-t" data-grm="' + i + '">Remove guest</button></div>' +
+				'<div class="gr-lab" style="margin-top:14px">Invitation message</div><div class="msg">' + msgHtml(msg) + '</div>' +
+				'<div class="gr-lab" style="margin-top:12px">' + icon('link') + ' Invitation URL</div><button type="button" class="urlb" data-copy="' + esc(link) + '" title="Click to copy">' + '<span class="url">' + esc(link) + '</span>' + icon('link') + '</button></div>' +
 				'<div class="gr-dr"><div class="gr-lab">Quick actions</div><div class="gr-qa"><button type="button" class="qa" data-copy="' + esc(link) + '">' + icon('link') + '<span>Copy link</span></button><a class="qa wa2 wa" target="_blank" rel="noopener" href="' + esc(waUrl(msg, g.phone)) + '">' + WA + '<span>WhatsApp</span></a><button type="button" class="qa" data-copy="' + esc(msg) + '" data-msg="1">' + icon('msg') + '<span>Copy message</span></button><a class="qa op" target="_blank" rel="noopener" href="' + esc(link) + '">' + icon('open') + '<span>Open invitation</span></a></div></div></div>';
+		}
+		function groupSel(i) {
+			var g = O.guests[i];
+			return '<select data-glink="' + i + '" aria-label="Group">' + O.links.map(function (l) {
+				return '<option value="' + esc(l.id) + '"' + (l.id === g.linkId ? ' selected' : '') + '>' + esc(comboTitle(l)) + '</option>';
+			}).join('') + '</select>';
 		}
 		function guestRow(i) {
 			var g = O.guests[i];
-			var sel = '<select data-glink="' + i + '" aria-label="Group">' + O.links.map(function (l) {
-				return '<option value="' + esc(l.id) + '"' + (l.id === g.linkId ? ' selected' : '') + '>' + esc(comboTitle(l)) + '</option>';
-			}).join('') + '</select>';
 			var open = !!openD[i];
-			return '<div class="gr-row' + (open ? ' open' : '') + '"><div class="gr-c gr-n"><button type="button" class="nm" data-dt="' + i + '">' + esc(g.name) + '</button></div><div class="gr-c gr-g" data-l="Group">' + sel + '</div><div class="gr-c gr-s" data-l="Seats reserved">' + seatSel(i) + '</div><div class="gr-c gr-a"><button type="button" class="vd" data-dt="' + i + '" aria-expanded="' + open + '">' + (open ? 'Hide details' : 'View details') + CHEV + '</button></div></div>' + (open ? guestDetails(i) : '');
+			return '<div class="gr-row' + (open ? ' open' : '') + '"><div class="gr-c gr-n"><button type="button" class="nm" data-dt="' + i + '">' + esc(g.name) + '</button></div><div class="gr-c gr-g" data-l="Group">' + groupSel(i) + '</div><div class="gr-c gr-s" data-l="Seats Details">' + seatCell(i) + '</div><div class="gr-c gr-a"><button type="button" class="vd" data-dt="' + i + '" aria-expanded="' + open + '">' + (open ? 'Hide details' : 'View details') + CHEV + '</button></div></div>' + (open ? guestDetails(i) : '');
 		}
-		function guestsListHtml() {
-			return guestsGrouped();
-		}
+		function guestsListHtml() { return guestTable(); }
 		function guestsListHtmlOld() {
 			var q = query.trim().toLowerCase();
 			var idx = [];
@@ -377,6 +464,12 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			var q = query.trim().toLowerCase();
 			var out = '';
 			var total = 0;
+			if (gfilter === '__all') {
+				var all = [];
+				O.guests.forEach(function (g, i) { if (!q || g.name.toLowerCase().indexOf(q) >= 0) all.push(i); });
+				if (!all.length) return '<p class="hint">' + (q ? 'No guest matches.' : 'No guests yet. Go to Step 4 and press "+ Add guests".') + '</p>';
+				return '<div class="gr-grp open"><div class="gr-gh gr-static"><b>All guests</b><span class="pill">' + all.length + (all.length === 1 ? ' guest' : ' guests') + '</span></div><div class="gr-tb"><div class="gr-head"><span>Guest name</span><span>Group</span><span>Seats reserved</span><span>Quick actions</span></div>' + all.map(function (i) { return guestRow(i); }).join('') + '</div></div>';
+			}
 			O.links.forEach(function (l) {
 				if (gfilter && l.id !== gfilter) return;
 				var idx = [];
@@ -396,68 +489,179 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			if (!total) return '<p class="hint">' + (q || gfilter ? 'No guest matches.' : 'No guests yet. Go to Step 4 and press "+ Add guests".') + '</p>';
 			return out;
 		}
+		/* ----- the guest sheet: filter chips, search, sort, an excel-style table (laptop) and a compact list (phone) ----- */
+		function guestIdx() {
+			var q = query.trim().toLowerCase();
+			var qd = q.replace(/\D/g, '');
+			var idx = [];
+			O.guests.forEach(function (g, i) {
+				if (gfilter && gfilter !== '__all' && g.linkId !== gfilter) return;
+				if (q) {
+					var okN = g.name.toLowerCase().indexOf(q) >= 0;
+					var okP = qd.length >= 2 && String(g.phone || '').replace(/\D/g, '').indexOf(qd) >= 0;
+					if (!okN && !okP) return;
+				}
+				idx.push(i);
+			});
+			if (gsort === 'az') idx.sort(function (a, b) { return O.guests[a].name.localeCompare(O.guests[b].name); });
+			else if (gsort === 'za') idx.sort(function (a, b) { return O.guests[b].name.localeCompare(O.guests[a].name); });
+			else idx.reverse(); // recently added first
+			return idx;
+		}
+		function chipsHtml() {
+			var cnt = {};
+			O.guests.forEach(function (g) { cnt[g.linkId] = (cnt[g.linkId] || 0) + 1; });
+			var all = !gfilter || gfilter === '__all';
+			var h = '<button type="button" class="gs-chip' + (all ? ' on' : '') + '" data-gchip="">All Guests (' + O.guests.length + ')</button>';
+			O.links.forEach(function (l) {
+				h += '<button type="button" class="gs-chip' + (gfilter === l.id ? ' on' : '') + '" data-gchip="' + esc(l.id) + '">' + esc(comboLabel(l)) + ' (' + (cnt[l.id] || 0) + ')</button>';
+			});
+			return h;
+		}
+		function entryRow() {
+			var lid = newLink && O.links.some(function (l) { return l.id === newLink; }) ? newLink : (gfilter && gfilter !== '__all' ? gfilter : O.links[0].id);
+			newLink = lid;
+			return '<div class="gr-row gr-new"><div class="gr-c gr-n"><input class="ge-in" id="od-newg" data-agt="' + esc(lid) + '" maxlength="80" autocomplete="off" placeholder="Guest name + phone number, press Enter" aria-label="New guest: name and phone number"></div>' +
+				'<div class="gr-c gr-g" data-l="Group"><select id="od-newlink" aria-label="Group for the new guest">' + O.links.map(function (l) { return '<option value="' + esc(l.id) + '"' + (l.id === lid ? ' selected' : '') + '>' + esc(comboTitle(l)) + '</option>'; }).join('') + '</select></div>' +
+				'<div class="gr-c gr-s" data-l="Seats Details"><span class="sd-t full">✅ Full family</span></div><div class="gr-c gr-a"><button type="button" class="vd" data-newadd="1">Add</button></div></div>';
+		}
+		function rowsHtml(idx) {
+			if (!idx.length) return '<p class="hint" style="padding:14px 16px;margin:0">' + (query || gfilter ? 'No guest matches.' : 'No guests yet. Type a name and phone number in the first row, then press Enter.') + '</p>';
+			return idx.map(function (i) { return guestRow(i); }).join('');
+		}
+		function guestTable() {
+			var idx = guestIdx();
+			var h = '<div class="gd-only"><div class="gr-grp open"><div class="gr-tb"><div class="gr-head"><span>Guest name</span><span>Group</span><span>Seats Details</span><span>Quick actions</span></div>';
+			h += (page === 'guests' ? entryRow() : '') + '<div id="od-grows">' + rowsHtml(idx) + '</div></div></div></div>';
+			return h + '<div class="gm-only" id="od-mlist">' + mobileList(idx) + '</div>';
+		}
+		function mobileList(idx) {
+			var pages = Math.max(1, Math.ceil(idx.length / GPER));
+			if (gpage > pages) gpage = pages;
+			var from = (gpage - 1) * GPER;
+			var part = idx.slice(from, from + GPER);
+			var h = '<div class="gm-list">';
+			if (!part.length) h += '<p class="hint" style="padding:14px 4px">' + (query || gfilter ? 'No guest matches.' : 'No guests yet. Tap "+ Add Guest".') + '</p>';
+			part.forEach(function (i) {
+				var g = O.guests[i];
+				var t = seatSummaryText(g);
+				h += '<button type="button" class="gm-it" data-gm="' + i + '"><span class="gm-l"><b>' + esc(g.name) + '</b><span class="gm-p">' + esc(g.phone || 'No phone number') + '</span></span><span class="gm-r"><span class="gm-g">' + esc(comboLabel(linkOfGuest(g))) + '</span><span class="gm-s">' + (t ? esc(t) : '✅ Full family') + '</span></span></button>';
+			});
+			h += '</div>';
+			if (idx.length > GPER) {
+				h += '<div class="gm-pg"><button type="button" class="gs-pg" data-gpage="-1"' + (gpage <= 1 ? ' disabled' : '') + '>Previous</button><span>Page ' + gpage + ' of ' + pages + '</span><button type="button" class="gs-pg" data-gpage="1"' + (gpage >= pages ? ' disabled' : '') + '>Next</button></div>';
+			}
+			if (idx.length) h += '<p class="gm-show">Showing ' + (from + 1) + '–' + (from + part.length) + ' of ' + idx.length + (idx.length === 1 ? ' Guest' : ' Guests') + '</p>';
+			return h;
+		}
+		function sheetTop(entry) {
+			var h = '<div class="gm-only gm-head"><h2>Guest Management</h2><p>' + O.guests.length + (O.guests.length === 1 ? ' Guest' : ' Guests') + '</p></div>';
+			h += '<div class="od-tools gs-tools"><input type="search" id="od-q" placeholder="Search guest name or phone number..." value="' + esc(query) + '" aria-label="Search guests">';
+			h += '<select id="od-sort" aria-label="Sort guests"><option value="recent"' + (gsort === 'recent' ? ' selected' : '') + '>Recently Added</option><option value="az"' + (gsort === 'az' ? ' selected' : '') + '>Name: A–Z</option><option value="za"' + (gsort === 'za' ? ' selected' : '') + '>Name: Z–A</option></select></div>';
+			h += '<div class="gs-chips" id="od-chips">' + chipsHtml() + '</div>';
+			return h;
+		}
 		function guestsHtml() {
 			if (!O.guestsOn) return '';
-			var h = '<section class="od-sec"><div class="sec-h"><div><h2>Guest list</h2><p class="hint">Each guest has a personal link and a greeting card with their name. Tap a name to see their message and links.</p></div><button type="button" class="btn-p" data-nav="guests">+ Add guests</button></div>';
-			h += '<div class="od-tools"><input type="search" id="od-q" placeholder="Search guests by name..." value="' + esc(query) + '" aria-label="Search guests">';
-			if (many()) h += '<select id="od-gf" aria-label="Show combination"><option value="">All combinations</option>' + O.links.map(function (l) { return '<option value="' + esc(l.id) + '"' + (gfilter === l.id ? ' selected' : '') + '>' + esc(comboTitle(l)) + '</option>'; }).join('') + '</select>';
-			h += '</div><div id="od-glist">' + guestsListHtml() + '</div></section>';
+			var h = '<section class="od-sec"><div class="sec-h gd-only"><div><h2>Guest list</h2><p class="hint">Each guest has a personal link and a greeting card with their name. Tap a name to see their message and links.</p></div><button type="button" class="btn-p" data-nav="guests">+ Add guests</button></div>';
+			h += sheetTop(false) + '<div id="od-glist">' + guestsListHtml() + '</div></section>';
 			return h;
+		}
+		/* phone: bottom sheet with the guest's details */
+		function sheetHtml() {
+			if (mobOpen === null || !O.guests[mobOpen]) return '';
+			var i = mobOpen;
+			var g = O.guests[i];
+			var h = '<div class="gm-shw" data-gsx="1"><div class="gm-sh" role="dialog" aria-label="Guest details"><div class="gm-grab"></div><div class="gm-shh"><b>' + esc(g.name) + '</b><button type="button" class="gm-x" data-gsx="1" aria-label="Close">&times;</button></div>';
+			h += '<div class="gm-fld"><span class="gr-lab">Invitation group</span>' + groupSel(i) + '</div><div class="gm-fld"><span class="gr-lab">Seats Details</span>' + seatCell(i) + '</div>';
+			h += guestDetails(i) + '</div></div>';
+			return h;
+		}
+		function renderSheet() {
+			var el = document.getElementById('od-sheet');
+			if (el) el.innerHTML = sheetHtml();
+		}
+		function renderChips() {
+			var el = document.getElementById('od-chips');
+			if (el) el.innerHTML = chipsHtml();
+			var hd = document.querySelector('.gm-head p');
+			if (hd) hd.textContent = O.guests.length + (O.guests.length === 1 ? ' Guest' : ' Guests');
+		}
+		// phone: "+ Add Guest" form
+		function openAddOne() {
+			if (!editing) { askPin(); return; }
+			var m = popup('<h3>Add Guest</h3><label class="lab" for="ao-n">Guest Name</label><input id="ao-n" class="plain" maxlength="45" autocomplete="off" placeholder="e.g. Ali Raza"><div style="height:10px"></div><label class="lab" for="ao-p">Phone Number</label><input id="ao-p" class="plain" type="tel" inputmode="tel" maxlength="16" placeholder="03XX XXXXXXX"><div style="height:10px"></div>' +
+				'<label class="lab" for="ao-g">Invitation Group</label><select id="ao-g">' + O.links.map(function (l) { return '<option value="' + esc(l.id) + '"' + (l.id === (gfilter && gfilter !== '__all' ? gfilter : O.links[0].id) ? ' selected' : '') + '>' + esc(comboTitle(l)) + '</option>'; }).join('') + '</select><div style="height:10px"></div>' +
+				'<label class="lab" for="ao-s">Reserved Seats</label><select id="ao-s"><option value="0">Full Family</option>' + Array.apply(null, Array(SEAT_MAX)).map(function (x, k) { return '<option value="' + (k + 1) + '">' + (k + 1) + (k ? ' Seats' : ' Seat') + '</option>'; }).join('') + '</select><p class="hint" style="margin:6px 0 0">This number is used for every event. You can set seats event by event later with "Edit seats".</p><div class="ag-err" id="ao-err" hidden></div><div class="od-inline"><button type="button" class="btn-p" id="ao-go">Add Guest</button><button type="button" class="lnk" id="ao-cancel">Cancel</button></div>');
+			m.classList.add('sheetm');
+			m.querySelector('#ao-cancel').onclick = function () { m.close(); };
+			m.querySelector('#ao-go').onclick = function () {
+				var err = m.querySelector('#ao-err');
+				var name = m.querySelector('#ao-n').value.trim();
+				if (!name) { err.textContent = 'Please write the guest name.'; err.hidden = false; return; }
+				if (O.guests.length >= 500) { err.textContent = 'You can add up to 500 guests.'; err.hidden = false; return; }
+				O.guests.push({ id: '', name: tc(name), linkId: m.querySelector('#ao-g').value, phone: m.querySelector('#ao-p').value.replace(/[^0-9+]/g, ''), seats: Number(m.querySelector('#ao-s').value) || 0, seatMap: {} });
+				m.close();
+				gpage = 1;
+				setDirty(true);
+				renderGuestList();
+				renderChips();
+				save(null, true);
+			};
+			m.addEventListener('click', function (ev) { if (ev.target === m) m.close(); });
+			setTimeout(function () { var f = m.querySelector('#ao-n'); if (f) f.focus(); }, 30);
 		}
 		/* step 4: add guests, one combination at a time */
 		function addGuestsPage() {
-			var h = '<div class="ag-grid"><div class="ag-main">';
-			O.links.forEach(function (l) {
-				var mine = O.guests.map(function (g, i) { return { g: g, i: i }; }).filter(function (x) { return x.g.linkId === l.id; });
-				h += '<section class="od-sec cb-sec" data-lk="' + esc(l.id) + '"><h3 class="cb-t">Add guests to ' + esc(comboTitle(l)) + '</h3><p class="cb-n">' + mine.length + (mine.length === 1 ? ' guest added' : ' guests added') + '</p>';
-				h += '<div class="cb-act"><button type="button" class="btn-p" data-addbox="' + esc(l.id) + '">' + (addOpen[l.id] ? 'Close' : '+ Add guests') + '</button></div>';
-				if (addOpen[l.id]) {
-					h += '<div class="cb-box"><p class="cb-h"><b>Write 1 guest per line: Name - Seats - Phone</b><span>Write F for Full Family, or write a number for seats.</span></p>' +
-						'<textarea data-agt="' + esc(l.id) + '" rows="6" placeholder="Hamza Chachu F 03331111111&#10;Mr. Ali Raza 2 0333111111" aria-label="Guests"></textarea>' +
-						'<p class="cb-s">Write the names of all guests who are invited to this combination.</p><div class="err" data-agerr="' + esc(l.id) + '" hidden></div>' +
-						'<div class="od-inline"><button type="button" class="btn-p" data-agdone="' + esc(l.id) + '">Add these guests</button><button type="button" class="lnk" data-addbox="' + esc(l.id) + '">Cancel</button></div></div>';
-				}
-				if (mine.length) h += '<div class="cb-chips">' + mine.map(function (x) { return '<span class="cb-chip">' + esc(x.g.name) + '<button type="button" data-grm="' + x.i + '" aria-label="Remove ' + esc(x.g.name) + '" title="Remove">&times;</button></span>'; }).join('') + '</div>';
-				h += '</section>';
-			});
-			h += '</div><aside class="ag-aside"><div class="ag-aside-in"><h3>Card preview</h3><p class="hint" style="margin:0 0 8px">Write a guest name to see how it looks on the greeting card. The preview follows the line you are typing.</p><div class="pv" id="od-pv3"><p class="hint">Type a guest name to see the card.</p></div></div></aside></div>';
+			var h = '<div class="ag-grid"><div class="ag-main"><section class="od-sec gs-sec"><div class="sec-h gd-only"><div><h2>Guest list</h2><p class="hint">Type the guest name and phone number in the first row, then press Enter. The row is created with the group and seats dropdowns.</p></div></div>';
+			h += sheetTop(true) + '<div id="od-glist">' + guestsListHtml() + '</div><p class="err" id="od-newerr" hidden></p></section></div>';
+			h += '<aside class="ag-aside gd-only"><div class="ag-aside-in"><h3>Card preview</h3><p class="hint" style="margin:0 0 8px">Write a guest name to see how it looks on the greeting card. The preview follows what you type.</p><div class="pv" id="od-pv3"><p class="hint">Type a guest name to see the card.</p></div></div></aside></div>';
 			return h;
 		}
 		/* step 3: card combinations */
+		function comboHowHtml() {
+			return '<h3>How card combinations work</h3><p>Not every guest is invited to every event. Create different combinations of event cards for different guests.</p><p><b>Each combination has its own invitation link.</b></p><div class="cp-ex"><b>Combo 1: Nikkah only</b><span>Ali gets a link with only the Nikkah card.</span></div><div class="cp-ex"><b>Combo 2: Nikkah + Mehndi + Baraat</b><span>Sara gets a link with the 3 events she is invited to.</span></div><p>Create as many combinations as you like.</p><p><b>Send on WhatsApp:</b> copy the link of a combination and send it to the guests who belong to it.</p><button type="button" class="btn-p" data-pclose="1">Got it</button>';
+		}
 		function combosPage() {
-			var h = '<div class="cp-grid"><aside class="cp-aside"><h3>How card combinations work</h3><p>Not every guest is invited to every event. Create different combinations of event cards for different guests.</p><p><b>Each combination has its own invitation link.</b></p><div class="cp-ex"><b>Combo 1: Nikkah only</b><span>Ali gets a link with only the Nikkah card.</span></div><div class="cp-ex"><b>Combo 2: Nikkah + Mehndi + Baraat</b><span>Sara gets a link with the 3 events she is invited to.</span></div><p>Create as many combinations as you like.</p><p><b>Send on WhatsApp:</b> copy the link of a combination and send it to the guests who belong to it.</p></aside>';
-			h += '<div class="cp-main"><section class="od-sec"><div id="od-finder"></div></section></div></div>';
-			return h;
+			return '<div class="cp-main"><section class="od-sec"><div id="od-finder"></div></section></div>';
 		}
 		function mountFinder() {
 			var m = document.getElementById('od-finder');
 			if (!m || !window.IHCombos) return;
-			var key = function (c) { return c.slice().sort().join('+'); };
-			window.IHCombos.create({
+			var after = function () { setDirty(true); renderLinksOnly(); saveSoon(500); };
+			window.IHCombos.createLinks({
 				mount: m,
-				state: finderSt,
+				showHeading: false,
 				getEvents: function () { return O.events.map(function (e) { return { id: e.id, label: evLabel(e) }; }); },
-				getChosen: function () { return O.links.filter(function (l) { return !l.main; }).map(function (l) { return l.cards.slice(); }); },
-				isSelected: function (k) { return O.links.some(function (l) { return !l.main && key(l.cards) === key(k.split('+')); }); },
-				toggle: function (cards) {
+				getLinks: function () { return O.links.filter(function (l) { return !l.main && l.cards.length; }).map(function (l) { return { id: l.id, cards: l.cards.slice() }; }); },
+				add: function (cards) {
+					if (!editing) { askPin(); return null; }
+					var nl = { id: uid(), label: '', cards: O.events.map(function (e) { return e.id; }).filter(function (id) { return cards.indexOf(id) >= 0; }) };
+					nl.label = comboLabel(nl);
+					O.links.push(nl);
+					after();
+					return nl.id;
+				},
+				update: function (id, cards) {
 					if (!editing) { askPin(); return; }
-					var k = key(cards);
+					var l = O.links.filter(function (x) { return x.id === id; })[0];
+					if (!l) return;
+					l.cards = O.events.map(function (e) { return e.id; }).filter(function (i) { return cards.indexOf(i) >= 0; });
+					l.label = comboLabel(l);
+					after();
+				},
+				remove: function (id) {
+					if (!editing) { askPin(); return false; }
 					var ix = -1;
-					O.links.forEach(function (l, i) { if (!l.main && key(l.cards) === k) ix = i; });
-					if (ix >= 0) {
-						var l0 = O.links[ix];
-						var cnt = O.guests.filter(function (g) { return g.linkId === l0.id; }).length;
-						if (!confirm('Remove ' + comboTitle(l0) + '?' + (cnt ? ' Its ' + cnt + ' guest(s) will move to Combo 1.' : ''))) return;
-						O.guests.forEach(function (g) { if (g.linkId === l0.id) g.linkId = O.links[0].id; });
-						O.links.splice(ix, 1);
-					} else {
-						var nl = { id: uid(), label: '', cards: O.events.map(function (e) { return e.id; }).filter(function (id) { return cards.indexOf(id) >= 0; }) };
-						nl.label = comboLabel(nl);
-						O.links.push(nl);
-					}
-					setDirty(true);
-					renderLinksOnly();
-					saveSoon(500);
+					O.links.forEach(function (l, i) { if (l.id === id) ix = i; });
+					if (ix < 0) return true;
+					var l0 = O.links[ix];
+					var cnt = O.guests.filter(function (g) { return g.linkId === l0.id; }).length;
+					if (!confirm('Remove ' + comboTitle(l0) + '?' + (cnt ? ' Its ' + cnt + ' guest(s) will move to Link 1.' : ''))) return false;
+					O.guests.forEach(function (g) { if (g.linkId === l0.id) g.linkId = O.links[0].id; });
+					O.links.splice(ix, 1);
+					after();
+					return true;
 				}
 			});
 		}
@@ -479,10 +683,10 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			return '<div class="f"><label>' + label + '</label>' + (pre ? '<div class="pre"><span>' + pre + '</span>' + inp + '</div>' : inp) + (hint ? '<p class="hint">' + hint + '</p>' : '') + '</div>';
 		}
 		function coupleBody() {
-			return cf('Bride\'s name', 'brideName', '', '') +
-				cf('Bride\'s parents', 'brideParents', 'D/O Mr &amp; Mrs', 'Type only the names, like the examples. We add "D/O Mr &amp; Mrs" and "S/O Mr &amp; Mrs" for you.') +
-				cf('Groom\'s name', 'groomName', '', '') +
-				cf('Groom\'s parents', 'groomParents', 'S/O Mr &amp; Mrs', '');
+			return cf('Groom\'s name', 'groomName', '', '') +
+				cf('Groom\'s parents', 'groomParents', 'S/O Mr &amp; Mrs', 'Type only the names, like the examples. We add "S/O Mr &amp; Mrs" and "D/O Mr &amp; Mrs" for you.') +
+				cf('Bride\'s name', 'brideName', '', '') +
+				cf('Bride\'s parents', 'brideParents', 'D/O Mr &amp; Mrs', '');
 		}
 		function eventsBody() {
 			var have = {};
@@ -546,11 +750,12 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 
 		/* ---------- card preview ---------- */
 		var pv = { guestId: '', groupId: '', typed: '', typedLink: '', timer: null, a: { sig: '', cards: null }, b: { sig: '', cards: null }, c: { sig: '', cards: null } };
+		function gkey(g) { return g.id || 'n:' + O.guests.indexOf(g); }
 		var pvQ = Promise.resolve(); // the card maker is shared, so previews take turns
 		function pvInvitation() {
 			var g = null;
 			if (O.guestsOn && O.guests.length) {
-				g = O.guests.filter(function (x) { return x.id === pv.guestId; })[0] || O.guests[0];
+				g = O.guests.filter(function (x) { return gkey(x) === pv.guestId; })[0] || O.guests[0];
 			}
 			var evs = O.events;
 			if (g && many()) {
@@ -589,11 +794,11 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 		}
 		function previewBody() {
 			var h = '<p class="hint">Type a guest\'s name, or choose one from the list, to see exactly the cards that guest receives, starting with their greeting card. Swipe left or right to see every card.</p>';
-			var gs = O.guests.filter(function (g) { return g.id; });
+			var gs = O.guests.filter(function (g) { return g.name.trim(); });
 			if (!gs.length) return h + '<p class="hint">Add your guests first (Add/remove guests), then their cards appear here.</p>';
 			h += '<label class="lab" for="od-pvname">Type a guest name</label><input id="od-pvname" list="od-pvlist" placeholder="e.g. Hamza Chachu" autocomplete="off"><datalist id="od-pvlist">' + gs.map(function (g) { return '<option value="' + esc(g.name) + '"></option>'; }).join('') + '</datalist><p class="hint" id="od-pvmiss" style="color:#b3261e;margin:6px 0 0" hidden>No guest with this name. Please check the spelling.</p><div style="height:10px"></div>';
 			h += '<label class="lab" for="od-pvguest">Or choose from the list</label><select id="od-pvguest">' + gs.map(function (g) {
-				return '<option value="' + esc(g.id) + '"' + (g.id === pv.guestId ? ' selected' : '') + '>' + esc(g.name) + '</option>';
+				return '<option value="' + esc(gkey(g)) + '"' + (gkey(g) === pv.guestId ? ' selected' : '') + '>' + esc(g.name) + '</option>';
 			}).join('') + '</select><div style="height:10px"></div>';
 			h += '<div class="pv" id="od-pv"><p class="hint">Loading preview...</p></div>';
 			return h;
@@ -638,7 +843,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 				if (window.__ihCards) return res();
 				window.__ihCardsReady = res;
 				var sc = document.createElement('script');
-				sc.src = '/envelope-engine.js?v=30';
+				sc.src = '/envelope-engine.js?v=32';
 				sc.onerror = rej;
 				document.head.appendChild(sc);
 			});
@@ -682,7 +887,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			var add = function (k, t) { n++; a.push({ k: k, t: t, n: n }); };
 			add('couple', 'Couple details');
 			add('events', 'Add events');
-			add('groups', 'Create card combinations');
+			add('groups', 'Create invitation links');
 			if (O.guestsOn) add('guests', 'Add/remove guests');
 			add('hosts', 'Add reception hosts card');
 			add('music', 'Add/remove music');
@@ -699,13 +904,13 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			var h = '<div class="tpls">' + opt('couple', 'Option 1: Write the bride and groom names', 'e.g. ' + esc(coupleTitle())) + opt('family', 'Option 2: Write the family name', 'e.g. The Khan Family') + opt('none', 'Option 3: Do not write any names', 'The footer shows "With Love &amp; Warm Regards" in big letters') + '</div>';
 			h += '<div class="f" id="od-famwrap"' + (f.mode === 'family' ? '' : ' hidden') + ' style="margin-top:14px"><label for="od-family">Family name</label><input id="od-family" maxlength="40" value="' + esc(f.family || '') + '" placeholder="e.g. The Khan Family"></div>';
 			h += '<h3 class="sec-t" style="margin-top:22px">How your footer looks</h3><div class="ft-pv" id="od-ftpv">' + footerPreview() + '</div>';
-			if (O.guestsOn) h += '<p class="hint">The seats lines are an example. They appear only for guests whose seats you set (guests marked "Full family" do not get them).</p>';
+			if (O.guestsOn) h += '<p class="hint">The seats lines are an example. Each guest sees their own seats, event by event. A guest who is "Full Family" for every event gets no seats lines.</p>';
 			return h;
 		}
 		function footerPreview() {
 			var f = O.footer || { mode: 'couple', family: '' };
 			if (!window.IHFooter) return '';
-			return window.IHFooter.html({ bride: O.couple.brideName, groom: O.couple.groomName, mode: f.mode, family: f.family, seats: O.guestsOn ? 2 : 0 });
+			return window.IHFooter.html({ bride: O.couple.brideName, groom: O.couple.groomName, mode: f.mode, family: f.family, seatRows: O.guestsOn ? [{ label: 'Baraat', n: 1 }, { label: 'Nikah', n: 2 }, { label: 'Mehndi', n: 0 }, { label: 'Walima', n: 0 }] : [] });
 		}
 		function musicBody() {
 			var lib = (CFG.design && CFG.design.musicLibrary) || [];
@@ -723,8 +928,8 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 		var PAGE_INFO = {
 			couple: ['Couple details', 'These names appear on all your cards.'],
 			events: ['Add events', 'Change the date, time and venue, remove an event, or add a new one. New cards are made for you automatically.'],
-			groups: ['Create card combinations', 'Choose which event cards each guest will receive. Each combination has its own link.'],
-			guests: ['Add/remove guests', 'Add guests to each combination. Everyone gets a personal link and a greeting card with their name.'],
+			groups: ['Create invitation links', 'Choose which event cards each guest will receive. Each invitation link has a different set of cards.'],
+			guests: ['Add/remove guests', 'Add guests to each invitation link. Everyone gets a personal link and a greeting card with their name.'],
 			hosts: ['Add reception hosts card', 'Add the hosts\' names and phone numbers, or remove the card.'],
 			music: ['Add/remove music', ''],
 			message: ['Edit WhatsApp message', ''],
@@ -745,7 +950,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			var head = '<div class="pg-h"><span class="pg-step">Step ' + it.n + '</span><h2>' + info[0] + '</h2>' + (info[1] ? '<p>' + info[1] + '</p>' : '') + '</div>';
 			if (page === 'couple') return head + wrapSec(coupleBody()) + cont;
 			if (page === 'events') return head + wrapSec(eventsBody()) + cont;
-			if (page === 'groups') return head + combosPage() + cont + '<section class="od-sec"><div class="sec-h"><div><h2>Your combination links</h2><p class="hint">Copy a link, or press Open to check that it shows the right cards.</p></div></div><div id="od-lklist">' + comboLinksHtml() + '</div></section><section class="od-sec"><h3 class="sec-t">Preview a combination</h3>' + previewAllBody() + '</section>';
+			if (page === 'groups') return head + combosPage() + '<section class="od-sec"><div class="sec-h"><div><h2>Your combination links</h2><p class="hint">Copy a link, or press Open to check that it shows the right cards.</p></div></div><div id="od-lklist">' + comboLinksHtml() + '</div></section><section class="od-sec"><h3 class="sec-t">Preview a combination</h3>' + previewAllBody() + '</section>' + cont;
 			if (page === 'guests') return head + addGuestsPage() + cont;
 			if (page === 'hosts') return head + wrapSec(hostsBody()) + cont;
 			if (page === 'music') return head + wrapSec(musicBody()) + cont;
@@ -768,7 +973,10 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			h += '<div class="od-content"><div class="od-top"><span class="od-no">Order No. ' + esc(O.orderNo) + '</span><h1>' + esc(coupleTitle()) + '</h1>';
 			var ex = expiry();
 			h += '<p class="od-exp">Your invitation links are live until <b>' + ex.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) + '</b>' + (Date.now() > ex.getTime() ? ' (expired)' : ' (3 months from your order)') + '.</p></div>';
-			h += pageHtml(items) + '</div></div>';
+			h += pageHtml(items) + '</div>';
+			// phone: the floating button and the bottom sheet live outside the content box so they stay fixed on the screen
+			if (O.guestsOn && (page === 'guests' || page === 'dash')) h += '<button type="button" class="gs-fab gm-only" data-gadd="1">+ Add Guest</button><div id="od-sheet">' + sheetHtml() + '</div>';
+			h += '</div>';
 			root.innerHTML = h;
 			root.classList.toggle('od-view', !editing);
 			applyView();
@@ -794,6 +1002,13 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 				else if (/^\d{1,2}$/.test(z)) { seats = Number(z); t.pop(); }
 			}
 			return { name: t.join(' ').replace(/[,|:\-\s]+$/, '').trim() || ln.trim(), phone: phone.replace(/[^0-9+]/g, ''), seats: seats };
+		}
+		// while typing, the card shows only the name: anything from the seats letter / number or the phone number onwards is left out
+		function nameOnly(ln) {
+			var t = ln.trim().split(/\s+/);
+			var cut = t.length;
+			for (var i = 1; i < t.length; i++) { if (/^f$/i.test(t[i]) || /^[+\d][\d\-+]*$/.test(t[i])) { cut = i; break; } }
+			return t.slice(0, cut).join(' ').replace(/[,|:\-\s]+$/, '').trim();
 		}
 		function openAddGuests() {
 			if (!editing) { askPin(); return; }
@@ -832,7 +1047,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			var t = ev.target;
 			if (!t.closest) return;
 			var c = t.closest('input, textarea, select');
-			if (!c || c.id === 'od-q' || c.id === 'od-gf' || c.id === 'od-pvguest' || c.id === 'od-pvname' || c.id === 'od-pvgroup' || c.id === 'od-pin' || c.closest('.od-modal')) return;
+			if (!c || c.id === 'od-q' || c.id === 'od-gf' || c.id === 'od-sort' || c.id === 'od-pvguest' || c.id === 'od-pvname' || c.id === 'od-pvgroup' || c.id === 'od-pin' || c.closest('.od-modal')) return;
 			ev.preventDefault();
 			if (c.blur) c.blur();
 			askPin();
@@ -840,15 +1055,57 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 		root.addEventListener('mousedown', guardEdit, true);
 		root.addEventListener('keydown', function (ev) { if (ev.key !== 'Tab') guardEdit(ev); }, true);
 		root.addEventListener('touchstart', guardEdit, true);
+		function renderMobileList() {
+			var ml = document.getElementById('od-mlist');
+			if (ml) ml.innerHTML = mobileList(guestIdx());
+		}
+		function addFromEntry() {
+			if (!editing) { askPin(); return; }
+			var inp = document.getElementById('od-newg');
+			var er = document.getElementById('od-newerr');
+			if (!inp) return;
+			var fail = function (t) { if (er) { er.textContent = t; er.hidden = false; } };
+			var ln = inp.value.replace(/[*]+$/, '').trim();
+			if (!ln) return;
+			var r = parseGuestLine(ln);
+			if (r.name.length > 45) return fail('That name is too long. Please keep each name within 45 characters.');
+			if (O.guests.length >= 500) return fail('You can add up to 500 guests.');
+			if (er) er.hidden = true;
+			O.guests.push({ id: '', name: tc(r.name), linkId: newLink || O.links[0].id, phone: r.phone, seats: r.seats || 0, seatMap: {} });
+			inp.value = '';
+			pv.typed = '';
+			pv.c.reset = true;
+			setDirty(true);
+			renderGuestList();
+			renderChips();
+			pvRefresh();
+			save(null, true); // the guest gets a link right away
+			inp.focus();
+		}
 		function renderGuestList() {
-			var el = document.getElementById('od-glist');
-			if (el) el.innerHTML = guestsListHtml();
+			var rows = document.getElementById('od-grows');
+			var ml = document.getElementById('od-mlist');
+			if (rows && ml) {
+				var idx = guestIdx();
+				rows.innerHTML = rowsHtml(idx);
+				ml.innerHTML = mobileList(idx);
+			} else {
+				var el = document.getElementById('od-glist');
+				if (el) el.innerHTML = guestsListHtml();
+			}
 			applyView();
 		}
 
 		function setState(text) {
 			stateEl.textContent = text;
 			stateEl.style.display = text ? 'block' : 'none';
+		}
+		// Couple names and every event's date, time and venue must be complete before the customer moves on
+		function navProblem() {
+			if (!O) return '';
+			if (!String(O.couple.brideName || '').trim() || !String(O.couple.groomName || '').trim()) return 'Please write the groom\'s and bride\'s names.';
+			for (var ev = 0; ev < O.events.length; ev++) { var e0 = O.events[ev]; if (!e0.date || !e0.time || !String(e0.venue || '').trim()) return evLabel(e0) + ': please fill in the date, time and venue.'; }
+			return '';
 		}
 		function problem() {
 			if (!String(O.couple.brideName || '').trim() || !String(O.couple.groomName || '').trim()) return 'Please keep the bride\'s and groom\'s names.';
@@ -887,7 +1144,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 				clearTimeout(autoT);
 				var ae = document.activeElement;
 				var typing = silent && ae && root.contains(ae) && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName);
-				if (typing) refreshMessages(); // never pull the page from under a typing customer
+				if (typing) { refreshMessages(); if (ae.id === 'od-newg') { renderGuestList(); renderChips(); } } // never pull the page from under a typing customer
 				else render();
 				updateBar();
 				statusEl.textContent = silent ? 'Saved automatically' : 'All changes saved';
@@ -946,13 +1203,19 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 		function agLine(t) {
 			var before = t.value.slice(0, t.selectionStart || 0);
 			var ln = t.value.split('\n')[before.split('\n').length - 1] || '';
-			var name = ln.trim() ? tc(parseGuestLine(ln).name) : '';
+			var name = ln.trim() ? tc(nameOnly(ln)) : '';
 			if (name === pv.typed && pv.typedLink === t.dataset.agt) return;
 			pv.typed = name;
 			pv.typedLink = t.dataset.agt;
 			pv.c.reset = true;
 			pvRefresh();
 		}
+		root.addEventListener('keydown', function (ev) {
+			if (ev.key === 'Enter' && ev.target && ev.target.id === 'od-newg') { ev.preventDefault(); addFromEntry(); }
+		});
+		root.addEventListener('click', function (ev) {
+			if (ev.target && ev.target.classList && ev.target.classList.contains('gm-shw')) { mobOpen = null; renderSheet(); }
+		});
 		root.addEventListener('keyup', function (ev) { if (ev.target.dataset && ev.target.dataset.agt !== undefined) agLine(ev.target); });
 		root.addEventListener('click', function (ev) { if (ev.target.dataset && ev.target.dataset.agt !== undefined) agLine(ev.target); });
 		root.addEventListener('input', function (ev) {
@@ -961,13 +1224,13 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			if (d && d.agt !== undefined) { agLine(t); return; }
 			if (t.id === 'od-pvname') {
 				var q0 = t.value.trim().toLowerCase();
-				var gl0 = O.guests.filter(function (g) { return g.id; });
+				var gl0 = O.guests.filter(function (g) { return g.name.trim(); });
 				var hit = gl0.filter(function (g) { return g.name.toLowerCase() === q0; })[0] || (q0 ? gl0.filter(function (g) { return g.name.toLowerCase().indexOf(q0) === 0; })[0] : null);
 				var miss = document.getElementById('od-pvmiss');
 				if (hit) {
-					pv.guestId = hit.id;
+					pv.guestId = gkey(hit);
 					var sel0 = document.getElementById('od-pvguest');
-					if (sel0) sel0.value = hit.id;
+					if (sel0) sel0.value = gkey(hit);
 					pv.a.reset = true;
 					pvRefresh();
 				}
@@ -985,13 +1248,14 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 				refreshMessages();
 			} else if (t.id === 'od-q') {
 				query = t.value;
-				shown = 10;
+				gpage = 1;
 				renderGuestList();
 				return;
 			} else if (d.gphone !== undefined) {
 				O.guests[Number(d.gphone)].phone = t.value.replace(/[^0-9+ ]/g, '');
 				var prw = t.closest('.tb-row');
 				if (prw) rowMessage(prw);
+				if (mobOpen !== null) renderMobileList();
 			} else if (d.c !== undefined) {
 				O.couple[d.c] = t.value;
 				var hh = document.querySelector('.od h1');
@@ -1005,6 +1269,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 				if (gtx) gtx.textContent = t.value;
 				var row = t.closest('.tb-row');
 				if (row) rowMessage(row);
+				if (mobOpen !== null) renderMobileList();
 			} else if (d.link !== undefined) O.links[Number(d.link)].label = t.value;
 			else if (t.id === 'od-gname') {
 				addGroup.label = t.value;
@@ -1062,13 +1327,21 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 				gfilter = t.value;
 				renderGuestList();
 				return;
-			} else if (d.gseats !== undefined) {
-				O.guests[Number(d.gseats)].seats = Number(t.value) || 0;
-				setDirty(true);
-				saveSoon();
+			} else if (t.id === 'od-sort') {
+				gsort = t.value;
+				gpage = 1;
+				renderGuestList();
+				return;
+			} else if (t.id === 'od-newlink') {
+				newLink = t.value;
+				var ne = document.getElementById('od-newg');
+				if (ne) { ne.dataset.agt = newLink; ne.focus(); }
+				return;
 			} else if (d.glink !== undefined) {
 				O.guests[Number(d.glink)].linkId = t.value;
 				renderGuestList(); // the guest moves into that group right away
+				renderChips();
+				if (mobOpen !== null) renderSheet();
 				setDirty(true);
 				saveSoon();
 			} else if (d.lcard !== undefined) {
@@ -1086,6 +1359,44 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			if (!b) return;
 			var d = b.dataset;
 			if (!editing && (d.erm !== undefined || d.addstd !== undefined || d.htoggle !== undefined || d.newgroup !== undefined || b.id === 'od-addcustom' || b.id === 'od-gnew' || d.grm !== undefined || d.acOpen === 'addguests' || b.id === 'od-addg' || b.id === 'od-reset' || b.id === 'od-addh' || d.tpl !== undefined || d.fmode !== undefined)) { askPin(); return; }
+			if (d.how !== undefined) {
+				var mh = popup(comboHowHtml());
+				mh.addEventListener('click', function (e2) { if (e2.target === mh || (e2.target.dataset && e2.target.dataset.pclose)) mh.close(); });
+				return;
+			}
+			if (d.rmc !== undefined) {
+				if (!editing) { askPin(); return; }
+				var l1 = O.links[Number(d.rmc)];
+				if (!l1 || l1.main) return;
+				var cnt1 = O.guests.filter(function (g) { return g.linkId === l1.id; }).length;
+				if (!confirm('Remove ' + comboTitle(l1) + '?' + (cnt1 ? ' Its ' + cnt1 + ' guest(s) will move to Link 1.' : ''))) return;
+				O.guests.forEach(function (g) { if (g.linkId === l1.id) g.linkId = O.links[0].id; });
+				O.links.splice(Number(d.rmc), 1);
+				setDirty(true);
+				render();
+				saveSoon(500);
+				return;
+			}
+			if (d.gchip !== undefined) {
+				gfilter = d.gchip;
+				gpage = 1;
+				if (d.gchip) { newLink = d.gchip; var nl = document.getElementById('od-newlink'); if (nl) nl.value = d.gchip; var ne2 = document.getElementById('od-newg'); if (ne2) ne2.dataset.agt = d.gchip; }
+				renderChips();
+				renderGuestList();
+				return;
+			}
+			if (d.gadd !== undefined) { openAddOne(); return; }
+			if (d.newadd !== undefined) { addFromEntry(); return; }
+			if (d.seats !== undefined) { openSeats(Number(d.seats)); return; }
+			if (d.gm !== undefined) { mobOpen = Number(d.gm); renderSheet(); return; }
+			if (d.gsx !== undefined) { mobOpen = null; renderSheet(); return; }
+			if (d.gpage !== undefined) {
+				gpage = Math.max(1, gpage + Number(d.gpage));
+				renderGuestList();
+				var gl0 = document.getElementById('od-mlist');
+				if (gl0 && gl0.scrollIntoView) gl0.scrollIntoView({ block: 'start' });
+				return;
+			}
 			if (d.dt !== undefined) {
 				openD[d.dt] = !openD[d.dt];
 				renderGuestList();
@@ -1244,6 +1555,8 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			} else if (d.acOpen === 'addguests') {
 				openAddGuests();
 			} else if (d.nav) {
+				var np0 = navProblem();
+				if (np0 && editing) { statusEl.textContent = np0; alert(np0 + '\nPlease complete this before moving to the next step.'); if (page !== 'events' && /event|date/i.test(np0)) { page = 'events'; render(); } return; }
 				page = d.nav;
 				navOpen = false;
 				try { history.replaceState(null, '', '#' + page); } catch (e) {}
@@ -1272,6 +1585,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 				var gi = Number(d.grm);
 				if (confirm('Remove ' + O.guests[gi].name + '? Their personal link will stop working after you save.')) {
 					O.guests.splice(gi, 1);
+					mobOpen = null;
 					setDirty(true);
 					render();
 				}
@@ -1513,7 +1827,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 	.sec-h { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; margin-bottom: 4px; }
 	.sec-h .hint { margin-bottom: 14px; }
 	.od-tools { display: flex; gap: 10px; flex-wrap: wrap; margin: 0 0 16px; }
-	.od-tools input[type="search"] { flex: 1 1 220px; min-width: 0; border-radius: 999px; padding: 11px 18px; }
+	.od-tools input[type="search"] { font-size: 13px; flex: 1 1 220px; min-width: 0; border-radius: 999px; padding: 11px 18px; }
 	.od-tools select { flex: 0 0 auto; width: auto; border-radius: 999px; padding: 10px 16px; }
 	.tb { border: 1px solid #EBDDC3; border-radius: 12px; overflow: hidden; background: #fff; }
 	.tb-head, .tb-row { display: grid; column-gap: 0; align-items: stretch; }
@@ -1787,5 +2101,93 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 		.gr-dt { grid-template-columns: 1fr; }
 		.gr-dl { border-right: 0; border-bottom: 1px solid #F0E6D2; }
 		.gr-edit { grid-template-columns: 1fr; }
+	}
+
+	.pg-h { position: relative; }
+	.how-l { position: absolute; right: 0; top: 4px; border: 0; background: none; padding: 4px 0; font: 500 13.5px 'Poppins', sans-serif; color: #B8793C; text-decoration: underline; cursor: pointer; }
+	.qa.rmc { border-color: #EBC9C5; color: #a3261e; }
+	.od-modal-in .cp-ex { background: #F8EEDB; border-radius: 12px; padding: 10px 12px; margin: 0 0 10px; }
+	.od-modal-in .cp-ex b { display: block; font: 600 13px 'Poppins', sans-serif; color: #1A1A1A; }
+	.od-modal-in .cp-ex span { display: block; margin-top: 2px; color: #6B6459; }
+	.od-modal-in h3 { font: 700 20px 'Playfair Display', serif; color: #1A1A1A; margin: 0 0 10px; }
+	.od-modal-in .btn-p { margin-top: 6px; }
+
+	.gr-head, .gr-row { grid-template-columns: minmax(190px, 2.8fr) minmax(210px, 2fr) 138px 136px; padding-right: 10px; }
+	.gr-row .gr-a, .gr-head span:last-child { justify-self: end; text-align: right; }
+	.gr-row .gr-s select { padding: 7px 24px 7px 11px; background-position: right 9px center; }
+	.gr-row .gr-g select { max-width: none; }
+	.gr-row .nm { font-size: 17px; }
+	.gr-static { cursor: default; }
+
+	/* one font family everywhere on the dashboard (Poppins), headings keep Playfair */
+	.od, .od-modal { font-family: 'Poppins', sans-serif; }
+	.od :where(button, input, select, textarea, p, a, span, label, small), .od-modal :where(button, input, select, textarea, p, a, span, label, small) { font-family: inherit; }
+
+	.vd { white-space: nowrap; padding: 7px 10px; gap: 6px; }
+
+	/* ===== guest sheet: chips, excel-style table, phone list, seats ===== */
+	.gs-tools { align-items: center; }
+	.gs-chips { display: flex; gap: 8px; overflow-x: auto; padding: 2px 0 12px; margin: 0 0 6px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+	.gs-chips::-webkit-scrollbar { display: none; }
+	.gs-chip { flex: 0 0 auto; border: 1px solid #E5D8BF; background: #fff; color: #3B352D; border-radius: 999px; padding: 8px 16px; font: 500 13px 'Poppins', sans-serif; cursor: pointer; white-space: nowrap; }
+	.gs-chip.on { background: #D4A276; border-color: #D4A276; color: #1A1A1A; font-weight: 600; }
+	.gr-head, .gr-row { grid-template-columns: minmax(140px, 2.2fr) minmax(140px, 1.6fr) minmax(112px, 1.2fr) 116px; gap: 10px; padding-left: 14px; padding-right: 8px; }
+	@media (min-width: 1001px) { .ag-grid { grid-template-columns: minmax(0, 1fr) 250px; } }
+	@media (max-width: 1000px) { .ag-grid { grid-template-columns: 1fr; } }
+	.gs-sec { padding: 18px 16px; }
+	.gr-row .gr-g select { padding-left: 12px; font-size: 13px; }
+	.gr-new { background: #FFF9EC; border-top: 1px solid #E8D9B8; border-bottom: 2px solid #D4A276; }
+	.gr-new .ge-in { width: 100%; box-sizing: border-box; border: 1.5px dashed #D4A276; border-radius: 10px; background: #fff; padding: 10px 12px; font: 400 14px 'Poppins', sans-serif; color: #1A1A1A; outline: none; }
+	.gr-new .ge-in:focus { border-style: solid; box-shadow: 0 0 0 3px rgba(212, 162, 118, .25); }
+	.gr-new .vd { background: #D4A276; border-color: #D4A276; color: #1A1A1A; font-weight: 600; }
+	.sd { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; min-width: 0; }
+	.sd-t { font: 500 12.5px/1.35 'Poppins', sans-serif; color: #3B352D; overflow-wrap: anywhere; }
+	.sd-t.full { color: #2f5a2a; font-weight: 600; }
+	.sd-b { border: 0; background: none; padding: 0; color: #B8793C; text-decoration: underline; font: 500 12.5px 'Poppins', sans-serif; cursor: pointer; }
+	.od-modal-in .se-list { display: grid; gap: 10px; margin: 4px 0 6px; }
+	.od-modal-in .se-r { display: grid; grid-template-columns: 1fr 150px; gap: 10px; align-items: center; font: 500 14px 'Poppins', sans-serif; color: #1A1A1A; }
+	.sdd { position: relative; }
+	.od-modal-in .sdd-b { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 6px; border: 1px solid #D9C8A6; background: #fff; border-radius: 10px; padding: 9px 12px; font: 500 13.5px 'Poppins', sans-serif; color: #1A1A1A; cursor: pointer; letter-spacing: 0; }
+	.sdd-b svg { width: 14px; height: 14px; flex: none; }
+	.sdd-l { position: absolute; z-index: 5; left: 0; right: 0; top: calc(100% + 4px); max-height: 132px; overflow-y: auto; background: #fff; border: 1px solid #E5D8BF; border-radius: 10px; box-shadow: 0 8px 20px rgba(0,0,0,.14); }
+	.sdd-l[hidden] { display: none; }
+	.od-modal-in .sdd-o { display: block; width: 100%; text-align: left; border: 0; border-bottom: 1px solid #F3EAD7; background: #fff; padding: 0 12px; height: 44px; font: 400 13.5px 'Poppins', sans-serif; color: #1A1A1A; cursor: pointer; letter-spacing: 0; }
+	.sdd-o:last-child { border-bottom: 0; }
+	.sdd-o.on { background: #FBF3E4; font-weight: 600; }
+	.od-modal-in input.plain { letter-spacing: 0; font-size: 15px; }
+	.gm-only { display: none; }
+	.gm-head h2 { margin: 0; font: 700 26px 'Playfair Display', serif; color: #1A1A1A; }
+	.gm-head p { margin: 2px 0 14px; color: #6B6459; font: 500 14px 'Poppins', sans-serif; }
+	.gm-list { border: 1px solid #EADFC9; border-radius: 14px; background: #fff; overflow: hidden; }
+	.gm-it { display: flex; width: 100%; justify-content: space-between; align-items: flex-start; gap: 10px; text-align: left; border: 0; border-bottom: 1px solid #F1E8D5; background: #fff; padding: 12px 14px; min-height: 56px; cursor: pointer; font-family: 'Poppins', sans-serif; }
+	.gm-it:last-child { border-bottom: 0; }
+	.gm-l { display: flex; flex-direction: column; min-width: 0; }
+	.gm-l b { font: 600 16px 'Playfair Display', serif; color: #1A1A1A; overflow-wrap: anywhere; }
+	.gm-p { font: 400 12.5px 'Poppins', sans-serif; color: #6B6459; }
+	.gm-r { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; text-align: right; max-width: 52%; }
+	.gm-g { font: 500 12px 'Poppins', sans-serif; color: #7a5a2e; background: #F3E3C4; border-radius: 999px; padding: 2px 10px; overflow-wrap: anywhere; }
+	.gm-s { font: 500 12px 'Poppins', sans-serif; color: #3B352D; overflow-wrap: anywhere; }
+	.gm-pg { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 12px 0 4px; font: 500 13px 'Poppins', sans-serif; color: #3B352D; }
+	.gs-pg { border: 1px solid #E5D8BF; background: #fff; border-radius: 999px; padding: 9px 18px; font: 500 13px 'Poppins', sans-serif; color: #1A1A1A; cursor: pointer; min-height: 40px; }
+	.gs-pg:disabled { opacity: .4; cursor: default; }
+	.gm-show { text-align: center; color: #6B6459; font: 400 12.5px 'Poppins', sans-serif; margin: 6px 0 130px; }
+	.gs-fab { position: fixed; left: 50%; transform: translateX(-50%); bottom: 80px; z-index: 40; border: 0; border-radius: 999px; background: #D4A276; color: #1A1A1A; padding: 14px 26px; min-height: 50px; font: 600 15px 'Poppins', sans-serif; box-shadow: 0 8px 22px rgba(80, 50, 10, .3); cursor: pointer; }
+	.gm-shw { position: fixed; inset: 0; z-index: 90; background: rgba(0,0,0,.4); display: flex; align-items: flex-end; }
+	.gm-sh { width: 100%; max-height: 88vh; overflow-y: auto; background: #FFFCF6; border-radius: 20px 20px 0 0; padding: 8px 14px 24px; box-sizing: border-box; }
+	.gm-grab { width: 42px; height: 4px; border-radius: 4px; background: #D9C8A6; margin: 4px auto 10px; }
+	.gm-shh { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 8px; }
+	.gm-shh b { font: 700 20px 'Playfair Display', serif; color: #1A1A1A; }
+	.gm-x { border: 0; background: #F3E7D0; width: 34px; height: 34px; border-radius: 50%; font-size: 20px; line-height: 1; cursor: pointer; color: #1A1A1A; }
+	.gm-fld { margin: 0 0 12px; }
+	.gm-fld select { width: 100%; border: 1px solid #E5D8BF; border-radius: 10px; padding: 10px 12px; background: #fff; font: 14px 'Poppins', sans-serif; }
+	.gm-sh .gr-dt { margin: 0; grid-template-columns: 1fr; }
+	.gm-sh .gr-dl { border-right: 0; border-bottom: 1px solid #F0E6D2; }
+	.gm-sh .gr-edit { grid-template-columns: 1fr; margin-top: 0; border-top: 0; padding-top: 0; }
+	@media (max-width: 1000px) {
+		.gd-only { display: none !important; }
+		.gm-only { display: block; }
+		.gs-fab.gm-only { display: block; }
+		.od-modal.sheetm { align-items: flex-end; padding: 0; }
+		.od-modal.sheetm .od-modal-in { max-width: none; border-radius: 20px 20px 0 0; max-height: 90vh; overflow-y: auto; padding-bottom: 28px; }
 	}
 </style>

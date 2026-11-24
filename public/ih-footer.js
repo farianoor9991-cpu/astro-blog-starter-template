@@ -1,6 +1,6 @@
 /* InviteHeaven invitation footer: one function that makes the footer markup.
    Used by the invitation page (envelope-engine.js) and by the dashboard preview, so both always look the same.
-   IHFooter.html({ bride, groom, mode: 'couple' | 'family' | 'none', family, seats }) */
+   IHFooter.html({ bride, groom, mode: 'couple' | 'family' | 'none', family, seatRows: [{ label, n }] }) */
 (function () {
 	var esc = function (s) {
 		return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
@@ -29,13 +29,33 @@
 		'<path d="M52 15 C44 6 30 6 22 13 C30 11 40 13 46 17 C40 20 30 21 22 17 C30 24 44 24 52 15Z"/>' +
 		'<path d="M68 15 C76 6 90 6 98 13 C90 11 80 13 74 17 C80 20 90 21 98 17 C90 24 76 24 68 15Z"/>' +
 		'<circle cx="12" cy="15" r="1.8" fill="#d9b676" stroke="none"/><circle cx="108" cy="15" r="1.8" fill="#d9b676" stroke="none"/></svg>';
+	// "Baraat & Walima" / "Mehndi, Baraat & Walima"
+	var joinNames = function (a) {
+		return a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' & ' + a[a.length - 1];
+	};
+	// rows: [{ label, n }] in the guest's event order; n = 0 means Full Family.
+	// Lines with a seat number first (fewest seats on top, same number keeps the event order), then ONE "Full Family" line.
+	// If every event is Full Family there is nothing to write.
+	var seatLines = function (rows) {
+		rows = (rows || []).filter(function (r) { return r && r.label; });
+		var specific = rows
+			.map(function (r, i) { return { r: r, i: i }; })
+			.filter(function (x) { return x.r.n >= 1; })
+			.sort(function (a, b) { return a.r.n - b.r.n || a.i - b.i; })
+			.map(function (x) { return { text: x.r.label + ': ' + x.r.n + (x.r.n === 1 ? ' Seat' : ' Seats') }; });
+		var full = rows.filter(function (r) { return !(r.n >= 1); }).map(function (r) { return r.label; });
+		if (!specific.length) return [];
+		if (full.length) specific.push({ text: joinNames(full) + ': Full Family' });
+		return specific;
+	};
 	window.IHFooter = {
+		seatLines: seatLines,
 		html: function (o) {
 			o = o || {};
 			var mode = o.mode === 'family' || o.mode === 'none' ? o.mode : 'couple';
-			var names = first(o.bride) + (first(o.bride) && first(o.groom) ? ' & ' : '') + first(o.groom);
+			var names = first(o.groom) + (first(o.bride) && first(o.groom) ? ' & ' : '') + first(o.bride);
 			if (mode === 'family') names = String(o.family || '').trim() || names;
-			var seats = Math.floor(Number(o.seats)) || 0;
+			var lines = seatLines(o.seatRows);
 			var top;
 			if (mode === 'none') {
 				// no names: the greeting itself becomes the big script line
@@ -50,7 +70,7 @@
 			return (
 				'<div class="ihf"><div class="ihf-frame">' + crest +
 				top + divider(id + 'x') +
-				(seats ? '<p class="ihf-seats">' + seats + (seats === 1 ? ' Seat' : ' Seats') + ' Reserved</p><p class="ihf-honour">in your honour</p>' : '') +
+				(lines.length ? '<p class="ihf-seats">Reserved in Your Honour</p><ul class="ihf-sl">' + lines.map(function (l) { return '<li>' + esc(l.text) + '</li>'; }).join('') + '</ul>' : '') +
 				'<p class="ihf-msg">Your presence will make our celebration even more special!</p>' +
 				divider(id + 'y') +
 				'<a class="ihf-brand" href="/"><span class="ihf-by">Created by</span><span class="ihf-bn">Invite<b>Heaven</b></span></a>' +

@@ -635,3 +635,5 @@ body {
 }
 .ev-loading.gone { opacity: 0 !important; animation: none; }
 @keyframes ev-pulse { 0%, 100% { opacity: 0.45; } 50% { opacity: 0.95; } }
+
+.ev-flap, .ev-closed { will-change: transform; }
