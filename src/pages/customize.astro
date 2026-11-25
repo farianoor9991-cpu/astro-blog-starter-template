@@ -84,7 +84,7 @@ const MAX_HOSTS: number = tpl.maxHosts || 6;
 		const STEPS = [
 			{ n: 1, d: 1, title: 'Couple details', sub: 'Names of the bride, groom and their parents' },
 			{ n: 2, d: 2, title: 'Your events', sub: 'Choose your events' },
-			{ n: 7, d: 3, title: 'Create invitation links', sub: 'Choose which event cards each guest receives' },
+			{ n: 7, d: 3, title: 'Create Separate Links for Different Guests', sub: 'Choose event/events for each Invitation Link' },
 			{ n: 3, d: 4, title: 'Reception hosts card', sub: 'Do you want a Reception Hosts card?' },
 			{ n: 4, d: 5, title: 'Share links', sub: 'Get links for each event. Greeting cards are optional.' },
 			{ n: 6, d: 6, title: 'Who fills card details?', sub: 'Do it yourself for free, or let our team do it' },
@@ -662,7 +662,7 @@ const save = () => {};
 			if (!m || !(window as any).IHCombos) return;
 			(window as any).IHCombos.createLinks({
 				mount: m,
-				doneNote: 'You will get the links after payment',
+				showHeading: false,
 				getEvents: comboEvents,
 				getLinks: () => S.links.list.filter((l: D) => l.cards.length).map((l: D) => ({ id: l.id, cards: l.cards.slice() })),
 				add: (cards: string[]) => { const id = uid(); S.links.list.push({ id, label: '', cards: cards.slice() }); lkDone(); return id; },

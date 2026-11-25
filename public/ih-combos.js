@@ -91,6 +91,34 @@
 		'.hw-list li span{margin-right:4px}' +
 		'.cm-hw button.cm-ok{background:#d4a276;color:#fff;border:0;border-radius:999px;padding:10px 26px;font:600 14px Poppins,sans-serif;cursor:pointer}';
 
+	CSS +=
+		'.hw2{font-family:Poppins,sans-serif;background:#fcf9f1;border-radius:22px;max-width:640px;width:100%;max-height:92vh;overflow:auto;padding:24px 18px 22px;box-shadow:0 24px 70px rgba(0,0,0,.35);color:#5a5a5a;border:1px solid #ead9b9}' +
+		'.hw2 *{box-sizing:border-box}' +
+		'.hw2 h3{margin:0 0 4px;text-align:center;font:700 26px/1.2 "Playfair Display",serif;color:#1a1a1a}' +
+		'.hw2 .hw2-sub{margin:0 0 16px;text-align:center;font-size:13px;color:#8a7a5c}' +
+		'.hw2-two{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:stretch}' +
+		'.hw2-box{display:flex;flex-direction:column;align-items:center;text-align:center;min-width:0}' +
+		'.hw2-card{width:100%;background:#fff;border:1px solid #e3cfa6;border-radius:18px;padding:14px 8px 14px;box-shadow:0 8px 22px rgba(120,84,30,.12);background-image:linear-gradient(180deg,#fffdf7,#fff)}' +
+		'.hw2-card h4{margin:0 0 3px;font:700 16px/1.25 "Playfair Display",serif;color:#1a1a1a}' +
+		'.hw2-tag{display:inline-block;margin:0 0 10px;font:500 12px/1.3 Poppins,sans-serif;color:#8a7a5c}' +
+		'.hw2-tag.green{background:#e4f3df;color:#2c6a2f;border:1px solid #bfe0b8;border-radius:999px;padding:3px 10px;font-weight:600}' +
+		'.hw2-tiles{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}' +
+		'.hw2-tile{width:62px;height:62px;border-radius:14px;background:#fbf3e4;border:1px solid #ead9b9;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:#9a6a36;font:600 11px/1 Poppins,sans-serif}' +
+		'.hw2-tile svg{width:24px;height:24px;stroke:#b8793c;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}' +
+		'.hw2-tile span{color:#1a1a1a}' +
+		'.hw2-arrow{height:44px;display:flex;align-items:center;justify-content:center}' +
+		'.hw2-url{width:100%;background:#fff;border:1px dashed #d4a276;border-radius:12px;padding:8px 8px;font:500 11.5px/1.45 Poppins,sans-serif;color:#1a1a1a;word-break:break-all}' +
+		'.hw2-url b{color:#b8793c}' +
+		'.hw2-send{margin:0;font:500 12.5px/1.5 Poppins,sans-serif;color:#5a5a5a}' +
+		'.hw2-list{list-style:none;margin:18px 0 0;padding:12px 14px;background:#fff;border:1px solid #ead9b9;border-radius:14px;display:flex;flex-direction:column;gap:7px}' +
+		'.hw2-list li{color:#1a1a1a;font:500 13.5px/1.4 Poppins,sans-serif}' +
+		'.hw2 .cm-ok{background:#d4a276;color:#fff;border:0;border-radius:999px;padding:11px 34px;font:600 14.5px Poppins,sans-serif;cursor:pointer;box-shadow:0 6px 14px rgba(180,120,60,.3)}' +
+		'@media(max-width:420px){.hw2{padding:20px 10px 18px}.hw2-two{gap:8px}.hw2-tile{width:56px;height:56px}.hw2-card h4{font-size:14.5px}}' +
+		'.lk-howrow{margin:0 0 10px}' +
+		'.lk-bt{display:block;margin:0 0 8px;color:#1a1a1a;font:700 14.5px/1.35 Poppins,sans-serif}' +
+		'.lk-rm{border:0;background:none;color:#b3261e;font:500 12px Poppins,sans-serif;text-decoration:underline;cursor:pointer;padding:6px 0 0}' +
+		'.lk-fld{max-width:380px}';
+
 	function addCss() {
 		if (document.getElementById('cm-css')) return;
 		var s = document.createElement('style');
@@ -131,24 +159,32 @@
 	function howItWorks() {
 		var w = document.createElement('div');
 		w.className = 'cm-hw-bg';
-		var ARROW = '<svg viewBox="0 0 24 34" width="26" height="36" aria-hidden="true"><path d="M12 2v22M4 17l8 10 8-10" fill="none" stroke="#b8793c" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-		var mini = function (n) { var h = '<span class="hw-cards">'; for (var i = 0; i < n; i++) h += '<i></i>'; return h + '</span>'; };
+		var ARROW = '<svg viewBox="0 0 30 42" width="30" height="42" aria-hidden="true"><path d="M15 3v28M5 22l10 13 10-13" fill="none" stroke="#c28f5f" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+		var IC = {
+			Mehndi: '<svg viewBox="0 0 24 24"><path d="M12 3c3.5 3.2 5.5 6 5.5 9.2A5.5 5.5 0 016.5 12.2C6.5 9 8.5 6.2 12 3z"/><path d="M12 9v8M12 12.5l-2-1.5M12 14.5l2-1.5"/></svg>',
+			Baraat: '<svg viewBox="0 0 24 24"><path d="M4 18h16l1-10-5 4-4-6-4 6-5-4z"/><path d="M4 21h16"/></svg>',
+			Walima: '<svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="6"/><circle cx="12" cy="13" r="3"/><path d="M3.5 5v6M5.5 5v6M3.5 8h2M4.5 11v8M20.5 5c-1.5 1.5-2 3.5-2 6h2v8"/></svg>'
+		};
+		var tiles = function (names) {
+			return '<div class="hw2-tiles">' + names.map(function (n) { return '<div class="hw2-tile">' + IC[n] + '<span>' + n + '</span></div>'; }).join('') + '</div>';
+		};
 		w.innerHTML =
-			'<div class="cm-hw" role="dialog" aria-modal="true"><h3>How does it work?</h3>' +
-			'<p class="hw-step"><b>Step 1:</b> Choose event/events for each invitation link</p>' +
-			'<div class="hw-two">' +
-			'<div class="hw-col"><div class="hw-pill">Invitation link 1</div><div class="hw-arrow">' + ARROW + '</div>' + mini(4) +
-			'<p class="hw-t">Has cards for all of your chosen events</p><p class="hw-s">(Send it to everyone)</p></div>' +
-			'<div class="hw-col"><div class="hw-pill">Invitation link 2</div><div class="hw-arrow">' + ARROW + '</div>' + mini(2) +
-			'<p class="hw-t">Has only 2 cards, for the only two events that you selected</p><p class="hw-s">(Send it to Ali, who is only invited to two events)</p></div>' +
+			'<div class="hw2" role="dialog" aria-modal="true" aria-label="How it works"><h3>How It Works</h3>' +
+			'<p class="hw2-sub">Create a different invitation link for each group of guests.</p>' +
+			'<div class="hw2-two">' +
+			'<div class="hw2-box"><div class="hw2-card"><h4>Invitation Link 1</h4><span class="hw2-tag">All events selected</span>' + tiles(['Mehndi', 'Baraat', 'Walima']) + '</div>' +
+			'<div class="hw2-arrow">' + ARROW + '</div>' +
+			'<div class="hw2-url"><b>Link 1:</b> ali-weds-sara/group=all-events/</div>' +
+			'<div class="hw2-arrow">' + ARROW + '</div>' +
+			'<p class="hw2-send">Send this link to 50 guests who are invited to all events.</p></div>' +
+			'<div class="hw2-box"><div class="hw2-card"><h4>Invitation Link 2</h4><span class="hw2-tag green">&#9989; Only 2 events selected</span>' + tiles(['Baraat', 'Walima']) + '</div>' +
+			'<div class="hw2-arrow">' + ARROW + '</div>' +
+			'<div class="hw2-url"><b>Link 2:</b> ali-weds-sara/group=baraat&amp;walima/</div>' +
+			'<div class="hw2-arrow">' + ARROW + '</div>' +
+			'<p class="hw2-send">Send this link to 20 guests who are invited to Baraat &amp; Walima only.</p></div>' +
 			'</div>' +
-			'<ul class="hw-list">' +
-			'<li><span>&#9989;</span> Link created</li>' +
-			'<li><span>&#9989;</span> Personal dashboard provided</li>' +
-			'<li><span>&#9989;</span> Edit anything anytime</li>' +
-			'<li><span>&#9989;</span> Create as many invitation links as you want</li>' +
-			'</ul>' +
-			'<div style="text-align:center;margin-top:16px"><button type="button" class="cm-ok">Got it</button></div></div>';
+			'<ul class="hw2-list"><li>&#9989; Personal dashboard provided</li><li>&#9989; Edit anything anytime</li><li>&#9989; Create as many invitation links as you like</li></ul>' +
+			'<div style="text-align:center;margin-top:18px"><button type="button" class="cm-ok">Got it</button></div></div>';
 		w.addEventListener('click', function (e) {
 			var t = e.target;
 			if (t === w || (t.closest && t.closest('.cm-ok'))) w.remove();
@@ -248,60 +284,52 @@
 		addCss();
 		var m = o.mount;
 		m.classList.add('lk');
-		var items = []; // { k, id, cards, done, dd, q, err }
+		var items = []; // { k, id, cards, dd, q, err } : one box per extra link (Invitation Link 2, 3, ...)
 		var seq = 0;
 		function evs() { return o.getEvents() || []; }
 		function evIds() { return evs().map(function (e) { return e.id; }); }
 		function nm(id) { var e = evs().filter(function (x) { return x.id === id; })[0]; return e ? e.label : id; }
-		function newDraft() { return { k: 'd' + (++seq), id: null, cards: [], done: false, dd: false, q: '', err: '' }; }
+		function newDraft() { return { k: 'd' + (++seq), id: null, cards: [], dd: false, q: '', err: '' }; }
+		function keyOf(c) { return c.slice().sort().join('+'); }
 		function sync() {
 			var have = {};
 			var ids = evIds();
 			o.getLinks().forEach(function (l) { have[l.id] = l; });
 			items = items.filter(function (it) { return !it.id || have[it.id]; });
-			items.forEach(function (it) { if (it.id && it.done) it.cards = have[it.id].cards.slice(); });
+			items.forEach(function (it) { if (it.id) it.cards = have[it.id].cards.slice(); else it.cards = it.cards.filter(function (c) { return ids.indexOf(c) >= 0; }); });
 			var known = {};
 			items.forEach(function (it) { if (it.id) known[it.id] = 1; });
-			var done = items.filter(function (it) { return it.done; });
-			var rest = items.filter(function (it) { return !it.done; });
+			var saved = items.filter(function (it) { return it.id; });
+			var rest = items.filter(function (it) { return !it.id; });
 			o.getLinks().forEach(function (l) {
-				if (!known[l.id]) done.push({ k: 'd' + (++seq), id: l.id, cards: l.cards.slice(), done: true, dd: false, q: '', err: '' });
+				if (!known[l.id]) saved.push({ k: 'd' + (++seq), id: l.id, cards: l.cards.slice(), dd: false, q: '', err: '' });
 			});
-			items = done.concat(rest);
-			items.forEach(function (it) { if (!it.done) it.cards = it.cards.filter(function (c) { return ids.indexOf(c) >= 0; }); });
-			if (!items.filter(function (it) { return !it.done; }).length && !(done.length)) items.push(newDraft());
+			items = saved.concat(rest);
+			if (!items.length) items.push(newDraft());
 		}
-		function lab(cards) { return label(cards, evs()); }
-		function ph(n) { return n === 2 ? 'e.g, Baraat & Walima' : 'e.g Walima only'; }
+		function ph(n) { return n === 2 ? 'e.g, Baraat & Walima' : 'e.g, Walima only'; }
 		function draw() {
 			sync();
 			var events = evs();
 			var h = '';
-			if (o.showHeading !== false) h += '<h3 class="lk-h">Create Invitation Links</h3>';
-			if (o.showHeading !== false) h += '<p class="lk-sub">Choose which event cards each guest will receive. Each invitation link has a different set of cards.</p>';
-			h += '<div class="lk-box"><div class="lk-top"><b>Invitation link 1</b></div><div class="lk-all"><span class="cm-bx on">&#10003;</span>All events</div><p class="lk-note">This link will show all chosen event cards.</p></div>';
+			if (o.showHeading !== false) h += '<h3 class="lk-h">Create Separate Links for Different Guests</h3><p class="lk-sub">Choose event/events for each Invitation Link</p>';
+			h += '<p class="lk-howrow"><button type="button" class="lk-how" data-lkhow="1">See how it works</button></p>';
+			h += '<div class="lk-box"><b class="lk-bt">Choose events for Invitation Link 1:</b><div class="lk-all"><span class="cm-bx on">&#10003;</span>All events</div><p class="lk-note">This link will display all event cards.</p></div>';
 			if (events.length < 2) {
 				h += '<div class="lk-box"><p class="lk-note" style="margin:0">Choose at least 2 events in Step 2 to create more links. Every guest will get the link with all your events.</p></div>';
 				m.innerHTML = h; return;
 			}
-			var anyOpen = false;
 			items.forEach(function (it, ix) {
 				var n = ix + 2;
-				var top = '<div class="lk-top"><b>' + (it.done ? 'Invitation link ' + n : 'Create another invitation link') + '</b>' + (ix === 0 ? '<button type="button" class="lk-how" data-lkhow="1">See how it works</button>' : '') + '</div>';
-				if (it.done) {
-					h += '<div class="lk-box" data-lkk="' + it.k + '">' + top + '<div class="lk-sum"><span>&#9989; ' + esc(lab(it.cards)) + '</span><button type="button" class="lk-mini" data-lkedit="' + it.k + '">Edit</button><button type="button" class="lk-mini" data-lkdel="' + it.k + '">Remove</button></div></div>';
-					return;
-				}
-				anyOpen = true;
-				h += '<div class="lk-box" data-lkk="' + it.k + '">' + top +
-					'<p class="lk-lab">Select the event or events that this link will show:</p>' +
-					'<div class="lk-fld"><input class="lk-q" type="text" data-lkq="' + it.k + '" placeholder="' + esc(ph(n)) + '" autocomplete="off" value="' + esc(it.q) + '" aria-label="Search events"><button type="button" class="lk-car" data-lkcar="' + it.k + '" aria-label="Show events">' + (it.dd ? '&#9652;' : '&#9662;') + '</button></div>' +
+				h += '<div class="lk-box" data-lkk="' + it.k + '"><b class="lk-bt">Choose events for Invitation Link ' + n + ':</b>' +
+					'<div class="lk-fld"><input class="lk-q" type="text" data-lkq="' + it.k + '" placeholder="' + esc(ph(n)) + '" autocomplete="off" value="' + esc(it.q) + '" aria-label="Choose events for Invitation Link ' + n + '"><button type="button" class="lk-car" data-lkcar="' + it.k + '" aria-label="Show events">' + (it.dd ? '&#9652;' : '&#9662;') + '</button></div>' +
 					(it.dd ? '<div class="lk-dd" data-lkdd="' + it.k + '">' + ddRows(it) + '</div>' : '') +
 					'<div class="lk-pills" data-lkpl="' + it.k + '">' + pills(it) + '</div>' +
-					(it.err ? '<p class="lk-err">' + esc(it.err) + '</p>' : '') +
-					'<div class="lk-act"><button type="button" class="lk-done" data-lkdone="' + it.k + '">Done</button>' + (o.doneNote ? '<span class="lk-note">' + esc(o.doneNote) + '</span>' : '') + '</div></div>';
+					'<p class="lk-err" data-lker="' + it.k + '"' + (it.err ? '' : ' hidden') + '>' + esc(it.err) + '</p>' +
+					(it.id || ix > 0 ? '<button type="button" class="lk-rm" data-lkdel="' + it.k + '">Remove this link</button>' : '') + '</div>';
 			});
-			if (!anyOpen) h += '<button type="button" class="lk-add" data-lknew="1">+ Create another link</button>';
+			var last = items[items.length - 1];
+			if (last && last.id) h += '<button type="button" class="lk-add" data-lknew="1">+Create Invitation Link ' + (items.length + 2) + '</button>';
 			m.innerHTML = h;
 		}
 		function ddRows(it) {
@@ -325,6 +353,23 @@
 			if (dd) dd.innerHTML = ddRows(it);
 			var pl = box.querySelector('[data-lkpl]');
 			if (pl) pl.innerHTML = pills(it);
+			var er = box.querySelector('[data-lker]');
+			if (er) { er.textContent = it.err; er.hidden = !it.err; }
+		}
+		// the chosen events are saved as soon as they are valid; returns false when this choice is not allowed
+		function commit(it, cards) {
+			cards = ordered(cards);
+			if (!cards.length) {
+				if (it.id && o.remove) { var r = o.remove(it.id); if (r === false) return false; }
+				it.id = null; it.cards = [];
+				return true;
+			}
+			if (cards.length >= evIds().length) { it.err = 'That is the same as Invitation Link 1 (all events). Please leave at least one event out.'; return false; }
+			if (o.getLinks().some(function (l) { return l.id !== it.id && keyOf(l.cards) === keyOf(cards); })) { it.err = 'You already have a link with these events.'; return false; }
+			it.err = '';
+			if (it.id) o.update(it.id, cards); else { var nid = o.add(cards); if (!nid) return false; it.id = nid; }
+			it.cards = cards;
+			return true;
 		}
 		m.addEventListener('input', function (e) {
 			var k = e.target.getAttribute && e.target.getAttribute('data-lkq');
@@ -350,34 +395,22 @@
 			if (t.hasAttribute('data-lkpick')) {
 				var box = t.closest('[data-lkk]'); it = find(box.getAttribute('data-lkk'));
 				var id = t.getAttribute('data-lkpick'); var i = it.cards.indexOf(id);
-				if (i >= 0) it.cards.splice(i, 1); else it.cards.push(id);
-				it.cards = ordered(it.cards); it.err = '';
-				partial(it);
+				var next = it.cards.slice();
+				if (i >= 0) next.splice(i, 1); else next.push(id);
+				if (commit(it, next)) { it.cards = ordered(next); it.err = ''; draw(); }
+				else partial(it);
 				return;
 			}
 			if (t.hasAttribute('data-lkunpick')) {
 				it = find(t.closest('[data-lkk]').getAttribute('data-lkk'));
-				it.cards = it.cards.filter(function (c) { return c !== t.getAttribute('data-lkunpick'); }); it.err = '';
-				partial(it); return;
+				var rest = it.cards.filter(function (c) { return c !== t.getAttribute('data-lkunpick'); });
+				if (commit(it, rest)) { it.cards = ordered(rest); it.err = ''; draw(); } else partial(it);
+				return;
 			}
-			if (t.hasAttribute('data-lkedit')) { it = find(t.getAttribute('data-lkedit')); it.done = false; it.dd = false; it.q = ''; it.err = ''; draw(); return; }
 			if (t.hasAttribute('data-lkdel')) {
 				it = find(t.getAttribute('data-lkdel'));
 				if (it.id && o.remove) { var r = o.remove(it.id); if (r === false) return; }
 				items = items.filter(function (x) { return x !== it; });
-				draw(); return;
-			}
-			if (t.hasAttribute('data-lkdone')) {
-				it = find(t.getAttribute('data-lkdone'));
-				var cards = ordered(it.cards);
-				var key = function (c) { return c.slice().sort().join('+'); };
-				if (!cards.length) it.err = 'Please choose at least one event for this link.';
-				else if (cards.length >= evIds().length) it.err = 'This is the same as Invitation link 1 (all events). Please leave at least one event out.';
-				else if (o.getLinks().some(function (l) { return l.id !== it.id && key(l.cards) === key(cards); })) it.err = 'You already have a link with these events.';
-				else it.err = '';
-				if (it.err) { draw(); return; }
-				if (it.id) o.update(it.id, cards); else { var nid = o.add(cards); if (!nid) { draw(); return; } it.id = nid; }
-				it.cards = cards; it.done = true; it.dd = false; it.q = '';
 				draw(); return;
 			}
 		});

@@ -12,8 +12,8 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 		<p class="od-state" id="od-state">Loading your order...</p>
 	</div>
 	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Berkshire+Swash&family=Unna:ital,wght@0,400;0,700;1,600&family=Playfair+Display:wght@600;700&family=Poppins:wght@400;500;600&family=Inter:wght@500;600&family=Nunito:wght@600;700&family=Pinyon+Script&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&display=swap" />
-	<link rel="stylesheet" href="/ih-footer.css?v=3" />
-	<script is:inline src="/ih-footer.js?v=3"></script>
+	<link rel="stylesheet" href="/ih-footer.css?v=4" />
+	<script is:inline src="/ih-footer.js?v=4"></script>
 	<script is:inline src="/ih-combos.js?v=4"></script>
 	<div id="env-root" hidden></div>
 	<script is:inline id="env-config" type="application/json" set:html={JSON.stringify(previewConfig)} />
@@ -916,7 +916,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 				if (window.__ihCards) return res();
 				window.__ihCardsReady = res;
 				var sc = document.createElement('script');
-				sc.src = '/envelope-engine.js?v=34';
+				sc.src = '/envelope-engine.js?v=35';
 				sc.onerror = rej;
 				document.head.appendChild(sc);
 			});
@@ -960,7 +960,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			var add = function (k, t) { n++; a.push({ k: k, t: t, n: n }); };
 			add('couple', 'Couple details');
 			add('events', 'Add events');
-			add('groups', 'Create invitation links');
+			add('groups', 'Create separate links');
 			if (O.guestsOn) add('guests', 'Add/remove guests');
 			add('hosts', 'Add reception hosts card');
 			add('music', 'Add/remove music');
@@ -983,7 +983,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 		function footerPreview() {
 			var f = O.footer || { mode: 'couple', family: '' };
 			if (!window.IHFooter) return '';
-			return window.IHFooter.html({ bride: O.couple.brideName, groom: O.couple.groomName, mode: f.mode, family: f.family, seatRows: O.guestsOn ? [{ label: 'Baraat', n: 1 }, { label: 'Nikah', n: 2 }, { label: 'Mehndi', n: 0 }, { label: 'Walima', n: 0 }] : [] });
+			return window.IHFooter.html({ layout: 'm', bride: O.couple.brideName, groom: O.couple.groomName, mode: f.mode, family: f.family, seatRows: O.guestsOn ? [{ label: 'Baraat', n: 1 }, { label: 'Nikah', n: 2 }, { label: 'Mehndi', n: 0 }, { label: 'Walima', n: 0 }] : [] });
 		}
 		function musicBody() {
 			var lib = (CFG.design && CFG.design.musicLibrary) || [];
@@ -1001,7 +1001,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 		var PAGE_INFO = {
 			couple: ['Couple details', 'These names appear on all your cards.'],
 			events: ['Add events', 'Change the date, time and venue, remove an event, or add a new one. New cards are made for you automatically.'],
-			groups: ['Create invitation links', 'Choose which event cards each guest will receive. Each invitation link has a different set of cards.'],
+			groups: ['Create Separate Links for Different Guests', 'Choose event/events for each Invitation Link'],
 			guests: ['Add/remove guests', 'Add guests to each invitation link. Everyone gets a personal link and a greeting card with their name.'],
 			hosts: ['Add reception hosts card', 'Add the hosts\' names and phone numbers, or remove the card.'],
 			music: ['Add/remove music', ''],
@@ -2116,7 +2116,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 	.od-gnew-b { margin-top: 20px; }
 	.od-addrow { margin: 0 0 16px; }
 	.ag-hint { font-size: 12px; color: #7a6a58; margin: 0 0 8px; line-height: 1.5; }
-	.ft-pv { max-width: 460px; margin: 0 auto; border-radius: 16px; overflow: hidden; }
+	.ft-pv { max-width: 420px; margin: 0 auto; border-radius: 16px; overflow: hidden; }
 	.od-start { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 8px; width: min(100%, 330px); aspect-ratio: 1 / 1; box-sizing: border-box; background: #FBF3E4; border: 1px solid #EBD9BC; border-radius: 20px; padding: 26px 24px; margin: 6px auto 26px; }
 	.od-start-t { font: 600 14px 'Poppins', sans-serif; color: #B8793C; margin-top: 6px; }
 	.od-start h3 { font: 700 1.25rem 'Playfair Display', serif; color: #1A1A1A; margin: 0 0 6px; }

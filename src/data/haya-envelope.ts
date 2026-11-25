@@ -5,10 +5,10 @@ export const hayaEnvelope = {
 	background: '#fbf3e4', // page colour (cream), shown until the silk pictures load
 	backgroundImage: '/haya-bg.jpg?v=4', // silk background on phones (9:16)
 	backgroundImageWide: '/haya-bg-wd.jpg?v=3', // silk background on laptops (16:9)
-	footerBackground: '#1d4a30', // closing section and the strip that rises after the tap
+	footerBackground: '#071c0e', // closing section and the strip that rises after the tap
 	stageMaxWidth: 430, // widest the invitation column gets on a laptop (px)
 
-	welcome: { text: 'You are invited!', font: 'Berkshire Swash', color: '#276041', size: 'clamp(1.7rem, 7.6vw, 2.3rem)', gap: 14 },
+	welcome: { text: "You're Warmly Invited to Our Celebration!", font: 'Berkshire Swash', color: '#276041', size: 'clamp(1.7rem, 7.6vw, 2.3rem)', gap: 14 },
 	hint: { text: 'Tap the envelope to open', openText: 'Tap the cards to read', font: 'Unna', color: '#5a1016', size: '1.1rem' },
 
 	footer: {
@@ -102,6 +102,8 @@ export const hayaEnvelope = {
 		settle: 0.6,
 		row: 1.0, // the pile spreading into the row of cards (and back)
 		rowStagger: 0.1,
+		rowOpen: 1.9, // opening: each card gliding from the pile to the screen (seconds)
+		rowOpenStagger: 0.16,
 		openSpeed: 1, // 1 = as written, 0.8 = slower
 		closeSpeed: 1,
 	},

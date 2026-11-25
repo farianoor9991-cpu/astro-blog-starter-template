@@ -10,25 +10,6 @@
 	var first = function (n) {
 		return String(n || '').trim().split(/\s+/)[0] || '';
 	};
-	// a thin line, a small diamond and two dots, then a thin line (fades out at both ends)
-	var divider = function (id) {
-		return (
-			'<svg class="ihf-div" viewBox="0 0 300 16" aria-hidden="true"><defs><linearGradient id="' + id + 'a" x1="0" x2="1"><stop offset="0" stop-color="#d9b676" stop-opacity="0"/><stop offset="1" stop-color="#d9b676"/></linearGradient>' +
-			'<linearGradient id="' + id + 'b" x1="0" x2="1"><stop offset="0" stop-color="#d9b676"/><stop offset="1" stop-color="#d9b676" stop-opacity="0"/></linearGradient></defs>' +
-			'<line x1="6" y1="8" x2="128" y2="8" stroke="url(#' + id + 'a)" stroke-width="1"/>' +
-			'<line x1="172" y1="8" x2="294" y2="8" stroke="url(#' + id + 'b)" stroke-width="1"/>' +
-			'<path d="M150 1.5 L156.5 8 L150 14.5 L143.5 8 Z" fill="none" stroke="#d9b676" stroke-width="1"/>' +
-			'<path d="M150 4.6 L153.4 8 L150 11.4 L146.6 8 Z" fill="#d9b676"/>' +
-			'<circle cx="135" cy="8" r="1.6" fill="#d9b676"/><circle cx="165" cy="8" r="1.6" fill="#d9b676"/></svg>'
-		);
-	};
-	// the small ornament that sits on the top edge of the frame
-	var crest =
-		'<svg class="ihf-crest" viewBox="0 0 120 30" aria-hidden="true" fill="none" stroke="#d9b676" stroke-width="1.1" stroke-linecap="round">' +
-		'<path d="M60 3 L66 15 L60 27 L54 15 Z" fill="#d9b676" fill-opacity=".9"/>' +
-		'<path d="M52 15 C44 6 30 6 22 13 C30 11 40 13 46 17 C40 20 30 21 22 17 C30 24 44 24 52 15Z"/>' +
-		'<path d="M68 15 C76 6 90 6 98 13 C90 11 80 13 74 17 C80 20 90 21 98 17 C90 24 76 24 68 15Z"/>' +
-		'<circle cx="12" cy="15" r="1.8" fill="#d9b676" stroke="none"/><circle cx="108" cy="15" r="1.8" fill="#d9b676" stroke="none"/></svg>';
 	// "Baraat & Walima" / "Mehndi, Baraat & Walima"
 	var joinNames = function (a) {
 		return a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' & ' + a[a.length - 1];
@@ -48,32 +29,101 @@
 		if (full.length) specific.push({ text: joinNames(full) + ': Full Family' });
 		return specific;
 	};
+	/* ---- layout: positions come from her sample images (design pixels), then everything is scaled to the real width ---- */
+	var WIDE_Q = '(min-width: 700px) and (orientation: landscape)';
+	var PD = { W: 1920, H: 1080, nameY: 232, nameMax: 1000, resY: 442, l1: 530, l2: 602, maxLine: 1250, brandY: 965, brandFs: 40 };
+	var PM = { W: 1080, H: 1500, nameY: 405, nameMax: 880, resY: 648, l1: 735, l2: 805, maxLine: 880, brandY: 1360, brandFs: 50 };
+	var FS_NAME = 65, FS_RES = 37.6, FS_EV = 34.4;
+	var fit = function (root) {
+		if (!root) return;
+		var box = root.querySelector('.ihf2-in');
+		if (!box) return;
+		var force = box.getAttribute('data-force');
+		var wide = force ? force === 'd' : window.matchMedia(WIDE_Q).matches;
+		var P = wide ? PD : PM;
+		var bw = box.clientWidth;
+		if (!bw) return;
+		var k = bw / P.W; // design px > real px
+		var place = function (el, y, fs) {
+			el.style.top = (y / P.H) * 100 + '%';
+			el.style.fontSize = fs * k + 'px';
+		};
+		var widthOf = function (el) { return el.getBoundingClientRect().width / k; };
+		// names (long names get a smaller size)
+		var nm = box.querySelector('.ihf2-names');
+		if (nm) {
+			place(nm, P.nameY, FS_NAME);
+			var w0 = widthOf(nm);
+			if (w0 > P.nameMax) place(nm, P.nameY, Math.max(26, (FS_NAME * P.nameMax) / w0));
+		}
+		// "Reserved In Your Honour" + the seat lines: the block keeps the same top and bottom as the sample;
+		// fewer lines are spaced evenly, more lines get a smaller font
+		var res = box.querySelector('.ihf2-res');
+		var ls = box.querySelectorAll('.ihf2-l');
+		var n = ls.length;
+		if (res && n) {
+			var resY = P.resY, ys = [], fs = FS_EV;
+			if (n === 1) {
+				var c = (P.resY + P.l2) / 2;
+				var g = Math.min(P.l2 - P.resY, 1.25 * (P.l1 - P.resY));
+				resY = c - g / 2;
+				ys = [c + g / 2];
+			} else if (n === 2) {
+				ys = [P.l1, P.l2];
+			} else {
+				var bottom = P.l2 + 14 * (n - 2);
+				var pitch = (bottom - P.l1) / (n - 1);
+				fs = Math.max(15, Math.min(FS_EV, pitch / 1.5));
+				for (var i = 0; i < n; i++) ys.push(P.l1 + i * pitch);
+			}
+			place(res, resY, FS_RES);
+			var worst = 1;
+			Array.prototype.forEach.call(ls, function (el, i) {
+				place(el, ys[i], fs);
+				var w = widthOf(el);
+				if (w > P.maxLine) worst = Math.min(worst, P.maxLine / w);
+			});
+			if (worst < 1) Array.prototype.forEach.call(ls, function (el, i) { place(el, ys[i], fs * worst); });
+		}
+		var br = box.querySelector('.ihf2-brand');
+		if (br) place(br, P.brandY, P.brandFs);
+	};
+	var fitAll = function () {
+		Array.prototype.forEach.call(document.querySelectorAll('.ihf2'), fit);
+	};
+	var wired = false;
+	var init = function (root) {
+		if (!root) return;
+		fit(root);
+		if (typeof ResizeObserver !== 'undefined' && !root._ro) {
+			root._ro = new ResizeObserver(function () { fit(root); });
+			root._ro.observe(root.querySelector('.ihf2-in'));
+		}
+		if (!wired) {
+			wired = true;
+			window.addEventListener('resize', fitAll);
+			if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitAll);
+		}
+		if (document.fonts && document.fonts.load) document.fonts.load("65px 'Berkshire Swash'").then(function () { fit(root); });
+	};
 	window.IHFooter = {
 		seatLines: seatLines,
+		fit: init,
 		html: function (o) {
 			o = o || {};
 			var mode = o.mode === 'family' || o.mode === 'none' ? o.mode : 'couple';
 			var names = first(o.groom) + (first(o.bride) && first(o.groom) ? ' & ' : '') + first(o.bride);
 			if (mode === 'family') names = String(o.family || '').trim() || names;
+			if (mode === 'none') names = 'With Love & Warm Regards';
 			var lines = seatLines(o.seatRows);
-			var top;
-			if (mode === 'none') {
-				// no names: the greeting itself becomes the big script line
-				top = '<h2 class="ihf-names ihf-big">With Love<span class="ihf-amp">&amp;</span>Warm Regards</h2>';
-			} else {
-				var len = names.length;
-				top =
-					'<p class="ihf-top"><i></i><span>With Love &amp; Warm Regards</span><i></i></p>' +
-					'<h2 class="ihf-names' + (len > 22 ? ' ihf-xs' : len > 15 ? ' ihf-sm' : '') + '">' + esc(names) + '</h2>';
-			}
-			var id = 'ihd' + Math.floor(Math.random() * 1e6);
+			var v = lines.length ? 'seats' : 'family'; // everyone Full Family: the small picture instead of the seat lines
+			var force = o.layout === 'd' || o.layout === 'm' ? ' data-force="' + o.layout + '"' : '';
 			return (
-				'<div class="ihf"><div class="ihf-frame">' + crest +
-				top + divider(id + 'x') +
-				(lines.length ? '<p class="ihf-seats">Reserved in Your Honour</p><ul class="ihf-sl">' + lines.map(function (l) { return '<li>' + esc(l.text) + '</li>'; }).join('') + '</ul>' : '') +
-				'<p class="ihf-msg">Your presence will make our celebration even more special!</p>' +
-				divider(id + 'y') +
-				'<a class="ihf-brand" href="/"><span class="ihf-by">Created by</span><span class="ihf-bn">Invite<b>Heaven</b></span></a>' +
+				'<div class="ihf2"><div class="ihf2-in v-' + v + (o.layout ? ' f-' + o.layout : '') + '"' + force + '>' +
+				'<h2 class="ihf2-t ihf2-names">' + esc(names) + '</h2>' +
+				(lines.length ? '<p class="ihf2-t ihf2-res">Reserved In Your Honour</p>' + lines.map(function (l) { return '<p class="ihf2-t ihf2-l">' + esc(l.text) + '</p>'; }).join('') : '') +
+				'<a class="ihf2-brand" href="/"><span class="ihf2-by">Created by</span><span class="ihf2-bn">Invite<b>Heaven</b></span></a>' +
+				'<img class="ihf2-hook" alt="" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" onload="window.IHFooter.fit(this.closest(\'.ihf2\'))">' +
 				'</div></div>'
 			);
 		},

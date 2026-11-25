@@ -1264,12 +1264,22 @@
 			return { cx: c.cx, cy: c.cy, s: r.width / cardW };
 		});
 	};
-	var fly = function (flyers, targets, done) {
+	var easeGlide = bez(0.3, 0.06, 0.18, 1); // the cards gliding to the screen: very soft start, long smooth landing
+	var fly = function (flyers, targets, done, slow) {
 		if (flyTl) flyTl.kill();
 		flyTl = gsap.timeline({ onComplete: done });
 		flyers.forEach(function (f, i) {
 			var t = targets[i];
-			flyTl.to(f.el, { x: t.cx - f.cx, y: t.cy - f.cy, scale: t.s, rotation: t.rot || 0, duration: D.row, ease: easeDown }, i * D.rowStagger);
+			if (!slow) {
+				flyTl.to(f.el, { x: t.cx - f.cx, y: t.cy - f.cy, scale: t.s, rotation: t.rot || 0, duration: D.row, ease: easeDown }, i * D.rowStagger);
+				return;
+			}
+			// opening: slower and one after another, with a little depth (each card swells very slightly on its way, then settles)
+			var at = i * (D.rowOpenStagger || 0.16);
+			var dur = D.rowOpen || 1.9;
+			flyTl.to(f.el, { x: t.cx - f.cx, y: t.cy - f.cy, rotation: t.rot || 0, duration: dur, ease: easeGlide }, at);
+			flyTl.to(f.el, { scale: t.s * 1.035, duration: dur * 0.62, ease: 'sine.inOut' }, at);
+			flyTl.to(f.el, { scale: t.s, duration: dur * 0.38, ease: 'sine.out' }, at + dur * 0.62);
 		});
 	};
 
@@ -1303,7 +1313,7 @@
 			vw.classList.remove('vw-hold');
 			state = 'open';
 			closeBtn.classList.add('show');
-		});
+		}, true);
 	}
 	// close: row > pile
 	function fromRow() {
