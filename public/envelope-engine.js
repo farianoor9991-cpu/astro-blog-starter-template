@@ -1344,17 +1344,32 @@
 		cards.forEach(function (c) {
 			ctl.to(c.el, { y: c.pose.pile.out, x: 0, scale: 1, rotation: 0, duration: D.cardDown, ease: easeDown }, 0);
 		});
-		ctl.call(
-			function () {
-				cards.forEach(function (c) {
-					cardsEl.appendChild(c.el);
-				});
-			},
-			null,
-			D.cardDown
-		);
+		// each card goes back behind the pocket front only once it has dropped to the same height where it came out in front
+		// (moving them all at the top made the stack jump behind the raised flap for a moment = the blink)
 		cards.forEach(function (c) {
-			ctl.to(c.el, { y: c.pose.lift.y, duration: D.cardDown, ease: easeDown }, D.cardDown + c.pose.k * step);
+			var swap = c.pose.lift.y + (c.pose.pile.out - c.pose.lift.y) * 0.85;
+			var done = false;
+			ctl.to(
+				c.el,
+				{
+					y: c.pose.lift.y,
+					duration: D.cardDown,
+					ease: easeDown,
+					onUpdate: function () {
+						if (!done && gsap.getProperty(c.el, 'y') >= swap) {
+							done = true;
+							cardsEl.appendChild(c.el);
+						}
+					},
+					onComplete: function () {
+						if (!done) {
+							done = true;
+							cardsEl.appendChild(c.el);
+						}
+					},
+				},
+				D.cardDown + c.pose.k * step
+			);
 		});
 	}
 
@@ -1583,17 +1598,8 @@
 			);
 		})
 		.catch(function () {});
-	var loadEl = document.createElement('div');
-	loadEl.className = 'ev-loading';
-	loadEl.textContent = 'Preparing your invitation\u2026';
-	document.body.appendChild(loadEl);
-	Promise.race([Promise.all([firstImgs, cardsDecoded]), wait(6000)]).then(function () {
-		return wait(150);
-	}).then(function () {
-		loadEl.classList.add('gone');
-		setTimeout(function () {
-			if (loadEl.parentNode) loadEl.parentNode.removeChild(loadEl);
-		}, 500);
+	// no visible "preparing" screen: the tray and envelope come in as soon as their own pictures are ready (cards keep decoding quietly)
+	Promise.race([firstImgs, wait(2500)]).then(function () {
 		stage.classList.add('ev-in');
 		fireConfetti(); // confetti falls as soon as the invitation opens, once
 		wait((TM.hintDelay || 0) + 900).then(function () {

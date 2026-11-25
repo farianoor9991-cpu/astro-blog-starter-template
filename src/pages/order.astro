@@ -11,7 +11,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 	<div class="od" id="od">
 		<p class="od-state" id="od-state">Loading your order...</p>
 	</div>
-	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Berkshire+Swash&family=Unna:ital,wght@0,400;0,700;1,600&family=Playfair+Display:wght@600;700&family=Poppins:wght@400;500;600&family=Pinyon+Script&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&display=swap" />
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Berkshire+Swash&family=Unna:ital,wght@0,400;0,700;1,600&family=Playfair+Display:wght@600;700&family=Poppins:wght@400;500;600&family=Inter:wght@500;600&family=Nunito:wght@600;700&family=Pinyon+Script&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&display=swap" />
 	<link rel="stylesheet" href="/ih-footer.css?v=3" />
 	<script is:inline src="/ih-footer.js?v=3"></script>
 	<script is:inline src="/ih-combos.js?v=4"></script>
@@ -437,10 +437,14 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			if (!g.id) return '<div class="gr-dt tb-row" data-gi="' + i + '"><p class="hint" style="margin:0;padding:14px 18px">' + (navProblem() ? 'This guest cannot be saved yet. ' + esc(navProblem()) : 'Saving this guest. Their personal link and message will appear here in a moment.') + '</p></div>';
 			var link = guestLink(g);
 			var msg = message(g.name, link);
-			return '<div class="gr-dt tb-row" data-gi="' + i + '"><div class="gr-dl"><div class="gr-edit"><label>Guest name ' + title + '</label><label>Phone number <input type="tel" inputmode="tel" class="phin" data-gphone="' + i + '" value="' + esc(g.phone || '') + '" placeholder="03XX XXXXXXX" maxlength="16" aria-label="Phone number"></label><button type="button" class="rm-t" data-grm="' + i + '">Remove guest</button></div>' +
+			var wa = page === 'guests'
+				? '<a class="qa wa2 wa" target="_blank" rel="noopener" href="' + esc(waUrl(msg, g.phone)) + '" aria-label="WhatsApp" title="WhatsApp">' + WA + '</a>'
+				: '<a class="qa" target="_blank" rel="noopener" href="' + esc(waUrl(msg, g.phone)) + '">' + WA + '<span>WhatsApp</span></a>';
+			var op = '<a class="qa op" target="_blank" rel="noopener" href="' + esc(link) + '">' + icon('open') + '<span>' + (page === 'guests' ? 'Open' : 'Open invitation') + '</span></a>';
+			return '<div class="gr-dt tb-row" data-gi="' + i + '"><div class="gr-dl"><div class="gr-edit"><span class="gr-el">Guest name</span><span class="gr-el">Phone number</span><div class="gr-ef">' + title + '</div><div class="gr-ef"><input type="tel" inputmode="tel" class="phin" data-gphone="' + i + '" value="' + esc(g.phone || '') + '" placeholder="03XX XXXXXXX" maxlength="16" aria-label="Phone number"><button type="button" class="rm-t" data-grm="' + i + '">Remove guest</button></div></div>' +
 				'<div class="gr-lab" style="margin-top:14px">Invitation message</div><div class="msg">' + msgHtml(msg) + '</div>' +
 				'<div class="gr-lab" style="margin-top:12px">' + icon('link') + ' Invitation URL</div><button type="button" class="urlb" data-copy="' + esc(link) + '" title="Click to copy">' + '<span class="url">' + esc(link) + '</span>' + icon('link') + '</button></div>' +
-				'<div class="gr-dr"><div class="gr-lab">Quick actions</div><div class="gr-qa"><button type="button" class="qa" data-copy="' + esc(link) + '">' + icon('link') + '<span>Copy link</span></button><a class="qa wa2 wa" target="_blank" rel="noopener" href="' + esc(waUrl(msg, g.phone)) + '" aria-label="WhatsApp" title="WhatsApp">' + WA + '</a><button type="button" class="qa" data-copy="' + esc(msg) + '" data-msg="1">' + icon('msg') + '<span>Copy message</span></button><a class="qa op" target="_blank" rel="noopener" href="' + esc(link) + '">' + icon('open') + '<span>Open</span></a></div></div></div>';
+				'<div class="gr-dr"><div class="gr-lab">Quick actions</div><div class="gr-qa"><button type="button" class="qa" data-copy="' + esc(link) + '">' + icon('link') + '<span>Copy link</span></button>' + wa + '<button type="button" class="qa" data-copy="' + esc(msg) + '" data-msg="1">' + icon('msg') + '<span>Copy message</span></button>' + op + '</div></div></div>';
 		}
 		function groupSel(i) {
 			var g = O.guests[i];
@@ -451,7 +455,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 		function guestRow(i) {
 			var g = O.guests[i];
 			var open = !!openD[i];
-			return '<div class="gr-row' + (open ? ' open' : '') + '"><div class="gr-c gr-n"><button type="button" class="nm" data-dt="' + i + '">' + esc(g.name) + '</button></div><div class="gr-c gr-g" data-l="Group">' + groupSel(i) + '</div><div class="gr-c gr-s" data-l="Seats Details">' + seatCell(i) + '</div><div class="gr-c gr-a"><button type="button" class="vd" data-dt="' + i + '" aria-expanded="' + open + '">' + (open ? 'Hide details' : 'View details') + CHEV + '</button></div></div>' + (open ? guestDetails(i) : '');
+			return '<div class="gr-row' + (open ? ' open' : '') + '"><div class="gr-c gr-n"><button type="button" class="nm" data-dt="' + i + '">' + esc(g.name) + '</button></div><div class="gr-c gr-g" data-l="Group">' + groupSel(i) + '</div><div class="gr-c gr-s" data-l="Seats Details">' + seatCell(i) + '</div><div class="gr-c gr-a"><button type="button" class="vd" data-dt="' + i + '" aria-expanded="' + open + '">' + (page === 'guests' ? (open ? 'Hide<br>details' : 'View<br>details') : (open ? 'Hide details' : 'View details')) + CHEV + '</button></div></div>' + (open ? guestDetails(i) : '');
 		}
 		function guestsListHtml() { return guestTable(); }
 		function guestsListHtmlOld() {
@@ -586,10 +590,27 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			if (mobOpen === null || !O.guests[mobOpen]) return '';
 			var i = mobOpen;
 			var g = O.guests[i];
-			var h = '<div class="gm-shw" data-gsx="1"><div class="gm-sh" role="dialog" aria-label="Guest details"><div class="gm-grab"></div><div class="gm-shh"><b>' + esc(g.name) + '</b><button type="button" class="gm-x" data-gsx="1" aria-label="Close">&times;</button></div>';
-			h += '<div class="gm-fld"><span class="gr-lab">Invitation group</span>' + groupSel(i) + '</div><div class="gm-fld"><span class="gr-lab">Seats Details</span>' + seatCell(i) + '</div>';
-			h += guestDetails(i) + '</div></div>';
-			return h;
+			var I = function (d) { return '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + d + '</svg>'; };
+			var IC = {
+				grp: I('<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.3"/><path d="M3 19c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><path d="M15.5 14c3 0 5.5 1.7 5.5 4.5"/>'),
+				ph: I('<path d="M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2z"/>'),
+				seat: I('<path d="M7 11V6a2 2 0 012-2h6a2 2 0 012 2v5"/><path d="M5 11h14v4H5z"/><path d="M7 15v5M17 15v5"/>')
+			};
+			var shw = function (inner) { return '<div class="gm-shw" data-gsx="1"><div class="gm-sh" role="dialog" aria-label="Guest details"><div class="gm-top"><span class="gm-eyebrow">GUEST DETAILS</span><i></i><button type="button" class="gm-x" data-gsx="1" aria-label="Close">&times;</button></div>' + inner + '</div></div>'; };
+			var nameHtml = '<div class="gm-nm"><span class="gn"><input class="lbl" data-gname="' + i + '" value="' + esc(g.name) + '" aria-label="Guest name" maxlength="45" readonly><span class="gtxt">' + esc(g.name) + '</span><button type="button" class="pen" data-gedit="' + i + '" aria-label="Edit name" title="Edit name">' + PENCIL + '</button></span></div>';
+			if (!g.id) return shw(nameHtml + '<p class="hint" style="padding:6px 4px">' + (navProblem() ? 'This guest cannot be saved yet. ' + esc(navProblem()) : 'Saving this guest. Their personal link and message will appear here in a moment.') + '</p>');
+			var link = guestLink(g);
+			var msg = message(g.name, link);
+			var t = seatSummaryText(g);
+			var h = nameHtml + '<div class="gm-badgerow"><span class="gm-badge"><b>&#10003;</b> Invitation Assigned</span><button type="button" class="rm-t" data-grm="' + i + '">Remove guest</button></div>';
+			h += '<label class="gm-card gm-sel"><span class="gm-ic">' + IC.grp + '</span><span class="gm-ct"><small>Invitation Group</small><b>' + esc(comboTitle(linkOfGuest(g))) + '</b></span><span class="gm-chv">' + CHEV + '</span>' + groupSel(i) + '</label>';
+			h += '<div class="gm-card"><span class="gm-ic">' + IC.ph + '</span><span class="gm-ct"><small>Phone Number</small><input type="tel" inputmode="tel" class="gm-phin" data-gphone="' + i + '" value="' + esc(g.phone || '') + '" placeholder="03XX XXXXXXX" maxlength="16" aria-label="Phone number"></span><span class="gm-chv">' + PENCIL + '</span></div>';
+			h += '<div class="gm-card"><span class="gm-ic">' + IC.seat + '</span><span class="gm-ct"><small>Seats Details</small><b>' + (t ? esc(t) : 'Full Family') + '</b></span><button type="button" class="gm-eb" data-seats="' + i + '">' + PENCIL + ' Edit Seats</button></div>';
+			h += '<div class="gm-card gm-col"><div class="gm-lab">' + icon('msg') + ' Invitation Message</div><div class="msg gm-msg">' + msgHtml(msg) + '</div></div>';
+			h += '<div class="gm-card gm-col"><div class="gm-lab">' + icon('link') + ' Personal Invitation Link</div><div class="gm-linkrow"><span class="url">' + esc(link) + '</span><button type="button" class="gm-cp" data-copy="' + esc(link) + '" aria-label="Copy link">' + icon('link') + '</button></div></div>';
+			h += '<div class="gm-card gm-col gm-qcard"><div class="gm-lab">Quick Actions</div><div class="gm-q3"><button type="button" data-copy="' + esc(link) + '"><span class="gm-qi">' + icon('link') + '</span>Copy Link</button><button type="button" data-copy="' + esc(msg) + '" data-msg="1"><span class="gm-qi">' + icon('msg') + '</span>Copy Message</button><a target="_blank" rel="noopener" href="' + esc(waUrl(msg, g.phone)) + '"><span class="gm-qi gm-wa">' + WA + '</span>Share on WhatsApp</a></div></div>';
+			h += '<a class="gm-open" target="_blank" rel="noopener" href="' + esc(link) + '">' + icon('open') + ' Open Invitation</a>';
+			return shw(h);
 		}
 		function renderSheet() {
 			var el = document.getElementById('od-sheet');
@@ -693,7 +714,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 		}
 		function cf(label, key, pre, hint) {
 			var sm = (CFG.template && CFG.template.sample) || {};
-			var inp = '<input data-c="' + key + '" value="' + esc(O.couple[key]) + '" placeholder="e.g. ' + esc(sm[key] || '') + '" maxlength="80">';
+			var inp = pre ? '<textarea rows="1" class="wrapin" data-c="' + key + '" placeholder="e.g. ' + esc(sm[key] || '') + '" maxlength="80" autocomplete="off">' + esc(O.couple[key]) + '</textarea>' : '<input data-c="' + key + '" value="' + esc(O.couple[key]) + '" placeholder="e.g. ' + esc(sm[key] || '') + '" maxlength="80">';
 			return '<div class="f"><label>' + label + '</label>' + (pre ? '<div class="pre"><span>' + pre + '</span>' + inp + '</div>' : inp) + (hint ? '<p class="hint">' + hint + '</p>' : '') + '</div>';
 		}
 		function coupleBody() {
@@ -702,7 +723,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 				cf('Bride\'s name', 'brideName', '', '') +
 				cf('Bride\'s parents', 'brideParents', 'D/O Mr &amp; Mrs', '');
 		}
-		var evMore = false; // all events shown (otherwise only the first two)
+		var evMore = false; // 'Add an event' box: all remaining events shown (otherwise only two)
 		var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 		var DAYN = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 		function evParts(e) {
@@ -746,23 +767,23 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			var have = {};
 			O.events.forEach(function (e) { have[e.id] = true; });
 			var left = Object.keys(LABELS).filter(function (k) { return !have[k]; });
-			var add = '<div class="od-addev"><b>Add an event</b><div class="chips">' + left.map(function (k) { return '<button type="button" class="chip" data-addstd="' + k + '">+ ' + esc(LABELS[k]) + '</button>'; }).join('') + '</div>';
+			var shown = evMore ? left : left.slice(0, 2);
+			var add = '<div class="od-addev"><b>Add an event</b><div class="chips">' + shown.map(function (k) { return '<button type="button" class="chip" data-addstd="' + k + '">+ ' + esc(LABELS[k]) + '</button>'; }).join('') + (left.length > 2 ? '<button type="button" class="chip chip-more" data-evmore="1">' + (evMore ? 'Show fewer' : '+ more (' + (left.length - 2) + ')') + '</button>' : '') + '</div>';
 			add += '<div class="od-inline"><input id="od-custom" maxlength="24" placeholder="Or write your own, e.g. Rukhsati" autocomplete="off"><button type="button" class="btn-s" id="od-addcustom">Add</button></div></div>';
 			var h = '';
-			var cap = evMore ? O.events.length : 2;
-			O.events.forEach(function (e, i) { if (i < cap) h += evBlock(e, i); });
-			if (O.events.length > 2) h += '<button type="button" class="btn-s ev-more" data-evmore="1">' + (evMore ? 'Show fewer events' : '+ More events (' + (O.events.length - 2) + ')') + '</button>';
+			O.events.forEach(function (e, i) { h += evBlock(e, i); });
 			return '<div class="ev-grid"><div class="ev-main"><section class="od-sec">' + h + '</section></div><aside class="ev-aside"><section class="od-sec">' + add + '</section></aside></div>';
 		}
 		function hostsBody() {
 			if (!hostsOn()) return '<p class="hint">The Reception Hosts card is not in your invitation.</p><button type="button" class="btn-s" data-htoggle="1">Add the Reception Hosts card</button>';
 			var h = '<p class="hint">The Reception Hosts card is part of your invitation. Add the hosts\' names and phone numbers, or remove the card.</p>';
+			if (!O.hosts.length) O.hosts.push({ name: '', phone: '' });
 			O.hosts.forEach(function (x, i) {
 				h += '<div class="od-ev"><div class="f"><label>Name</label><input data-h="' + i + '" data-k="name" value="' + esc(x.name) + '" maxlength="60"></div>';
 				h += '<div class="f"><label>Phone</label><input data-h="' + i + '" data-k="phone" value="' + esc(x.phone) + '" maxlength="25"></div>';
 				h += '<button type="button" class="rm" data-hrm="' + i + '">Remove host</button></div>';
 			});
-			if (O.hosts.length < 6) h += '<button type="button" class="btn-s" id="od-addh">+ Add host</button>';
+			if (O.hosts.length < 6) h += '<button type="button" class="btn-s" id="od-addh">+ Add another host</button>';
 			h += '<div class="od-addev"><button type="button" class="rm" data-htoggle="0">Remove the Reception Hosts card</button></div>';
 			return h;
 		}
@@ -895,7 +916,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 				if (window.__ihCards) return res();
 				window.__ihCardsReady = res;
 				var sc = document.createElement('script');
-				sc.src = '/envelope-engine.js?v=33';
+				sc.src = '/envelope-engine.js?v=34';
 				sc.onerror = rej;
 				document.head.appendChild(sc);
 			});
@@ -1013,6 +1034,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			return ph + '<section class="od-sec od-narrow"><h3 class="sec-t">Preview event cards</h3>' + previewAllBody() + '</section>' + cont;
 		}
 		function render() {
+			setTimeout(function () { fitTA(); }, 0);
 			var y = window.scrollY;
 			var items = navItems();
 			var cur = items.filter(function (x) { return x.k === page; })[0] || items[0];
@@ -1125,6 +1147,10 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			if (er) er.hidden = true;
 			O.guests.push({ id: '', name: tc(r.name), linkId: newLink || O.links[0].id, phone: r.phone, seats: r.seats || 0, seatMap: Object.assign({}, newSeat) });
 			newSeat = {};
+			newLink = O.links[0].id;
+			var nlk = document.getElementById('od-newlink');
+			if (nlk) nlk.value = newLink;
+			inp.dataset.agt = newLink;
 			var nsc = document.getElementById('od-newseat');
 			if (nsc) nsc.innerHTML = newSeatInner();
 			inp.value = '';
@@ -1273,7 +1299,12 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			pv.c.reset = true;
 			pvRefresh();
 		}
+		function fitTA() { document.querySelectorAll('textarea.wrapin').forEach(function (t) { t.style.height = 'auto'; t.style.height = t.scrollHeight + 'px'; }); }
+		root.addEventListener('input', function (ev) { if (ev.target && ev.target.matches && ev.target.matches('textarea.wrapin')) fitTA(); });
+		root.addEventListener('click', function () { setTimeout(fitTA, 0); setTimeout(fitTA, 350); });
+		window.addEventListener('resize', fitTA);
 		root.addEventListener('keydown', function (ev) {
+			if (ev.key === 'Enter' && ev.target && ev.target.matches && ev.target.matches('textarea.wrapin')) ev.preventDefault();
 			if (ev.key === 'Enter' && ev.target && ev.target.id === 'od-newg') { ev.preventDefault(); addFromEntry(); }
 		});
 		root.addEventListener('click', function (ev) {
@@ -1563,14 +1594,14 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			}
 			if (d.addstd !== undefined || b.id === 'od-addcustom') {
 				var ne;
-				if (d.addstd !== undefined) ne = { id: d.addstd, date: '', time: '', venue: (O.events[0] && O.events[0].venue) || '' };
+				if (d.addstd !== undefined) ne = { id: d.addstd, date: '', time: '', venue: '' };
 				else {
 					var ci = document.getElementById('od-custom');
 					var nm = (ci.value || '').trim().replace(/\s+/g, ' ');
 					if (!nm) { ci.focus(); return; }
 					var dup = O.events.filter(function (e) { return evLabel(e).toLowerCase() === nm.toLowerCase(); })[0];
 					if (dup) { alert('You already have an event called ' + nm + '.'); return; }
-					ne = { id: 'x' + Date.now().toString(36), custom: true, label: nm, title: nm, date: '', time: '', venue: (O.events[0] && O.events[0].venue) || '' };
+					ne = { id: 'x' + Date.now().toString(36), custom: true, label: nm, title: nm, date: '', time: '', venue: '' };
 				}
 				O.events.push(ne);
 				O.links.forEach(function (l) { if (l.main) l.cards.push(ne.id); });
@@ -2309,4 +2340,70 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 	@media (max-width: 1000px) { .ev-grid { grid-template-columns: 1fr; } .ev-aside { position: static; order: -1; } }
 	.od-top-m { display: none; }
 	@media (max-width: 1000px) { .od-top-m { display: block; padding: 18px 16px 0; } .od-top-d { display: none; } }
+
+	/* ===== round 12i ===== */
+	.gr-head span { font: 600 13.5px 'Inter', 'Poppins', sans-serif; letter-spacing: .01em; }
+	.gr-row { padding-top: 21px; padding-bottom: 21px; }
+	.gr-row .nm, .gm-l b, .gr-edit .gtxt, .gm-nm .gtxt { font-family: 'Nunito', 'Poppins', sans-serif; }
+	.gr-row .nm { font-weight: 700; }
+	.gr-edit { grid-template-columns: 1fr 1fr; gap: 6px 14px; align-items: start; }
+	.gr-el { font: 500 12px 'Poppins', sans-serif; color: var(--mu); white-space: nowrap; }
+	.gr-ef { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+	.gr-ef .gn { margin-top: 0; }
+	.gr-ef .phin { margin-top: 0; }
+	.gr-edit .gn .gtxt { font-weight: 700; }
+	.gr-qa .qa.wa2 { flex: 0 0 48px; }
+	.ag-main .gr-head, .ag-main .gr-row { grid-template-columns: minmax(250px, 3.6fr) minmax(150px, 1.5fr) minmax(125px, 1.1fr) 84px; gap: 10px; }
+	.ag-main .vd { line-height: 1.25; text-align: left; white-space: normal; }
+	.od-start { width: min(100%, 440px); aspect-ratio: auto; padding: 16px 22px 18px; margin: 2px auto 16px; gap: 6px; }
+	.od-start h3 { margin-bottom: 2px; }
+	.chip-more { background: #fff; border-style: dashed; }
+	textarea.wrapin { flex: 1; min-width: 0; width: 100%; box-sizing: border-box; font: 400 14px 'Poppins', sans-serif; color: #1A1A1A; background: transparent; border: none; padding: 10px 12px; resize: none; overflow: hidden; line-height: 1.4; outline: none; display: block; }
+	.od .pre { align-items: stretch; }
+	.od .pre span { display: flex; align-items: center; }
+	@media (max-width: 999px) {
+		.gs-sortl, .gm-addb.gm-only { font: 500 13px/1.25 'Poppins', sans-serif; }
+		.gm-addb.gm-only { font-weight: 500; }
+		.gm-shw { background: #FFFCF6; align-items: stretch; }
+		.gm-sh { max-height: none; height: 100%; border-radius: 0; background: #FFFCF6; padding: 12px 14px calc(12px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 6px; overflow-y: auto; }
+		.gm-top { display: flex; align-items: center; gap: 12px; }
+		.gm-eyebrow { font: 600 11px 'Poppins', sans-serif; letter-spacing: .22em; color: #8a7a62; }
+		.gm-top i { flex: 1; height: 1px; background: #E5D8BF; }
+		.gm-x { width: 36px; height: 36px; flex: none; }
+		.gm-nm .gn { display: flex; align-items: center; gap: 8px; position: relative; }
+		.gm-nm .gtxt { font: 700 24px/1.15 'Playfair Display', serif; color: #1A1A1A; overflow-wrap: anywhere; }
+		.gm-nm .lbl { display: none; }
+		.gm-nm .lbl:not([readonly]) { display: block; flex: 1; border: 1px solid #D4A276; border-radius: 10px; padding: 8px 10px; font: 600 16px 'Poppins', sans-serif; }
+		.gm-nm .lbl:not([readonly]) ~ .gtxt { display: none; }
+		.gm-nm .pen { position: static; transform: none; flex: none; width: 28px; height: 28px; opacity: .7; }
+		.gm-badgerow { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+		.gm-badge { display: inline-flex; align-items: center; gap: 7px; background: #E6F1E3; color: #2f5a2a; border-radius: 999px; padding: 6px 13px 6px 7px; font: 500 13px 'Poppins', sans-serif; }
+		.gm-badge b { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: #2f7a3a; color: #fff; font-size: 12px; }
+		.gm-sh .rm-t { padding: 4px 2px; font-size: 12px; }
+		.gm-card { position: relative; display: flex; align-items: center; gap: 12px; border: 1px solid #EADFC9; border-radius: 16px; background: #FFFAF1; padding: 8px 12px; min-width: 0; }
+		.gm-card.gm-col { flex-direction: column; align-items: stretch; gap: 6px; }
+		.gm-ic { flex: none; width: 38px; height: 38px; border-radius: 50%; background: #F5E6CC; color: #7a4f24; display: grid; place-items: center; }
+		.gm-ct { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+		.gm-ct small { font: 400 13px 'Poppins', sans-serif; color: #7b7466; }
+		.gm-ct b { font: 600 16px/1.3 'Poppins', sans-serif; color: #1A1A1A; overflow-wrap: anywhere; }
+		.gm-sh input.gm-phin { width: 100%; border: 0 !important; box-shadow: none !important; background: transparent !important; padding: 0 !important; margin: 0 !important; height: auto; min-height: 0; font: 600 16px 'Poppins', sans-serif; color: #1A1A1A; outline: none; }
+		.gm-chv { flex: none; color: #7a4f24; display: grid; place-items: center; }
+		.gm-sel select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; border: 0; font-size: 16px; }
+		.gm-eb { flex: none; display: inline-flex; align-items: center; gap: 6px; border: 1px solid #D4A276; background: #fff; border-radius: 999px; padding: 9px 14px; font: 600 13px 'Poppins', sans-serif; color: #5c4424; }
+		.gm-lab { display: flex; align-items: center; gap: 8px; font: 600 14px 'Poppins', sans-serif; color: #1A1A1A; }
+		.gm-lab svg { width: 18px; height: 18px; color: #7a4f24; }
+		.gm-msg { background: #F6EBD6; border-radius: 12px; padding: 8px 12px; font: 400 13.5px/1.45 'Poppins', sans-serif; color: #3f392f; max-height: 66px; overflow-y: auto; }
+		.gm-msg p { margin: 0 0 3px; }
+		.gm-linkrow { display: flex; align-items: center; gap: 8px; }
+		.gm-linkrow .url { flex: 1; min-width: 0; background: #F6EBD6; border-radius: 12px; padding: 10px 12px; font: 400 13px 'Poppins', sans-serif; color: #4a443a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+		.gm-cp { flex: none; width: 46px; height: 42px; border: 1px solid #D4A276; background: #fff; border-radius: 12px; color: #7a4f24; display: grid; place-items: center; }
+		.gm-q3 { display: grid; grid-template-columns: 1fr 1fr 1fr; }
+		.gm-q3 > * { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 4px; text-align: center; border: 0; background: none; padding: 2px 4px; font: 500 12.5px/1.25 'Poppins', sans-serif; color: #1A1A1A; text-decoration: none; cursor: pointer; }
+		.gm-q3 > * + * { border-left: 1px solid #EADFC9; }
+		.gm-qi { width: 34px; height: 34px; border-radius: 50%; background: #F5E6CC; color: #7a4f24; display: grid; place-items: center; }
+		.gm-qi svg { width: 19px; height: 19px; }
+		.gm-qi.gm-wa { background: #E3F3E1; color: #25a244; }
+		.gm-open { display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid #D4A276; background: #F8EBD6; border-radius: 14px; padding: 11px; min-height: 44px; font: 600 15px 'Poppins', sans-serif; color: #5c4424; text-decoration: none; margin-top: auto; }
+		.gm-open svg { width: 18px; height: 18px; }
+	}
 </style>

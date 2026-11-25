@@ -564,15 +564,16 @@ const save = () => {};
 
 		/* ---------- step bodies ---------- */
 		const inp = (attr: string, val: string, ph: string) => `<input ${attr} value="${esc(val)}" placeholder="e.g. ${esc(ph)}" autocomplete="off">`;
+		const ta = (attr: string, val: string, ph: string) => `<textarea rows="1" class="wrapin" ${attr} placeholder="e.g. ${esc(ph)}" autocomplete="off" maxlength="80">${esc(val)}</textarea>`;
 
 		const body1 = (): string => {
 			const c = S.couple;
 			const sm = tpl.sample;
 			return `
 				<div class="f"><label>Groom's name</label>${inp('data-couple="groomName"', c.groomName, sm.groomName)}</div>
-				<div class="f"><label>Groom's parents</label><div class="pre"><span>S/O Mr &amp; Mrs</span>${inp('data-couple="groomParents"', c.groomParents, sm.groomParents)}</div><p class="hint">Type only the names, like the examples. We add "S/O Mr &amp; Mrs" and "D/O Mr &amp; Mrs" for you.</p></div>
+				<div class="f"><label>Groom's parents</label><div class="pre"><span>S/O Mr &amp; Mrs</span>${ta('data-couple="groomParents"', c.groomParents, sm.groomParents)}</div><p class="hint">Type only the names, like the examples. We add "S/O Mr &amp; Mrs" and "D/O Mr &amp; Mrs" for you.</p></div>
 				<div class="f"><label>Bride's name</label>${inp('data-couple="brideName"', c.brideName, sm.brideName)}</div>
-				<div class="f"><label>Bride's parents</label><div class="pre"><span>D/O Mr &amp; Mrs</span>${inp('data-couple="brideParents"', c.brideParents, sm.brideParents)}</div></div>
+				<div class="f"><label>Bride's parents</label><div class="pre"><span>D/O Mr &amp; Mrs</span>${ta('data-couple="brideParents"', c.brideParents, sm.brideParents)}</div></div>
 				<div class="err" data-err="1"></div>
 				<div class="acts" style="margin:0 0 10px"><button class="btn-o" type="button" data-act="sample">Fill with sample details</button></div><div class="acts"><button class="btn-g" type="button" data-act="next" data-n="1">Continue to Step 2</button></div>`;
 		};
@@ -957,7 +958,12 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 		root.addEventListener('click', (ev) => {
 			const b = (ev.target as HTMLElement).closest('[data-ev-toggle],[data-mode],[data-card-pick],[data-act="gtoggle"],[data-act="addlink"],[data-act="addev"],[data-act="rmev"],[data-act="rmlink"]');
 		});
+		const fitTA = () => { document.querySelectorAll('textarea.wrapin').forEach((x) => { const t = x as HTMLTextAreaElement; t.style.height = 'auto'; t.style.height = t.scrollHeight + 'px'; }); };
+		root.addEventListener('keydown', (ev) => { if ((ev.target as HTMLElement).matches?.('textarea.wrapin') && (ev as KeyboardEvent).key === 'Enter') ev.preventDefault(); });
+		root.addEventListener('click', () => { setTimeout(fitTA, 0); setTimeout(fitTA, 350); });
+		window.addEventListener('resize', fitTA);
 		root.addEventListener('input', (ev) => {
+			if ((ev.target as HTMLElement).matches?.('textarea.wrapin')) fitTA();
 			const t = ev.target as HTMLInputElement;
 			const ds = t.dataset;
 			if (ds.part && ds.ev) { 				setPart(ds.ev, ds.part, t.value); 			} else if (ds.couple) {
@@ -1466,6 +1472,23 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 		color: #5a5a5a;
 		white-space: nowrap;
 		border-right: 1px solid rgba(26, 26, 26, 0.18);
+	}
+	.cz .pre textarea.wrapin {
+		flex: 1;
+		min-width: 0;
+		width: 100%;
+		box-sizing: border-box;
+		font: 400 14px 'Poppins', sans-serif;
+		color: #1a1a1a;
+		background: transparent;
+		border: none;
+		border-radius: 0;
+		padding: 10px 12px;
+		resize: none;
+		overflow: hidden;
+		line-height: 1.4;
+		outline: none;
+		display: block;
 	}
 	.cz .pre input {
 		flex: 1;
