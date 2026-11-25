@@ -77,6 +77,18 @@
 		'.cm-mock .mr{display:flex;align-items:center;gap:8px;padding:8px 10px;background:#fbf3e4;border-radius:8px;margin:0 0 4px;color:#1a1a1a;font-size:13px}' +
 		'.cm-mock .mr i{width:18px;height:18px;border-radius:5px;background:#d4a276;color:#fff;font-style:normal;font-size:12px;display:inline-flex;align-items:center;justify-content:center}' +
 		'.cm-lk{font-family:monospace;font-size:12.5px;background:#fff;border:1px solid #e6d9bd;border-radius:8px;padding:6px 8px;color:#1a1a1a;word-break:break-all;margin:4px 0}' +
+		'.hw-step{margin:0 0 12px;font-size:15px;color:#1a1a1a}' +
+		'.hw-two{display:flex;gap:10px;align-items:stretch;margin:0 0 14px}' +
+		'.hw-col{flex:1;min-width:0;border:1px solid #e6d9bd;background:#fff;border-radius:14px;padding:12px 8px;text-align:center}' +
+		'.hw-pill{display:inline-block;background:#1a1a1a;color:#fff;border-radius:999px;padding:5px 12px;font:600 12.5px Poppins,sans-serif}' +
+		'.hw-arrow{height:40px;display:flex;align-items:center;justify-content:center}' +
+		'.hw-cards{display:flex;justify-content:center;gap:4px;margin:0 0 8px}' +
+		'.hw-cards i{display:block;width:26px;height:40px;border-radius:4px;background:linear-gradient(160deg,#f3dcb8,#d4a276);border:1px solid #c28f5f;box-shadow:0 2px 4px rgba(0,0,0,.12)}' +
+		'.hw-t{margin:0 0 4px;color:#1a1a1a;font-weight:600;font-size:13px;line-height:1.4}' +
+		'.hw-s{margin:0;color:#8a7a5c;font-size:12px;line-height:1.4}' +
+		'.hw-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}' +
+		'.hw-list li{background:#fbf3e4;border:1px solid #ead9b9;border-radius:10px;padding:9px 12px;color:#1a1a1a;font-weight:700;font-size:13.5px}' +
+		'.hw-list li span{margin-right:4px}' +
 		'.cm-hw button.cm-ok{background:#d4a276;color:#fff;border:0;border-radius:999px;padding:10px 26px;font:600 14px Poppins,sans-serif;cursor:pointer}';
 
 	function addCss() {
@@ -119,25 +131,24 @@
 	function howItWorks() {
 		var w = document.createElement('div');
 		w.className = 'cm-hw-bg';
+		var ARROW = '<svg viewBox="0 0 24 34" width="26" height="36" aria-hidden="true"><path d="M12 2v22M4 17l8 10 8-10" fill="none" stroke="#b8793c" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+		var mini = function (n) { var h = '<span class="hw-cards">'; for (var i = 0; i < n; i++) h += '<i></i>'; return h + '</span>'; };
 		w.innerHTML =
 			'<div class="cm-hw" role="dialog" aria-modal="true"><h3>How does it work?</h3>' +
-			'<p>Each invitation link shows a single event card or a combination of event cards, based on your requirements.</p>' +
-			'<p style="margin-bottom:6px"><b style="color:#1a1a1a">For example:</b></p>' +
-			'<div class="cm-ex"><b>Ali is invited only to Baraat &amp; Walima, and not to any other event?</b><span>No issues. Create an invitation link for him.</span></div>' +
-			'<div class="cm-arrow">&#8595;</div>' +
-			'<p style="margin:0 0 6px"><b style="color:#1a1a1a">Step 1</b></p>' +
-			'<div class="cm-mock"><b>Invitation link 2</b><span>Choose events for this link:</span>' +
-			'<div class="mf">e.g, Baraat &amp; Walima &nbsp;&#9662;</div>' +
-			'<div class="mr"><i>&#10003;</i>Baraat</div><div class="mr"><i>&#10003;</i>Walima</div></div>' +
-			'<div class="cm-arrow">&#8595;</div>' +
-			'<p style="margin:0 0 6px"><b style="color:#1a1a1a">Step 2</b></p>' +
-			'<p style="margin:0 0 4px">Link created &#9989;</p><div class="cm-lk">haroon-weds-maria/group=baraat-&amp;-walima</div>' +
-			'<p style="margin:4px 0 0">This invitation link now shows only the 2 event cards Ali is invited to.</p>' +
-			'<div class="cm-arrow" style="margin-top:8px">&#8595;</div>' +
-			'<p style="margin:0 0 6px"><b style="color:#1a1a1a">Step 3</b></p>' +
-			'<p style="margin:0">Send it to Ali on WhatsApp and enjoy &#128525;</p>' +
-			'<p style="margin-top:12px"><b style="color:#1a1a1a">Create as many invitation links as you like.</b></p>' +
-			'<div style="text-align:center;margin-top:14px"><button type="button" class="cm-ok">Got it</button></div></div>';
+			'<p class="hw-step"><b>Step 1:</b> Choose event/events for each invitation link</p>' +
+			'<div class="hw-two">' +
+			'<div class="hw-col"><div class="hw-pill">Invitation link 1</div><div class="hw-arrow">' + ARROW + '</div>' + mini(4) +
+			'<p class="hw-t">Has cards for all of your chosen events</p><p class="hw-s">(Send it to everyone)</p></div>' +
+			'<div class="hw-col"><div class="hw-pill">Invitation link 2</div><div class="hw-arrow">' + ARROW + '</div>' + mini(2) +
+			'<p class="hw-t">Has only 2 cards, for the only two events that you selected</p><p class="hw-s">(Send it to Ali, who is only invited to two events)</p></div>' +
+			'</div>' +
+			'<ul class="hw-list">' +
+			'<li><span>&#9989;</span> Link created</li>' +
+			'<li><span>&#9989;</span> Personal dashboard provided</li>' +
+			'<li><span>&#9989;</span> Edit anything anytime</li>' +
+			'<li><span>&#9989;</span> Create as many invitation links as you want</li>' +
+			'</ul>' +
+			'<div style="text-align:center;margin-top:16px"><button type="button" class="cm-ok">Got it</button></div></div>';
 		w.addEventListener('click', function (e) {
 			var t = e.target;
 			if (t === w || (t.closest && t.closest('.cm-ok'))) w.remove();
@@ -145,7 +156,7 @@
 		document.body.appendChild(w);
 	}
 
-	function create(o) {
+		function create(o) {
 		addCss();
 		var st = { q: '', size: 0, open: {} };
 		var m = o.mount;
@@ -276,14 +287,14 @@
 			var anyOpen = false;
 			items.forEach(function (it, ix) {
 				var n = ix + 2;
-				var top = '<div class="lk-top"><b>Invitation link ' + n + '</b>' + (n === 2 ? '<button type="button" class="lk-how" data-lkhow="1">See how it works</button>' : '') + '</div>';
+				var top = '<div class="lk-top"><b>' + (it.done ? 'Invitation link ' + n : 'Create another invitation link') + '</b>' + (ix === 0 ? '<button type="button" class="lk-how" data-lkhow="1">See how it works</button>' : '') + '</div>';
 				if (it.done) {
 					h += '<div class="lk-box" data-lkk="' + it.k + '">' + top + '<div class="lk-sum"><span>&#9989; ' + esc(lab(it.cards)) + '</span><button type="button" class="lk-mini" data-lkedit="' + it.k + '">Edit</button><button type="button" class="lk-mini" data-lkdel="' + it.k + '">Remove</button></div></div>';
 					return;
 				}
 				anyOpen = true;
 				h += '<div class="lk-box" data-lkk="' + it.k + '">' + top +
-					'<p class="lk-lab">Select the event or events that will appear in Invitation link ' + n + ':</p>' +
+					'<p class="lk-lab">Select the event or events that this link will show:</p>' +
 					'<div class="lk-fld"><input class="lk-q" type="text" data-lkq="' + it.k + '" placeholder="' + esc(ph(n)) + '" autocomplete="off" value="' + esc(it.q) + '" aria-label="Search events"><button type="button" class="lk-car" data-lkcar="' + it.k + '" aria-label="Show events">' + (it.dd ? '&#9652;' : '&#9662;') + '</button></div>' +
 					(it.dd ? '<div class="lk-dd" data-lkdd="' + it.k + '">' + ddRows(it) + '</div>' : '') +
 					'<div class="lk-pills" data-lkpl="' + it.k + '">' + pills(it) + '</div>' +

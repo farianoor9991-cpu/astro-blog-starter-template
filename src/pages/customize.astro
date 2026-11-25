@@ -85,9 +85,10 @@ const MAX_HOSTS: number = tpl.maxHosts || 6;
 			{ n: 1, d: 1, title: 'Couple details', sub: 'Names of the bride, groom and their parents' },
 			{ n: 2, d: 2, title: 'Your events', sub: 'Choose your events' },
 			{ n: 7, d: 3, title: 'Create invitation links', sub: 'Choose which event cards each guest receives' },
-			{ n: 4, d: 4, title: 'Share links', sub: 'Get links for each event. Greeting cards are optional.' },
-			{ n: 6, d: 5, title: 'Who fills card details?', sub: 'Do it yourself for free, or let our team do it' },
-			{ n: 5, d: 6, title: 'Review and preview', sub: 'See your cards before paying' },
+			{ n: 3, d: 4, title: 'Reception hosts card', sub: 'Do you want a Reception Hosts card?' },
+			{ n: 4, d: 5, title: 'Share links', sub: 'Get links for each event. Greeting cards are optional.' },
+			{ n: 6, d: 6, title: 'Who fills card details?', sub: 'Do it yourself for free, or let our team do it' },
+			{ n: 5, d: 7, title: 'Review and preview', sub: 'See your cards before paying' },
 		];
 
 		const $ = (s: string) => document.querySelector(s) as HTMLElement | null;
@@ -619,32 +620,14 @@ const save = () => {};
 
 		const body3 = (): string => {
 			const w = S.hosts.want;
-			const yn = `<div class="chips"><button type="button" class="chip${w === true ? ' on' : ''}" data-hosts="yes">Yes, add it</button><button type="button" class="chip${w === false ? ' on' : ''}" data-hosts="no">No, skip it</button></div>`;
-			let rows = '';
-			if (w) {
-				rows =
-					S.hosts.list
-						.map(
-							(h: D, i: number) => `
-						<div class="host">
-							<div class="two">
-								<div class="f"><label>Host ${i + 1} name</label><input data-host="${i}" data-k="name" value="${esc(h.name)}" placeholder="e.g. Ahmed Raza Khan" autocomplete="off"></div>
-								<div class="f"><label>Phone number</label><input data-host="${i}" data-k="phone" inputmode="tel" value="${esc(h.phone)}" placeholder="e.g. 0300 1234567" autocomplete="off"></div>
-							</div>
-							${S.hosts.list.length > 1 ? `<button type="button" class="lnk" data-act="rmhost" data-i="${i}">Remove host</button>` : ''}
-						</div>`
-						)
-						.join('') +
-					(S.hosts.list.length < MAX_HOSTS
-						? `<button type="button" class="btn-o" data-act="addhost">Add another host (${S.hosts.list.length} of ${MAX_HOSTS})</button>`
-						: `<p class="hint">You have added the maximum of ${MAX_HOSTS} hosts.</p>`) +
-					`<p class="hint">The card spaces the names evenly, whether you add 1 host or ${MAX_HOSTS}.</p>`;
-			}
+			const yn = `<div class="chips"><button type="button" class="chip${w === true ? ' on' : ''}" data-hosts="yes">Yes</button><button type="button" class="chip${w === false ? ' on' : ''}" data-hosts="no">No</button></div>`;
 			return `
-				<p class="hint">Would you like a Reception Hosts card? It lists the people your guests can call for the reception. You can add up to ${MAX_HOSTS} reception hosts.</p>
-				${yn}${rows}
+				<p class="hint" style="font-size:14px;color:#1a1a1a"><b>Do you want a Reception Hosts card?</b></p>
+				<p class="hint">It lists the people your guests can call for the reception. You can add up to ${MAX_HOSTS} hosts in your invitation.</p>
+				${yn}
+				<p class="hint">You will add the hosts\u2019 names and phone numbers later, on your personal dashboard.</p>
 				<div class="err" data-err="3"></div>
-				<div class="acts"><button class="btn-g" type="button" data-act="next" data-n="3">Continue to Step 4</button></div>`;
+				<div class="acts"><button class="btn-g" type="button" data-act="next" data-n="3">Continue to Step 5</button></div>`;
 		};
 
 		const optHead = (t: string, price: string) =>
@@ -666,7 +649,7 @@ const save = () => {};
 			return `
 				<style>.ihx{border:1px solid #e6d9bd;border-radius:14px;background:#fffdf7;padding:10px 10px 8px;margin:0 0 14px}.ihx .opt{margin-bottom:8px}</style>
 				<div class="ihx">${opt1}${opt2}</div>
-				<div class="err" data-err="4"></div><div class="acts"><button class="btn-g" type="button" data-act="next" data-n="4">Continue to Step 5</button></div>`;
+				<div class="err" data-err="4"></div><div class="acts"><button class="btn-g" type="button" data-act="next" data-n="4">Continue to Step 6</button></div>`;
 		};
 		/* ---------- card combinations ---------- */
 		const comboEvents = (): D[] => selEvents().sort(byDate).map((e: D) => ({ id: e.id, label: e.label }));
@@ -700,7 +683,7 @@ const save = () => {};
 					${card('self', 'A) I\u2019ll manage it', 'FREE', ['You get your own Guest Management Panel.', 'Make groups, add guests, and edit anything anytime.', 'Short video guide for every step.'])}
 					${card('team', 'B) Let our team handle it', '+Rs. 1,999', ['Send us everything on WhatsApp and we set it all up for you. You can change anything later.'])}
 				</div>
-				<div class="err" data-err="6"></div><div class="acts"><button class="btn-g" type="button" data-act="next" data-n="6">Continue to Step 6</button></div>`;
+				<div class="err" data-err="6"></div><div class="acts"><button class="btn-g" type="button" data-act="next" data-n="6">Continue to Step 7</button></div>`;
 		};
 		const howTo = () => {
 			const w = document.createElement('div');
@@ -750,9 +733,10 @@ const save = () => {};
 				1: S.done[1] ? `${tc(c.groomName)} and ${tc(c.brideName)}` : STEPS[0].sub,
 				2: S.done[2] ? `${evN} event${evN === 1 ? '' : 's'} chosen` : STEPS[1].sub,
 				7: S.done[7] ? `${S.links.list.length + 1} invitation link${S.links.list.length ? 's' : ''} (including all events)` : STEPS[2].sub,
-				4: S.done[4] ? (S.guests.on ? 'Links and personalized greeting cards' : 'Invitation links') : STEPS[3].sub,
-				6: S.done[6] ? (S.setup === 'team' ? 'Our team sets it up (+Rs. 1,999)' : 'I will manage it (free)') : STEPS[4].sub,
-				5: STEPS[5].sub,
+				3: S.done[3] ? (S.hosts.want ? 'Reception Hosts card: yes' : 'Reception Hosts card: no') : STEPS[3].sub,
+				4: S.done[4] ? (S.guests.on ? 'Links and personalized greeting cards' : 'Invitation links') : STEPS[4].sub,
+				6: S.done[6] ? (S.setup === 'team' ? 'Our team sets it up (+Rs. 1,999)' : 'I will manage it (free)') : STEPS[5].sub,
+				5: STEPS[6].sub,
 			};
 			STEPS.forEach((s) => {
 				const el = $(`[data-sum="${s.n}"]`);
@@ -823,7 +807,6 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 				return;
 			}
 			if (box) box.innerHTML = '';
-			if (n === 3 && S.hosts.want) S.hosts.list = S.hosts.list.filter((h: D) => h.name.trim() || h.phone.trim());
 			S.done[n] = true;
 			save();
 			const ix = STEPS.findIndex((x) => x.n === n);
@@ -860,7 +843,7 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 			S.hosts = { want: true, list: tpl.sampleHosts.map((h: D) => ({ name: h.name, phone: String(h.phone).replace(/x/gi, '1') })) };
 			S.links = { mode: 'many', list: [{ id: uid(), label: '', cards: ['mehndi', 'baraat'] }] };
 			S.guests = { on: true, one: '' };
-			S.done = { 1: true, 2: true, 7: true, 4: true, 6: true };
+			S.done = { 1: true, 2: true, 7: true, 3: true, 4: true, 6: true };
 			S.active = pkg()[0];
 			save();
 			openStep(5);
@@ -931,6 +914,7 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 					},
 					events: selEvents().sort(byDate).map((e: D) => ({ id: e.id, date: S.events[e.id].date, time: S.events[e.id].time, venue: String(S.events[e.id].venue).trim(), ...(e.custom ? { custom: true, label: e.label, title: e.title } : {}) })),
 					hosts: [],
+					hostsOn: !!S.hosts.want,
 					mode: 'one',
 					links: S.links.list.map((l: D) => ({ id: l.id, label: (window as any).IHCombos ? (window as any).IHCombos.label(l.cards, comboEvents()) : '', cards: l.cards })),
 					guestsOn: !!S.guests.on,

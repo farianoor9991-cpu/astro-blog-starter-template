@@ -49,6 +49,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 		var GPER = 20;
 		var mobOpen = null; // guest (index) whose mobile bottom sheet is open
 		var newLink = ''; // group chosen in the entry row
+		var newSeat = {}; // seats chosen in the entry row (event by event)
 		var openD = {}; // guests whose details box is open
 		var addOpen = {}; // combos whose add-guests box is open
 		var finderSt = { q: '', size: 0, open: {} };
@@ -327,7 +328,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 				h += '<div class="cl" data-li="' + i + '"><div class="cl-h"><h3>' + esc(comboTitle(l)) + '</h3><small>' + esc(cards.join(', ')) + '</small></div>';
 				if (!link) { h += '<p class="hint" style="margin:0">Your link is being made. It appears here in a moment.</p></div>'; return; }
 				h += '<div class="cl-r"><button type="button" class="urlb" data-copy="' + esc(link) + '" title="Click to copy this link">' + icon('link') + '<span class="url">' + esc(link) + '</span></button>' +
-					'<div class="cl-b">' + (l.main ? '' : '<button type="button" class="qa rmc" data-rmc="' + i + '">' + '<span>Remove combination</span></button>') + '<button type="button" class="qa" data-copy="' + esc(link) + '">' + icon('link') + '<span>Copy link</span></button><a class="qa wa2" target="_blank" rel="noopener" href="' + esc(waUrl(msg)) + '">' + WA + '<span>WhatsApp</span></a><a class="qa op" target="_blank" rel="noopener" href="' + esc(link) + '">' + icon('open') + '<span>Open</span></a></div></div></div>';
+					'<div class="cl-b"><button type="button" class="qa" data-copy="' + esc(link) + '">' + icon('link') + '<span>Copy link</span></button><a class="qa wa2" target="_blank" rel="noopener" href="' + esc(waUrl(msg)) + '">' + WA + '<span>WhatsApp</span></a><a class="qa op" target="_blank" rel="noopener" href="' + esc(link) + '">' + icon('open') + '<span>Open</span></a>' + (l.main ? '' : '<button type="button" class="qa rmc" data-rmc="' + i + '"><span>Remove combination</span></button>') + '</div></div></div>';
 			});
 			return h + '</div>';
 		}
@@ -378,7 +379,8 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 		}
 		function openSeats(i) {
 			if (!editing) { askPin(); return; }
-			var g = O.guests[i];
+			var isNew = i === 'new';
+			var g = isNew ? { name: 'New guest', linkId: newLink, seatMap: newSeat, seats: 0 } : O.guests[i];
 			var rows = seatRowsFor(g);
 			var m = popup('<h3>Edit seats</h3><p class="hint">' + esc(g.name) + '<br>Choose the seats reserved for each event.</p>' +
 				(rows.length ? '<div class="se-list">' + rows.map(function (r) { return '<div class="se-r"><span>' + esc(r.label) + '</span>' + seatDd(r.id, r.n) + '</div>'; }).join('') + '</div>' : '<p class="hint">This group has no events yet.</p>') +
@@ -412,6 +414,13 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 					m.querySelectorAll('.sdd').forEach(function (x) { map[x.dataset.sdd] = Number(x.dataset.v) || 0; });
 					var old = g.seatMap || {};
 					Object.keys(old).forEach(function (k) { if (map[k] === undefined) map[k] = old[k]; });
+					if (isNew) {
+						newSeat = map;
+						var ns = document.getElementById('od-newseat');
+						if (ns) ns.innerHTML = newSeatInner();
+						m.close();
+						return;
+					}
 					g.seatMap = map;
 					g.seats = 0;
 					m.close();
@@ -431,7 +440,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			return '<div class="gr-dt tb-row" data-gi="' + i + '"><div class="gr-dl"><div class="gr-edit"><label>Guest name ' + title + '</label><label>Phone number <input type="tel" inputmode="tel" class="phin" data-gphone="' + i + '" value="' + esc(g.phone || '') + '" placeholder="03XX XXXXXXX" maxlength="16" aria-label="Phone number"></label><button type="button" class="rm-t" data-grm="' + i + '">Remove guest</button></div>' +
 				'<div class="gr-lab" style="margin-top:14px">Invitation message</div><div class="msg">' + msgHtml(msg) + '</div>' +
 				'<div class="gr-lab" style="margin-top:12px">' + icon('link') + ' Invitation URL</div><button type="button" class="urlb" data-copy="' + esc(link) + '" title="Click to copy">' + '<span class="url">' + esc(link) + '</span>' + icon('link') + '</button></div>' +
-				'<div class="gr-dr"><div class="gr-lab">Quick actions</div><div class="gr-qa"><button type="button" class="qa" data-copy="' + esc(link) + '">' + icon('link') + '<span>Copy link</span></button><a class="qa wa2 wa" target="_blank" rel="noopener" href="' + esc(waUrl(msg, g.phone)) + '">' + WA + '<span>WhatsApp</span></a><button type="button" class="qa" data-copy="' + esc(msg) + '" data-msg="1">' + icon('msg') + '<span>Copy message</span></button><a class="qa op" target="_blank" rel="noopener" href="' + esc(link) + '">' + icon('open') + '<span>Open invitation</span></a></div></div></div>';
+				'<div class="gr-dr"><div class="gr-lab">Quick actions</div><div class="gr-qa"><button type="button" class="qa" data-copy="' + esc(link) + '">' + icon('link') + '<span>Copy link</span></button><a class="qa wa2 wa" target="_blank" rel="noopener" href="' + esc(waUrl(msg, g.phone)) + '" aria-label="WhatsApp" title="WhatsApp">' + WA + '</a><button type="button" class="qa" data-copy="' + esc(msg) + '" data-msg="1">' + icon('msg') + '<span>Copy message</span></button><a class="qa op" target="_blank" rel="noopener" href="' + esc(link) + '">' + icon('open') + '<span>Open</span></a></div></div></div>';
 		}
 		function groupSel(i) {
 			var g = O.guests[i];
@@ -518,12 +527,16 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			});
 			return h;
 		}
+		function newSeatInner() {
+			var t = seatSummaryText({ linkId: newLink, seatMap: newSeat, seats: 0 });
+			return '<div class="sd">' + (t ? '<span class="sd-t">' + esc(t) + '</span>' : '<span class="sd-t full">✅ Full family</span>') + '<button type="button" class="sd-b" data-seats="new">Edit seats</button></div>';
+		}
 		function entryRow() {
 			var lid = newLink && O.links.some(function (l) { return l.id === newLink; }) ? newLink : (gfilter && gfilter !== '__all' ? gfilter : O.links[0].id);
 			newLink = lid;
-			return '<div class="gr-row gr-new"><div class="gr-c gr-n"><input class="ge-in" id="od-newg" data-agt="' + esc(lid) + '" maxlength="80" autocomplete="off" placeholder="Guest name + phone number, press Enter" aria-label="New guest: name and phone number"></div>' +
+			return '<div class="gr-row gr-new"><div class="gr-c gr-n"><input class="ge-in" id="od-newg" data-agt="' + esc(lid) + '" maxlength="80" autocomplete="off" placeholder="e.g, Hamza Chachu 0333122678" aria-label="New guest: name and phone number"></div>' +
 				'<div class="gr-c gr-g" data-l="Group"><select id="od-newlink" aria-label="Group for the new guest">' + O.links.map(function (l) { return '<option value="' + esc(l.id) + '"' + (l.id === lid ? ' selected' : '') + '>' + esc(comboTitle(l)) + '</option>'; }).join('') + '</select></div>' +
-				'<div class="gr-c gr-s" data-l="Seats Details"><span class="sd-t full">✅ Full family</span></div><div class="gr-c gr-a"><button type="button" class="vd" data-newadd="1">Add</button></div></div>';
+				'<div class="gr-c gr-s" data-l="Seats Details" id="od-newseat">' + newSeatInner() + '</div><div class="gr-c gr-a"><button type="button" class="vd" data-newadd="1">Add</button></div></div>';
 		}
 		function rowsHtml(idx) {
 			if (!idx.length) return '<p class="hint" style="padding:14px 16px;margin:0">' + (query || gfilter ? 'No guest matches.' : 'No guests yet. Type a name and phone number in the first row, then press Enter.') + '</p>';
@@ -545,7 +558,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			part.forEach(function (i) {
 				var g = O.guests[i];
 				var t = seatSummaryText(g);
-				h += '<button type="button" class="gm-it" data-gm="' + i + '"><span class="gm-l"><b>' + esc(g.name) + '</b><span class="gm-p">' + esc(g.phone || 'No phone number') + '</span></span><span class="gm-r"><span class="gm-g">' + esc(comboLabel(linkOfGuest(g))) + '</span><span class="gm-s">' + (t ? esc(t) : '✅ Full family') + '</span></span></button>';
+				h += '<button type="button" class="gm-it" data-gm="' + i + '"><span class="gm-l"><b>' + esc(g.name) + '</b><span class="gm-p">' + esc(g.phone || 'No phone number') + '</span><span class="gm-m">' + esc(comboLabel(linkOfGuest(g))) + ' \u00B7 ' + (t ? esc(t) : '\u2705 Full family') + '</span></span><span class="gm-ch">' + CHEV + '</span></button>';
 			});
 			h += '</div>';
 			if (idx.length > GPER) {
@@ -554,10 +567,11 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			if (idx.length) h += '<p class="gm-show">Showing ' + (from + 1) + '–' + (from + part.length) + ' of ' + idx.length + (idx.length === 1 ? ' Guest' : ' Guests') + '</p>';
 			return h;
 		}
+		var SORTL = { recent: 'Recently<br>Added', az: 'Name<br>A\u2013Z', za: 'Name<br>Z\u2013A' };
 		function sheetTop(entry) {
-			var h = '<div class="gm-only gm-head"><h2>Guest Management</h2><p>' + O.guests.length + (O.guests.length === 1 ? ' Guest' : ' Guests') + '</p></div>';
+			var h = '<div class="gm-only gm-head"><h2>Guest list</h2><p>' + O.guests.length + (O.guests.length === 1 ? ' Guest' : ' Guests') + '</p></div>';
 			h += '<div class="od-tools gs-tools"><input type="search" id="od-q" placeholder="Search guest name or phone number..." value="' + esc(query) + '" aria-label="Search guests">';
-			h += '<select id="od-sort" aria-label="Sort guests"><option value="recent"' + (gsort === 'recent' ? ' selected' : '') + '>Recently Added</option><option value="az"' + (gsort === 'az' ? ' selected' : '') + '>Name: A–Z</option><option value="za"' + (gsort === 'za' ? ' selected' : '') + '>Name: Z–A</option></select></div>';
+			h += '<label class="gs-sortw"><span class="gs-sortl" id="od-sortl">' + SORTL[gsort] + '</span><select id="od-sort" aria-label="Sort guests"><option value="recent"' + (gsort === 'recent' ? ' selected' : '') + '>Recently Added</option><option value="az"' + (gsort === 'az' ? ' selected' : '') + '>Name: A–Z</option><option value="za"' + (gsort === 'za' ? ' selected' : '') + '>Name: Z–A</option></select></label><button type="button" class="btn-p gm-only gm-addb" data-gadd="1">+ Add guests</button></div>';
 			h += '<div class="gs-chips" id="od-chips">' + chipsHtml() + '</div>';
 			return h;
 		}
@@ -688,19 +702,57 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 				cf('Bride\'s name', 'brideName', '', '') +
 				cf('Bride\'s parents', 'brideParents', 'D/O Mr &amp; Mrs', '');
 		}
+		var evMore = false; // all events shown (otherwise only the first two)
+		var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+		var DAYN = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+		function evParts(e) {
+			var d = /^(\d{4})-(\d{2})-(\d{2})$/.exec(e.date || '');
+			var t = /^(\d{2}):(\d{2})$/.exec(e.time || '');
+			return {
+				day: d ? String(Number(d[3])) : '', month: d ? String(Number(d[2])) : '', year: d ? d[1] : '',
+				hour: t ? String(Number(t[1]) % 12 || 12) : '', minute: t ? t[2] : '', ampm: t ? (Number(t[1]) >= 12 ? 'PM' : 'AM') : ''
+			};
+		}
+		function evDayName(e) {
+			var d = /^(\d{4})-(\d{2})-(\d{2})$/.exec(e.date || '');
+			return d ? DAYN[new Date(Number(d[1]), Number(d[2]) - 1, Number(d[3])).getDay()] : '';
+		}
+		function evSel(i, part, ph, opts, cur) {
+			return '<select data-ep="' + i + '" data-part="' + part + '" aria-label="' + ph + '"><option value="">' + ph + '</option>' + opts.map(function (o) {
+				return '<option value="' + o[0] + '"' + (String(cur) === String(o[0]) ? ' selected' : '') + '>' + o[1] + '</option>';
+			}).join('') + '</select>';
+		}
+		function evBlock(e, i) {
+			var p = evParts(e);
+			var yr = new Date().getFullYear();
+			var yrs = [];
+			for (var y = yr; y < yr + 4; y++) yrs.push([String(y), String(y)]);
+			if (p.year && yrs.every(function (o) { return o[0] !== p.year; })) yrs.unshift([p.year, p.year]);
+			var days = [];
+			for (var k = 1; k <= 31; k++) days.push([String(k), String(k)]);
+			var hrs = [];
+			for (var hh = 1; hh <= 12; hh++) hrs.push([String(hh), String(hh)]);
+			var mins = [];
+			for (var mm = 0; mm < 60; mm += 5) mins.push([('0' + mm).slice(-2), ('0' + mm).slice(-2)]);
+			if (p.minute && mins.every(function (o) { return o[0] !== p.minute; })) mins.push([p.minute, p.minute]);
+			var h = '<div class="od-ev"><div class="od-ev-h"><b>' + esc(evLabel(e)) + '</b><span class="tag" data-evday="' + i + '">' + esc(evDayName(e)) + '</span>' + (O.events.length > 1 ? '<button type="button" class="rm" data-erm="' + i + '">Remove event</button>' : '') + '</div>';
+			h += '<div class="f"><label>Date</label><div class="three">' + evSel(i, 'day', 'Day', days, p.day) + evSel(i, 'month', 'Month', MONTHS.map(function (m, k) { return [String(k + 1), m]; }), p.month) + evSel(i, 'year', 'Year', yrs, p.year) + '</div></div>';
+			h += '<div class="f"><label>Time</label><div class="three">' + evSel(i, 'hour', 'Hour', hrs, p.hour) + evSel(i, 'minute', 'Min', mins, p.minute) + evSel(i, 'ampm', 'AM/PM', [['AM', 'AM'], ['PM', 'PM']], p.ampm) + '</div></div>';
+			h += '<div class="f"><label>Venue</label><input data-e="' + i + '" data-k="venue" value="' + esc(e.venue) + '" maxlength="140" placeholder="e.g. Paradise Marquee, Rawalpindi"></div>';
+			if (i > 0) h += '<button type="button" class="lnk" data-sameven="' + i + '">Same venue as the event above</button>';
+			return h + '</div>';
+		}
 		function eventsBody() {
 			var have = {};
 			O.events.forEach(function (e) { have[e.id] = true; });
 			var left = Object.keys(LABELS).filter(function (k) { return !have[k]; });
-			var h = '<div class="od-addev od-addtop"><b>Add an event</b><div class="chips">' + left.map(function (k) { return '<button type="button" class="chip" data-addstd="' + k + '">+ ' + esc(LABELS[k]) + '</button>'; }).join('') + '</div>';
-			h += '<div class="od-inline"><input id="od-custom" maxlength="24" placeholder="Or write your own, e.g. Rukhsati" autocomplete="off"><button type="button" class="btn-s" id="od-addcustom">Add</button></div></div>';
-			O.events.forEach(function (e, i) {
-				h += '<div class="od-ev"><div class="od-ev-h"><b>' + esc(evLabel(e)) + '</b>' + (O.events.length > 1 ? '<button type="button" class="rm" data-erm="' + i + '">Remove event</button>' : '') + '</div>';
-				h += '<div class="two"><div class="f"><label>Date</label><input type="date" data-e="' + i + '" data-k="date" value="' + esc(e.date) + '"></div>';
-				h += '<div class="f"><label>Time</label><input type="time" data-e="' + i + '" data-k="time" value="' + esc(e.time) + '"></div></div>';
-				h += '<div class="f"><label>Venue</label><input data-e="' + i + '" data-k="venue" value="' + esc(e.venue) + '" maxlength="140" placeholder="e.g. Paradise Marquee, Rawalpindi"></div></div>';
-			});
-			return h;
+			var add = '<div class="od-addev"><b>Add an event</b><div class="chips">' + left.map(function (k) { return '<button type="button" class="chip" data-addstd="' + k + '">+ ' + esc(LABELS[k]) + '</button>'; }).join('') + '</div>';
+			add += '<div class="od-inline"><input id="od-custom" maxlength="24" placeholder="Or write your own, e.g. Rukhsati" autocomplete="off"><button type="button" class="btn-s" id="od-addcustom">Add</button></div></div>';
+			var h = '';
+			var cap = evMore ? O.events.length : 2;
+			O.events.forEach(function (e, i) { if (i < cap) h += evBlock(e, i); });
+			if (O.events.length > 2) h += '<button type="button" class="btn-s ev-more" data-evmore="1">' + (evMore ? 'Show fewer events' : '+ More events (' + (O.events.length - 2) + ')') + '</button>';
+			return '<div class="ev-grid"><div class="ev-main"><section class="od-sec">' + h + '</section></div><aside class="ev-aside"><section class="od-sec">' + add + '</section></aside></div>';
 		}
 		function hostsBody() {
 			if (!hostsOn()) return '<p class="hint">The Reception Hosts card is not in your invitation.</p><button type="button" class="btn-s" data-htoggle="1">Add the Reception Hosts card</button>';
@@ -843,7 +895,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 				if (window.__ihCards) return res();
 				window.__ihCardsReady = res;
 				var sc = document.createElement('script');
-				sc.src = '/envelope-engine.js?v=32';
+				sc.src = '/envelope-engine.js?v=33';
 				sc.onerror = rej;
 				document.head.appendChild(sc);
 			});
@@ -941,7 +993,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			var it = items.filter(function (x) { return x.k === page; })[0];
 			if (!it) { page = 'dash'; it = items[0]; }
 			if (page === 'dash') {
-				var h = '<section class="od-start"><div><h3>Don\'t know where to start?</h3><p>Start building your invitation step by step. We will guide you from your couple details all the way to the preview.</p></div><button type="button" class="btn-p" data-nav="couple">Click here: Step 1</button></section><div class="pg-h"><h2>Dashboard</h2><p>' + (O.guestsOn ? 'Your guest list. Tap a guest to copy their link or send it on WhatsApp.' : 'Your invitation links. Copy a link or send it on WhatsApp.') + '</p></div>' + stats();
+				var h = '<section class="od-start"><h3>Don\'t know where to start?</h3><p>We will guide you step by step, from your couple details to the final preview.</p><span class="od-start-t">Click here</span><button type="button" class="btn-p" data-nav="couple">Step 1</button></section><div class="pg-h"><h2>Dashboard</h2><p>' + (O.guestsOn ? 'Your guest list. Tap a guest to copy their link or send it on WhatsApp.' : 'Your invitation links. Copy a link or send it on WhatsApp.') + '</p></div>' + stats();
 				return h + (O.guestsOn ? guestsHtml() : groupsHtml());
 			}
 			var nx = items[items.indexOf(it) + 1];
@@ -949,7 +1001,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			var info = PAGE_INFO[page];
 			var head = '<div class="pg-h"><span class="pg-step">Step ' + it.n + '</span><h2>' + info[0] + '</h2>' + (info[1] ? '<p>' + info[1] + '</p>' : '') + '</div>';
 			if (page === 'couple') return head + wrapSec(coupleBody()) + cont;
-			if (page === 'events') return head + wrapSec(eventsBody()) + cont;
+			if (page === 'events') return head + eventsBody() + cont;
 			if (page === 'groups') return head + combosPage() + '<section class="od-sec"><div class="sec-h"><div><h2>Your combination links</h2><p class="hint">Copy a link, or press Open to check that it shows the right cards.</p></div></div><div id="od-lklist">' + comboLinksHtml() + '</div></section><section class="od-sec"><h3 class="sec-t">Preview a combination</h3>' + previewAllBody() + '</section>' + cont;
 			if (page === 'guests') return head + addGuestsPage() + cont;
 			if (page === 'hosts') return head + wrapSec(hostsBody()) + cont;
@@ -964,18 +1016,18 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			var y = window.scrollY;
 			var items = navItems();
 			var cur = items.filter(function (x) { return x.k === page; })[0] || items[0];
-			var h = '<div class="od-shell"><aside class="od-nav' + (navOpen ? ' open' : '') + '"><a class="nv-brand" href="/"><span>Invite</span><b>Heaven</b></a><div class="nv-cap">Edit your invitation</div>';
+			var ex = expiry();
+			var topIn = '<span class="od-no">Order No. ' + esc(O.orderNo) + '</span><h1>' + esc(coupleTitle()) + '</h1><p class="od-exp">Your invitation links are live until <b>' + ex.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) + '</b>' + (Date.now() > ex.getTime() ? ' (expired)' : ' (3 months from your order)') + '.</p>';
+			var h = '<div class="od-shell"><div class="od-top od-top-m">' + topIn + '</div><aside class="od-nav' + (navOpen ? ' open' : '') + '"><a class="nv-brand" href="/"><span>Invite</span><b>Heaven</b></a><div class="nv-cap">Edit your invitation</div>';
 			h += '<button type="button" class="nv-tog" data-navtog="1" aria-expanded="' + navOpen + '"><span>' + (cur.n ? 'Step ' + cur.n + ': ' : '') + esc(cur.t) + '</span>' + CHEV + '</button><nav class="nv-list">';
 			items.forEach(function (x) {
 				h += '<button type="button" class="nv-i' + (x.k === cur.k ? ' on' : '') + '" data-nav="' + x.k + '">' + (x.n ? '<i>' + x.n + '</i>' : '<i class="nv-d">' + icon('cards') + '</i>') + '<span>' + esc(x.t) + '</span></button>';
 			});
 			h += '</nav><div class="nv-foot">Order No. ' + esc(O.orderNo) + '</div></aside>';
-			h += '<div class="od-content"><div class="od-top"><span class="od-no">Order No. ' + esc(O.orderNo) + '</span><h1>' + esc(coupleTitle()) + '</h1>';
-			var ex = expiry();
-			h += '<p class="od-exp">Your invitation links are live until <b>' + ex.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) + '</b>' + (Date.now() > ex.getTime() ? ' (expired)' : ' (3 months from your order)') + '.</p></div>';
+			h += '<div class="od-content"><div class="od-top od-top-d">' + topIn + '</div>';
 			h += pageHtml(items) + '</div>';
 			// phone: the floating button and the bottom sheet live outside the content box so they stay fixed on the screen
-			if (O.guestsOn && (page === 'guests' || page === 'dash')) h += '<button type="button" class="gs-fab gm-only" data-gadd="1">+ Add Guest</button><div id="od-sheet">' + sheetHtml() + '</div>';
+			if (O.guestsOn && (page === 'guests' || page === 'dash')) h += '<div id="od-sheet">' + sheetHtml() + '</div>';
 			h += '</div>';
 			root.innerHTML = h;
 			root.classList.toggle('od-view', !editing);
@@ -1071,7 +1123,10 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			if (r.name.length > 45) return fail('That name is too long. Please keep each name within 45 characters.');
 			if (O.guests.length >= 500) return fail('You can add up to 500 guests.');
 			if (er) er.hidden = true;
-			O.guests.push({ id: '', name: tc(r.name), linkId: newLink || O.links[0].id, phone: r.phone, seats: r.seats || 0, seatMap: {} });
+			O.guests.push({ id: '', name: tc(r.name), linkId: newLink || O.links[0].id, phone: r.phone, seats: r.seats || 0, seatMap: Object.assign({}, newSeat) });
+			newSeat = {};
+			var nsc = document.getElementById('od-newseat');
+			if (nsc) nsc.innerHTML = newSeatInner();
 			inp.value = '';
 			pv.typed = '';
 			pv.c.reset = true;
@@ -1199,6 +1254,14 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			O.links.forEach(function (l) { l.cards = l.cards.filter(function (c) { return c !== id; }); });
 		}
 
+		function pvGuest(i) {
+			var g = O.guests[i];
+			if (!g) return;
+			pv.typed = tc(g.name);
+			pv.typedLink = g.linkId;
+			pv.c.reset = true;
+			pvRefresh();
+		}
 		// the card preview follows the line being typed in an "Add guests" box
 		function agLine(t) {
 			var before = t.value.slice(0, t.selectionStart || 0);
@@ -1261,6 +1324,20 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 				var hh = document.querySelector('.od h1');
 				if (hh) hh.textContent = coupleTitle();
 				refreshMessages();
+			} else if (d.ep !== undefined) {
+				var evi = Number(d.ep);
+				var evc = t.closest('.od-ev');
+				var gv = function (part) { var x = evc.querySelector('select[data-part="' + part + '"]'); return x ? x.value : ''; };
+				var ev0 = O.events[evi];
+				ev0.date = '';
+				if (gv('day') && gv('month') && gv('year')) {
+					var dtt = new Date(Number(gv('year')), Number(gv('month')) - 1, Number(gv('day')));
+					if (dtt.getMonth() + 1 === Number(gv('month'))) ev0.date = gv('year') + '-' + ('0' + gv('month')).slice(-2) + '-' + ('0' + gv('day')).slice(-2);
+				}
+				ev0.time = '';
+				if (gv('hour') && gv('minute') && gv('ampm')) ev0.time = ('0' + ((Number(gv('hour')) % 12) + (gv('ampm') === 'PM' ? 12 : 0))).slice(-2) + ':' + gv('minute');
+				var tg = evc.querySelector('[data-evday]');
+				if (tg) tg.textContent = ev0.date ? evDayName(ev0) : (gv('day') && gv('month') && gv('year') ? 'Please check the date' : '');
 			} else if (d.e !== undefined) O.events[Number(d.e)][d.k] = t.value;
 			else if (d.h !== undefined) O.hosts[Number(d.h)][d.k] = t.value;
 			else if (d.gname !== undefined) {
@@ -1329,11 +1406,16 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 				return;
 			} else if (t.id === 'od-sort') {
 				gsort = t.value;
+				var sl = document.getElementById('od-sortl');
+				if (sl) sl.innerHTML = SORTL[gsort] || '';
 				gpage = 1;
 				renderGuestList();
 				return;
 			} else if (t.id === 'od-newlink') {
 				newLink = t.value;
+				newSeat = {}; // the events are different in another group
+				var nsg = document.getElementById('od-newseat');
+				if (nsg) nsg.innerHTML = newSeatInner();
 				var ne = document.getElementById('od-newg');
 				if (ne) { ne.dataset.agt = newLink; ne.focus(); }
 				return;
@@ -1358,7 +1440,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			var b = ev.target.closest('button');
 			if (!b) return;
 			var d = b.dataset;
-			if (!editing && (d.erm !== undefined || d.addstd !== undefined || d.htoggle !== undefined || d.newgroup !== undefined || b.id === 'od-addcustom' || b.id === 'od-gnew' || d.grm !== undefined || d.acOpen === 'addguests' || b.id === 'od-addg' || b.id === 'od-reset' || b.id === 'od-addh' || d.tpl !== undefined || d.fmode !== undefined)) { askPin(); return; }
+			if (!editing && (d.sameven !== undefined || d.erm !== undefined || d.addstd !== undefined || d.htoggle !== undefined || d.newgroup !== undefined || b.id === 'od-addcustom' || b.id === 'od-gnew' || d.grm !== undefined || d.acOpen === 'addguests' || b.id === 'od-addg' || b.id === 'od-reset' || b.id === 'od-addh' || d.tpl !== undefined || d.fmode !== undefined)) { askPin(); return; }
 			if (d.how !== undefined) {
 				var mh = popup(comboHowHtml());
 				mh.addEventListener('click', function (e2) { if (e2.target === mh || (e2.target.dataset && e2.target.dataset.pclose)) mh.close(); });
@@ -1387,8 +1469,8 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			}
 			if (d.gadd !== undefined) { openAddOne(); return; }
 			if (d.newadd !== undefined) { addFromEntry(); return; }
-			if (d.seats !== undefined) { openSeats(Number(d.seats)); return; }
-			if (d.gm !== undefined) { mobOpen = Number(d.gm); renderSheet(); return; }
+			if (d.seats !== undefined) { openSeats(d.seats === 'new' ? 'new' : Number(d.seats)); return; }
+			if (d.gm !== undefined) { mobOpen = Number(d.gm); pvGuest(mobOpen); renderSheet(); return; }
 			if (d.gsx !== undefined) { mobOpen = null; renderSheet(); return; }
 			if (d.gpage !== undefined) {
 				gpage = Math.max(1, gpage + Number(d.gpage));
@@ -1399,6 +1481,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			}
 			if (d.dt !== undefined) {
 				openD[d.dt] = !openD[d.dt];
+				if (openD[d.dt]) pvGuest(Number(d.dt)); // the side preview shows this guest's greeting card
 				renderGuestList();
 				return;
 			}
@@ -1460,6 +1543,12 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 				try { history.replaceState(null, '', '#groups'); } catch (e) {}
 				render();
 				window.scrollTo(0, 0);
+				return;
+			}
+			if (d.evmore !== undefined) { evMore = !evMore; render(); return; }
+			if (d.sameven !== undefined) {
+				var sv = Number(d.sameven);
+				if (O.events[sv - 1]) { O.events[sv].venue = O.events[sv - 1].venue || ''; setDirty(true); render(); }
 				return;
 			}
 			if (d.erm !== undefined) {
@@ -1997,9 +2086,10 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 	.od-addrow { margin: 0 0 16px; }
 	.ag-hint { font-size: 12px; color: #7a6a58; margin: 0 0 8px; line-height: 1.5; }
 	.ft-pv { max-width: 460px; margin: 0 auto; border-radius: 16px; overflow: hidden; }
-	.od-start { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; background: #FBF3E4; border: 1px solid #EBD9BC; border-radius: 16px; padding: 18px 20px; margin: 0 0 20px; }
+	.od-start { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 8px; width: min(100%, 330px); aspect-ratio: 1 / 1; box-sizing: border-box; background: #FBF3E4; border: 1px solid #EBD9BC; border-radius: 20px; padding: 26px 24px; margin: 6px auto 26px; }
+	.od-start-t { font: 600 14px 'Poppins', sans-serif; color: #B8793C; margin-top: 6px; }
 	.od-start h3 { font: 700 1.25rem 'Playfair Display', serif; color: #1A1A1A; margin: 0 0 6px; }
-	.od-start p { margin: 0; font-size: 14px; line-height: 1.55; color: #5A5A5A; max-width: 560px; }
+	.od-start p { margin: 0; font-size: 14px; line-height: 1.55; color: #5A5A5A; max-width: 260px; }
 	.pg-next { margin: 4px 0 24px; max-width: 680px; }
 	.pg-next .btn-p { padding: 12px 26px; }
 	@media (min-width: 1000px) and (max-width: 1250px) { .od-shell { grid-template-columns: 220px minmax(0, 1fr); } .od-content { padding-left: 20px; padding-right: 20px; } }
@@ -2031,9 +2121,9 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 	.vd { display: inline-flex; align-items: center; gap: 8px; border: 1px solid #E5D8BF; background: #fff; border-radius: 10px; padding: 7px 12px; font: 500 13px 'Poppins', sans-serif; color: var(--tx); cursor: pointer; }
 	.vd svg { width: 12px; height: 12px; transition: transform .2s; }
 	.vd[aria-expanded="true"] svg { transform: rotate(180deg); }
-	.gr-dt { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(220px, 1fr); gap: 0; margin: 0 14px 14px; border: 1px solid var(--ln); border-radius: 14px; background: #FFFCF6; padding: 0; }
-	.gr-dl { padding: 16px 18px; border-right: 1px solid #F0E6D2; min-width: 0; }
-	.gr-dr { padding: 16px 18px; }
+	.gr-dt { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(330px, 1fr); gap: 0; margin: 0 14px 14px; border: 1px solid var(--ln); border-radius: 14px; background: #FFFCF6; padding: 0; }
+	.gr-dl { padding: 12px 18px 16px; border-right: 1px solid #F0E6D2; min-width: 0; }
+	.gr-dr { padding: 12px 18px 16px; }
 	.gr-lab { font: 600 15px 'Playfair Display', serif; color: #1A1A1A; margin: 0 0 8px; display: flex; align-items: center; gap: 6px; }
 	.gr-lab svg { width: 15px; height: 15px; color: var(--gd); }
 	.gr-dl .msg { font-size: 13.5px; line-height: 1.6; color: #4a443a; }
@@ -2041,7 +2131,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 	.gr-dl .urlb { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; border: 0; border-radius: 10px; background: #F6EBD6; padding: 10px 12px; cursor: pointer; font: 400 13px 'Poppins', sans-serif; color: #4a443a; }
 	.gr-dl .urlb .url { flex: 1; overflow-wrap: anywhere; }
 	.gr-dl .urlb svg { width: 16px; height: 16px; flex: none; color: #7a5a2e; }
-	.gr-edit { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: end; margin-top: 14px; padding-top: 12px; border-top: 1px dashed #E8DCC3; }
+	.gr-edit { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: end; margin: 0; padding: 0; border: 0; }
 	.gr-edit label { font: 500 12px 'Poppins', sans-serif; color: var(--mu); display: block; }
 	.gr-edit .phin { width: 100%; margin-top: 4px; box-sizing: border-box; border: 1px solid var(--ln); border-radius: 10px; padding: 8px 10px; font: 400 13px 'Poppins', sans-serif; background: #fff; }
 	.gr-edit .gn { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
@@ -2051,7 +2141,9 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 	.gr-edit .gn .lbl:not([readonly]) ~ .gtxt { display: none; }
 	.gr-edit .gn .pen { position: static; transform: none; flex: 0 0 auto; width: 26px; height: 26px; opacity: 0.8; }
 	.rm-t { border: 0; background: none; color: #b3261e; font: 500 12px 'Poppins', sans-serif; cursor: pointer; padding: 8px 4px; text-decoration: underline; }
-	.gr-qa { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+	.gr-qa { display: flex; flex-wrap: wrap; gap: 8px; }
+	.gr-qa .qa { flex: 1 1 auto; white-space: nowrap; padding: 8px 10px; font-size: 12.5px; gap: 5px; }
+	.gr-qa .qa.wa { flex: 0 0 48px; padding: 8px 0; }
 	.qa { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 40px; padding: 8px 10px; border: 1px solid #E5D8BF; border-radius: 10px; background: #fff; color: var(--tx); font: 500 13px 'Poppins', sans-serif; cursor: pointer; text-decoration: none; box-sizing: border-box; }
 	.qa svg { width: 16px; height: 16px; flex: none; }
 	.qa:hover { border-color: #D4A276; }
@@ -2162,15 +2254,31 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 	.gm-it { display: flex; width: 100%; justify-content: space-between; align-items: flex-start; gap: 10px; text-align: left; border: 0; border-bottom: 1px solid #F1E8D5; background: #fff; padding: 12px 14px; min-height: 56px; cursor: pointer; font-family: 'Poppins', sans-serif; }
 	.gm-it:last-child { border-bottom: 0; }
 	.gm-l { display: flex; flex-direction: column; min-width: 0; }
-	.gm-l b { font: 600 16px 'Playfair Display', serif; color: #1A1A1A; overflow-wrap: anywhere; }
-	.gm-p { font: 400 12.5px 'Poppins', sans-serif; color: #6B6459; }
+	.gm-l b { font: 600 17px 'Poppins', sans-serif; color: #1A1A1A; overflow-wrap: anywhere; }
+	.gm-p { font: 400 14px 'Poppins', sans-serif; color: #6B6459; margin-top: 2px; }
+	.gm-m { font: 400 14px 'Poppins', sans-serif; color: #6B6459; margin-top: 1px; }
+	.gm-ch { align-self: center; color: #6B6459; flex: none; }
+	.gm-it { align-items: center; padding: 16px 16px; }
 	.gm-r { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; text-align: right; max-width: 52%; }
 	.gm-g { font: 500 12px 'Poppins', sans-serif; color: #7a5a2e; background: #F3E3C4; border-radius: 999px; padding: 2px 10px; overflow-wrap: anywhere; }
 	.gm-s { font: 500 12px 'Poppins', sans-serif; color: #3B352D; overflow-wrap: anywhere; }
 	.gm-pg { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 12px 0 4px; font: 500 13px 'Poppins', sans-serif; color: #3B352D; }
 	.gs-pg { border: 1px solid #E5D8BF; background: #fff; border-radius: 999px; padding: 9px 18px; font: 500 13px 'Poppins', sans-serif; color: #1A1A1A; cursor: pointer; min-height: 40px; }
 	.gs-pg:disabled { opacity: .4; cursor: default; }
-	.gm-show { text-align: center; color: #6B6459; font: 400 12.5px 'Poppins', sans-serif; margin: 6px 0 130px; }
+	.gm-show { text-align: center; color: #6B6459; font: 400 12.5px 'Poppins', sans-serif; margin: 6px 0 40px; }
+	.gs-sortw { position: relative; }
+	.gs-sortl { display: none; }
+	.gm-addb { display: none; }
+	@media (max-width: 1000px) {
+		.gs-tools { display: flex; flex-wrap: wrap; gap: 8px; }
+		.gs-tools #od-q { flex: 1 1 100%; width: 100%; font-size: 14px; }
+		.gs-tools #od-q::placeholder { font-size: 13px; }
+		.gs-sortw { flex: 0 0 auto; display: inline-flex; align-items: center; border: 1px solid #E5D8BF; border-radius: 12px; background: #fff; padding: 6px 28px 6px 14px; min-height: 48px; }
+		.gs-sortl { display: block; font: 500 13px/1.25 'Poppins', sans-serif; color: #1A1A1A; }
+		.gs-sortw::after { content: ''; position: absolute; right: 11px; top: 50%; width: 7px; height: 7px; border-right: 1.6px solid #7a5a2e; border-bottom: 1.6px solid #7a5a2e; transform: translateY(-65%) rotate(45deg); }
+		.gs-sortw select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; }
+		.gm-addb.gm-only { display: block; flex: 1 1 auto; min-height: 48px; border-radius: 12px; font-size: 15px; }
+	}
 	.gs-fab { position: fixed; left: 50%; transform: translateX(-50%); bottom: 80px; z-index: 40; border: 0; border-radius: 999px; background: #D4A276; color: #1A1A1A; padding: 14px 26px; min-height: 50px; font: 600 15px 'Poppins', sans-serif; box-shadow: 0 8px 22px rgba(80, 50, 10, .3); cursor: pointer; }
 	.gm-shw { position: fixed; inset: 0; z-index: 90; background: rgba(0,0,0,.4); display: flex; align-items: flex-end; }
 	.gm-sh { width: 100%; max-height: 88vh; overflow-y: auto; background: #FFFCF6; border-radius: 20px 20px 0 0; padding: 8px 14px 24px; box-sizing: border-box; }
@@ -2190,4 +2298,15 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 		.od-modal.sheetm { align-items: flex-end; padding: 0; }
 		.od-modal.sheetm .od-modal-in { max-width: none; border-radius: 20px 20px 0 0; max-height: 90vh; overflow-y: auto; padding-bottom: 28px; }
 	}
+	.ev-grid { display: grid; grid-template-columns: minmax(0, 1fr) 290px; gap: 18px; align-items: start; }
+	.ev-aside { position: sticky; top: 16px; }
+	.ev-aside .od-addev { border-top: 0; margin: 0; padding: 0; }
+	.od .three { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+	.od .three select { width: 100%; min-width: 0; }
+	.od-ev-h .tag { color: #B8793C; font: 500 12.5px 'Poppins', sans-serif; margin-right: auto; margin-left: 10px; }
+	.ev-more { margin-top: 14px; }
+	.ev-main .od-ev:first-child { border-top: 0; margin-top: 0; padding-top: 0; }
+	@media (max-width: 1000px) { .ev-grid { grid-template-columns: 1fr; } .ev-aside { position: static; order: -1; } }
+	.od-top-m { display: none; }
+	@media (max-width: 1000px) { .od-top-m { display: block; padding: 18px 16px 0; } .od-top-d { display: none; } }
 </style>

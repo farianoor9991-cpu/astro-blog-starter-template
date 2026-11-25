@@ -158,7 +158,7 @@
 	var placeTitle = function (H, envH, envBottom) {
 		var envTop = H - envBottom - envH;
 		var flapTop = envTop - envH * (S.envelope.openFlapRise || 0.74);
-		rs.setProperty('--ev-title-b', Math.round(H - flapTop + (S.welcome.gap || 14)) + 'px');
+		rs.setProperty('--ev-title-b', Math.min(Math.round(H - flapTop + (S.welcome.gap || 14)), Math.max(60, H - (wide0() ? 78 : 70))) + 'px'); // (never higher than the top edge)
 		var im = document.getElementById('ev-trayimg');
 		var want = wide0() ? S.images.tray : S.images.trayPhone || S.images.tray;
 		if (im && want && im.getAttribute('src') !== want) im.setAttribute('src', want);
@@ -637,21 +637,28 @@
 		};
 	};
 	var fxDpr = 1;
-	var fxCanvas = function () {
+	var fxCanvas = function (reg) {
 		var c = document.createElement('canvas');
 		c.className = 'ev-fx';
 		c.setAttribute('aria-hidden', 'true');
 		// exact pixel size (100vh is taller than the visible screen on phones, which pushed the ring off the seal)
-		c.style.width = window.innerWidth + 'px';
-		c.style.height = window.innerHeight + 'px';
-		var dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+		// reg = only the part of the screen that is needed (a smaller canvas is much lighter for a phone to draw)
+		var l = reg ? Math.max(0, Math.floor(reg.l)) : 0;
+		var t = reg ? Math.max(0, Math.floor(reg.t)) : 0;
+		var w = reg ? Math.min(window.innerWidth - l, Math.ceil(reg.w)) : window.innerWidth;
+		var h = reg ? Math.min(window.innerHeight - t, Math.ceil(reg.h)) : window.innerHeight;
+		c.style.left = l + 'px';
+		c.style.top = t + 'px';
+		c.style.width = w + 'px';
+		c.style.height = h + 'px';
+		var dpr = window.innerWidth < 700 ? 1 : Math.min(window.devicePixelRatio || 1, 1.25);
 		fxDpr = dpr;
-		c.width = Math.round(window.innerWidth * dpr);
-		c.height = Math.round(window.innerHeight * dpr);
+		c.width = Math.round(w * dpr);
+		c.height = Math.round(h * dpr);
 		var x = c.getContext('2d');
-		x.scale(dpr, dpr);
+		x.setTransform(dpr, 0, 0, dpr, -l * dpr, -t * dpr);
 		document.body.appendChild(c);
-		return { c: c, x: x, w: window.innerWidth, h: window.innerHeight };
+		return { c: c, x: x, w: w, h: h, l: l, t: t, dpr: dpr };
 	};
 	var rnd = function (a, b) {
 		return a + Math.random() * (b - a);
@@ -698,7 +705,7 @@
 	var confettiDone = false;
 	var fireConfetti = function () {
 		var C = S.confetti;
-		if (confettiDone || reduceMotion || !C || !C.enabled) return;
+		if (confettiDone || !C || !C.enabled) return;
 		confettiDone = true;
 		var f = fxCanvas();
 		var small = f.w < 700;
@@ -786,15 +793,20 @@
 	// warm = a silent rehearsal (invisible) done while the envelope waits, so the real one on the first tap is already "warmed up"
 	var fireRipple = function (warm) {
 		var Rp = S.ripple;
-		if (reduceMotion || !Rp || !Rp.enabled) return;
-		var f = fxCanvas();
-		if (warm) f.c.style.opacity = '0';
+		if (!Rp || !Rp.enabled) return;
 		var o = sealPoint();
+		var envR0 = envEl.getBoundingClientRect();
+		var f = null; // (made below, once the size of the ring is known)
 		// the ring stops at the edge of the tray (an oval), nothing beyond it
 		var TL = trayLive || (function () { var e = envEl.getBoundingClientRect(); return { cx: o.x, cy: o.y, rx: e.width * 0.7, ry: e.height * 0.9 }; })();
 		var R = TL.rx;
 		var r0 = Math.max(8, closedEl.getBoundingClientRect().width * ENV.sealR / 100 * 0.8); // starts inside the wax seal
 		var yk = TL.ry / TL.rx;
+		var padR = R * 1.12 + 60;
+		var bx0 = Math.min(o.x, TL.cx) - padR, bx1 = Math.max(o.x, TL.cx) + padR;
+		var by0 = Math.min(o.y, TL.cy) - Math.max(padR * Math.max(yk, 0.62), 160), by1 = Math.max(o.y, TL.cy) + Math.max(padR * Math.max(yk, 0.62), 160);
+		f = fxCanvas({ l: bx0, t: by0, w: bx1 - bx0, h: by1 - by0 });
+		if (warm) f.c.style.opacity = '0';
 		var dur = warm ? 450 : Rp.duration;
 		var t0 = null;
 		var rings = [
@@ -821,7 +833,8 @@
 			var t = (now - t0) / dur;
 			if (t >= 1) return finish();
 			var x = f.x;
-			x.clearRect(0, 0, f.w, f.h);
+			x.setTransform(f.dpr, 0, 0, f.dpr, -f.l * f.dpr, -f.t * f.dpr);
+			x.clearRect(f.l, f.t, f.w, f.h);
 			x.globalCompositeOperation = 'screen';
 			// the glow at the seal swells for a moment, then fades gently
 			var cg = smooth(0, 0.16, t) * (1 - smooth(0.16, 0.6, t));
@@ -843,7 +856,7 @@
 				var ec = Math.pow(e, 2.4);
 				var oo = { x: o.x + (TL.cx - o.x) * ec, y: o.y + (TL.cy - o.y) * ec };
 				var ykt = 1 + (yk - 1) * ec;
-				x.setTransform(fxDpr, 0, 0, fxDpr * ykt, 0, fxDpr * oo.y * (1 - ykt));
+				x.setTransform(f.dpr, 0, 0, f.dpr * ykt, -f.l * f.dpr, f.dpr * (oo.y * (1 - ykt) - f.t));
 				var r = r0 + (R - r0) * e;
 				var a = rg.k * smooth(0, 0.08, u) * Math.pow(1 - smooth(0.5, 1, u), 1.2);
 				if (a < 0.004) return;
@@ -896,7 +909,7 @@
 				});
 				x.globalAlpha = 1;
 			});
-			x.setTransform(fxDpr, 0, 0, fxDpr, 0, 0);
+			x.setTransform(f.dpr, 0, 0, f.dpr, -f.l * f.dpr, -f.t * f.dpr);
 			x.globalCompositeOperation = 'source-over';
 		});
 	};
@@ -905,7 +918,7 @@
 	var dust = null;
 	var startDust = function () {
 		var Sp = S.sparkle;
-		if (reduceMotion || !Sp || !Sp.enabled) return;
+		if (!Sp || !Sp.enabled) return;
 		stopDust(true);
 		var f = fxCanvas();
 		var ps = [];
@@ -1120,6 +1133,7 @@
 				stage.classList.add('was-opened');
 				hintEl.classList.add('show');
 				state = 'idle';
+				lockScroll(false);
 			},
 		});
 		// 1. a small lift
@@ -1313,8 +1327,7 @@
 			vw.setAttribute('aria-hidden', 'true');
 			stage.classList.remove('vw-on');
 			vwOpen = false;
-			lockScroll(false);
-			closeCards();
+			closeCards(); // (the page stays locked until the flap is closed, so nothing on screen shifts while the cards go back)
 		});
 	}
 
@@ -1518,6 +1531,7 @@
 		// the top of the green footer peeks above the bottom edge, so the guest knows there is more below
 		stage.style.height = 'calc(100vh - 92px)';
 		stage.style.height = 'calc(100svh - 92px)';
+		if (typeof fitTray === 'function') fitTray(); // lay everything out again for the shorter stage
 		var onScroll = function () {
 			if (sc) sc.classList.toggle('gone', (window.pageYOffset || document.documentElement.scrollTop) > 40);
 		};

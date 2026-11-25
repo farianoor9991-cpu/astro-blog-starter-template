@@ -40,10 +40,10 @@ export const haya = {
 		bg: ['/haya-event-bg-preview.jpg', '/haya-event-bg.png'],
 		fields: {
 						title: { x: 0.509, y: 0.4115, size: 0.0416, maxW: 0.36, font: 'Berkshire Swash', weight: 400 },
-			groomName: { x: 0.505, y: 0.493, size: 0.0618, maxW: 0.66, font: 'Unna', weight: 700 },
+			groomName: { x: 0.505, y: 0.493, size: 0.058, maxW: 0.66, font: 'Unna', weight: 700 },
 			groomParents: { x: 0.505, y: 0.521, size: 0.0228, maxW: 0.62, font: 'Unna', weight: 700 },
-			brideName: { x: 0.505, y: 0.572, size: 0.0618, maxW: 0.66, font: 'Unna', weight: 700 },
-			brideParents: { x: 0.505, y: 0.601, size: 0.0228, maxW: 0.62, font: 'Unna', weight: 700 },
+			brideName: { x: 0.505, y: 0.5775, size: 0.058, maxW: 0.66, font: 'Unna', weight: 700 },
+			brideParents: { x: 0.505, y: 0.6065, size: 0.0228, maxW: 0.62, font: 'Unna', weight: 700 },
 			month: { x: 0.5, y: 0.642, size: 0.0325, maxW: 0.4, font: 'Unna', weight: 700 },
 			dayName: { x: 0.337, y: 0.682, size: 0.0311, maxW: 0.17, font: 'Unna', weight: 700 },
 			date: { x: 0.497, y: 0.680, size: 0.051, maxW: 0.12, font: 'Unna', weight: 700 },

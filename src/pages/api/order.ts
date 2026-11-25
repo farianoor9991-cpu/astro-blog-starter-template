@@ -68,7 +68,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
 		...base,
 		mode: links.length > 1 ? 'many' : 'one',
 		links,
-		hostsOn: true, // the reception hosts card is part of every package; the customer can remove it on the order page
+		hostsOn: body.hostsOn !== false, // chosen in the form (Yes / No); can be changed later on the dashboard
 		guestsOn: !!body.guestsOn, // the personalized greeting cards add-on
 		setupTeam: !!body.setupTeam, // the customer asked our team to set everything up (+Rs. 1,999)
 		music: '',
