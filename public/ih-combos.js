@@ -66,7 +66,7 @@
 		'.lk-pills{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 0}' +
 		'.lk-err{color:#b3261e;font-size:12.5px;margin:8px 0 0}' +
 		'.lk-act{display:flex;flex-direction:column;align-items:flex-start;gap:6px;margin:12px 0 0}' +
-		'.lk-done{background:#d4a276;color:#fff;border:0;border-radius:999px;padding:10px 28px;font:600 14px Nunito,sans-serif;cursor:pointer}' +
+		'.lk-done{display:block;margin:12px auto 0;background:#d4a276;color:#fff;border:0;border-radius:999px;padding:10px 34px;font:700 14px Nunito,sans-serif;cursor:pointer}.lk-ok{margin:10px 0 0;color:#2c7a35;font-weight:700;font-size:13px;line-height:1.5}.lk-q.lk-set{font-weight:700;color:#1a1a1a;background:#fbf3e4;border-color:#d4a276}' +
 		'.lk-sum{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:2px 0 0}' +
 		'.lk-sum span{color:#1a1a1a}' +
 		'.lk-mini{border:0;background:none;color:#b8793c;font:500 12.5px Nunito,sans-serif;text-decoration:underline;cursor:pointer;padding:0 0 0 6px}' +
@@ -95,26 +95,26 @@
 		'.hw2{font-family:Nunito,sans-serif;background:#fcf9f1;border-radius:22px;max-width:640px;width:100%;max-height:92vh;overflow:auto;padding:24px 18px 22px;box-shadow:0 24px 70px rgba(0,0,0,.35);color:#5a5a5a;border:1px solid #ead9b9}' +
 		'.hw2 *{box-sizing:border-box}' +
 		'.hw2 h3{margin:0 0 4px;text-align:center;font:700 26px/1.2 Nunito,sans-serif;color:#1a1a1a}' +
-		'.hw2 .hw2-sub{margin:0 0 16px;text-align:center;font-size:13px;color:#8a7a5c}' +
-		'.hw2-two{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:stretch}' +
-		'.hw2-box{display:flex;flex-direction:column;align-items:center;text-align:center;min-width:0}' +
-		'.hw2-card{width:100%;background:#fff;border:1px solid #e3cfa6;border-radius:18px;padding:14px 8px 14px;box-shadow:0 8px 22px rgba(120,84,30,.12);background-image:linear-gradient(180deg,#fffdf7,#fff)}' +
-		'.hw2-card h4{margin:0 0 3px;font:700 16px/1.25 Nunito,sans-serif;color:#1a1a1a}' +
-		'.hw2-tag{display:inline-block;margin:0 0 10px;font:500 12px/1.3 Nunito,sans-serif;color:#8a7a5c}' +
-		'.hw2-tag.green{background:#e4f3df;color:#2c6a2f;border:1px solid #bfe0b8;border-radius:999px;padding:3px 10px;font-weight:600}' +
-		'.hw2-tiles{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}' +
-		'.hw2-tile{width:62px;height:62px;border-radius:14px;background:#fbf3e4;border:1px solid #ead9b9;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:#9a6a36;font:600 11px/1 Nunito,sans-serif}' +
-		'.hw2-tile svg{width:24px;height:24px;stroke:#b8793c;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}' +
+		'.hw2 h3{margin-bottom:20px}' +
+		'.hw2-two{display:grid;grid-template-columns:1fr 1fr;column-gap:14px;row-gap:0;align-items:stretch}' +
+		'.hw2-two>*{min-width:0}' +
+		'.hw2-card{display:flex;flex-direction:column;align-items:center;text-align:center;width:100%;height:100%;background:#fff;border:1px solid #e3cfa6;border-radius:18px;padding:18px 10px 14px;box-shadow:0 8px 22px rgba(120,84,30,.12);background-image:linear-gradient(180deg,#fffdf7,#fff)}' +
+		'.hw2-card h4{margin:0 0 6px;font:700 16px/1.3 Nunito,sans-serif;color:#1a1a1a}' +
+		'.hw2-tag{display:block;margin:0 0 14px;font:500 12.5px/1.4 Nunito,sans-serif;color:#8a7a5c}' +
+		'.hw2-tag.green{color:#2c7a35;font-weight:700}' +
+		'.hw2-tiles{display:flex;justify-content:center;gap:6px;width:100%;margin:0 0 16px}' +
+		'.hw2-tile{flex:0 1 calc((100% - 12px)/3);min-width:0;max-width:62px;aspect-ratio:1/1;border-radius:12px;background:#fbf3e4;border:1px solid #ead9b9;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:#9a6a36;font:600 11px/1 Nunito,sans-serif}' +
+		'.hw2-tile svg{width:22px;height:22px;stroke:#b8793c;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}' +
 		'.hw2-tile span{color:#1a1a1a}' +
-		'.hw2-arrow{height:44px;display:flex;align-items:center;justify-content:center}' +
-		'.hw2-url{width:100%;background:#fff;border:1px dashed #d4a276;border-radius:12px;padding:8px 8px;font:500 11.5px/1.45 Nunito,sans-serif;color:#1a1a1a;word-break:break-all}' +
+		'.hw2-arrow{height:56px;display:flex;align-items:center;justify-content:center}' +
+		'.hw2-url{width:100%;margin-top:auto;background:#fff;border:1px dashed #d4a276;border-radius:12px;padding:10px 8px;font:500 11.5px/1.6 Nunito,sans-serif;color:#1a1a1a;word-break:break-all;text-align:center}' +
 		'.hw2-url b{color:#b8793c}' +
-		'.hw2-send{margin:0;font:500 12.5px/1.5 Nunito,sans-serif;color:#5a5a5a}' +
-		'.hw2-list{list-style:none;margin:18px 0 0;padding:12px 14px;background:#fff;border:1px solid #ead9b9;border-radius:14px;display:flex;flex-direction:column;gap:7px}' +
+		'.hw2-send{margin:0;text-align:center;font:600 13px/1.65 Nunito,sans-serif;color:#3a3a3a}' +
+		'.hw2-list{list-style:none;margin:24px 0 0;padding:16px 16px;background:#fff;border:1px solid #ead9b9;border-radius:14px;display:flex;flex-direction:column;gap:11px}' +
 		'.hw2-list li{color:#1a1a1a;font:500 13.5px/1.4 Nunito,sans-serif}' +
-		'.hw2 .cm-ok{background:#d4a276;color:#fff;border:0;border-radius:999px;padding:11px 34px;font:600 14.5px Nunito,sans-serif;cursor:pointer;box-shadow:0 6px 14px rgba(180,120,60,.3)}' +
-		'@media(max-width:420px){.hw2{padding:20px 10px 18px}.hw2-two{gap:8px}.hw2-tile{width:56px;height:56px}.hw2-card h4{font-size:14.5px}}' +
-		'.lk-howrow{margin:0 0 10px}' +
+		'.hw2-list li{line-height:1.55}.hw2 .cm-ok{background:#d4a276;color:#fff;border:0;border-radius:999px;padding:11px 34px;font:600 14.5px Nunito,sans-serif;cursor:pointer;box-shadow:0 6px 14px rgba(180,120,60,.3)}' +
+		'@media(max-width:480px){.hw2{padding:26px 16px 22px}.hw2-two{column-gap:10px}.hw2-card{padding:16px 8px 12px}.hw2-card h4{font-size:14.5px}.hw2-tile{border-radius:10px;font-size:9.5px;gap:2px}.hw2-tile svg{width:18px;height:18px}.hw2-url{font-size:10.5px}.hw2-send{font-size:12.5px}}' +
+		'.lk-howrow{margin:0 0 12px;text-align:center}' +
 		'.lk-bt{display:block;margin:0 0 8px;color:#1a1a1a;font:700 14.5px/1.35 Nunito,sans-serif}' +
 		'.lk-rm{border:0;background:none;color:#b3261e;font:500 12px Nunito,sans-serif;text-decoration:underline;cursor:pointer;padding:6px 0 0}' +
 		'.lk-fld{max-width:380px}';
@@ -170,18 +170,12 @@
 		};
 		w.innerHTML =
 			'<div class="hw2" role="dialog" aria-modal="true" aria-label="How it works"><h3>How It Works</h3>' +
-			'<p class="hw2-sub">Create a different invitation link for each group of guests.</p>' +
 			'<div class="hw2-two">' +
-			'<div class="hw2-box"><div class="hw2-card"><h4>Invitation Link 1</h4><span class="hw2-tag">All events selected</span>' + tiles(['Mehndi', 'Baraat', 'Walima']) + '</div>' +
-			'<div class="hw2-arrow">' + ARROW + '</div>' +
-			'<div class="hw2-url"><b>Link 1:</b> ali-weds-sara/group=all-events/</div>' +
-			'<div class="hw2-arrow">' + ARROW + '</div>' +
-			'<p class="hw2-send">Send this link to 50 guests who are invited to all events.</p></div>' +
-			'<div class="hw2-box"><div class="hw2-card"><h4>Invitation Link 2</h4><span class="hw2-tag green">&#9989; Only 2 events selected</span>' + tiles(['Baraat', 'Walima']) + '</div>' +
-			'<div class="hw2-arrow">' + ARROW + '</div>' +
-			'<div class="hw2-url"><b>Link 2:</b> ali-weds-sara/group=baraat&amp;walima/</div>' +
-			'<div class="hw2-arrow">' + ARROW + '</div>' +
-			'<p class="hw2-send">Send this link to 20 guests who are invited to Baraat &amp; Walima only.</p></div>' +
+			'<div class="hw2-card"><h4>Invitation Link 1</h4><span class="hw2-tag">All events selected</span>' + tiles(['Mehndi', 'Baraat', 'Walima']) + '<div class="hw2-url">&#9989; <b>Link 1:</b> ali-weds-sara/group=all-events/</div></div>' +
+			'<div class="hw2-card"><h4>Invitation Link 2</h4><span class="hw2-tag green">&#9989;2 events selected</span>' + tiles(['Baraat', 'Walima']) + '<div class="hw2-url">&#9989; <b>Link 2:</b> ali-weds-sara/group=baraat&amp;walima/</div></div>' +
+			'<div class="hw2-arrow">' + ARROW + '</div><div class="hw2-arrow">' + ARROW + '</div>' +
+			'<p class="hw2-send">Send Link 1 to 50 guests invited to all events.</p>' +
+			'<p class="hw2-send">Send Link 2 to 20 guests invited to Baraat &amp; Walima only.</p>' +
 			'</div>' +
 			'<ul class="hw2-list"><li>&#9989; Personal dashboard provided</li><li>&#9989; Edit anything anytime</li><li>&#9989; Create as many invitation links as you like</li></ul>' +
 			'<div style="text-align:center;margin-top:18px"><button type="button" class="cm-ok">Got it</button></div></div>';
@@ -307,6 +301,7 @@
 			items = saved.concat(rest);
 			if (!items.length) items.push(newDraft());
 		}
+		function summary(it) { return it.cards.map(nm).join(' + '); }
 		function ph(n) { return n === 2 ? 'e.g, Baraat & Walima' : 'e.g, Walima only'; }
 		function draw() {
 			sync();
@@ -322,11 +317,12 @@
 			items.forEach(function (it, ix) {
 				var n = ix + 2;
 				h += '<div class="lk-box" data-lkk="' + it.k + '"><b class="lk-bt">Choose events for Invitation Link ' + n + ':</b>' +
-					'<div class="lk-fld"><input class="lk-q" type="text" data-lkq="' + it.k + '" placeholder="' + esc(ph(n)) + '" autocomplete="off" value="' + esc(it.q) + '" aria-label="Choose events for Invitation Link ' + n + '"><button type="button" class="lk-car" data-lkcar="' + it.k + '" aria-label="Show events">' + (it.dd ? '&#9652;' : '&#9662;') + '</button></div>' +
-					(it.dd ? '<div class="lk-dd" data-lkdd="' + it.k + '">' + ddRows(it) + '</div>' : '') +
-					'<div class="lk-pills" data-lkpl="' + it.k + '">' + pills(it) + '</div>' +
+					'<div class="lk-fld"><input class="lk-q' + (!it.dd && it.cards.length ? ' lk-set' : '') + '" type="text" data-lkq="' + it.k + '" placeholder="' + esc(ph(n)) + '" autocomplete="off" value="' + esc(!it.dd && it.cards.length ? summary(it) : it.q) + '" aria-label="Choose events for Invitation Link ' + n + '"><button type="button" class="lk-car" data-lkcar="' + it.k + '" aria-label="Show events">' + (it.dd ? '&#9652;' : '&#9662;') + '</button></div>' +
+					(it.dd ? '<div class="lk-dd" data-lkdd="' + it.k + '">' + ddRows(it) + '</div><button type="button" class="lk-done" data-lkdone="' + it.k + '">Done</button>' : '') +
+					(it.dd ? '<div class="lk-pills" data-lkpl="' + it.k + '">' + pills(it) + '</div>' : '') +
+					(!it.dd && it.id && it.cards.length ? '<p class="lk-ok">&#9989; Invitation Link ' + n + ' is ready: ' + esc(summary(it)) + '</p>' : '') +
 					'<p class="lk-err" data-lker="' + it.k + '"' + (it.err ? '' : ' hidden') + '>' + esc(it.err) + '</p>' +
-					(it.id || ix > 0 ? '<button type="button" class="lk-rm" data-lkdel="' + it.k + '">Remove this link</button>' : '') + '</div>';
+					(it.id || ix > 0 ? '<button type="button" class="lk-rm" data-lkdel="' + it.k + '">Remove Link ' + n + '</button>' : '') + '</div>';
 			});
 			var last = items[items.length - 1];
 			if (last && last.id) h += '<button type="button" class="lk-add" data-lknew="1">+Create Invitation Link ' + (items.length + 2) + '</button>';
@@ -391,6 +387,7 @@
 			var it;
 			if (t.hasAttribute('data-lkhow')) { howItWorks(); return; }
 			if (t.hasAttribute('data-lknew')) { items.push(newDraft()); draw(); return; }
+			if (t.hasAttribute('data-lkdone')) { it = find(t.getAttribute('data-lkdone')); it.dd = false; it.q = ''; it.err = ''; draw(); return; }
 			if (t.hasAttribute('data-lkcar')) { it = find(t.getAttribute('data-lkcar')); it.dd = !it.dd; draw(); return; }
 			if (t.hasAttribute('data-lkpick')) {
 				var box = t.closest('[data-lkk]'); it = find(box.getAttribute('data-lkk'));

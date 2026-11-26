@@ -12,7 +12,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 		<p class="od-state" id="od-state">Loading your order...</p>
 	</div>
 	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Berkshire+Swash&family=Unna:ital,wght@0,400;0,700;1,600&family=Playfair+Display:wght@600;700&family=Poppins:wght@400;500;600&family=Inter:wght@500;600&family=Nunito:wght@400;500;600;700;800&family=Pinyon+Script&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&display=swap" />
-	<link rel="stylesheet" href="/ih-footer.css?v=4" />
+	<link rel="stylesheet" href="/ih-footer.css?v=5" />
 	<script is:inline src="/ih-footer.js?v=4"></script>
 	<script is:inline src="/ih-combos.js?v=4"></script>
 	<div id="env-root" hidden></div>
@@ -331,12 +331,12 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 				h += '<div class="cl" data-li="' + i + '"><div class="cl-h"><h3>' + esc(comboTitle(l)) + '</h3><small>' + esc(cards.join(', ')) + '</small></div>';
 				if (!link) { h += '<p class="hint" style="margin:0">Your link is being made. It appears here in a moment.</p></div>'; return; }
 				h += '<div class="cl-r"><button type="button" class="urlb" data-copy="' + esc(link) + '" title="Click to copy this link">' + icon('link') + '<span class="url">' + esc(link) + '</span></button>' +
-					'<div class="cl-b"><button type="button" class="qa" data-copy="' + esc(link) + '">' + icon('link') + '<span>Copy link</span></button><a class="qa wa2" target="_blank" rel="noopener" href="' + esc(waUrl(msg)) + '">' + WA + '<span>WhatsApp</span></a><a class="qa op" target="_blank" rel="noopener" href="' + esc(link) + '">' + icon('open') + '<span>Open</span></a>' + (l.main ? '' : '<button type="button" class="qa rmc" data-rmc="' + i + '"><span>Remove combination</span></button>') + '</div></div></div>';
+					'<div class="cl-b"><button type="button" class="qa" data-copy="' + esc(link) + '">' + icon('link') + '<span>Copy link</span></button><a class="qa wa2" target="_blank" rel="noopener" href="' + esc(waUrl(msg)) + '">' + WA + '<span>WhatsApp</span></a><a class="qa op" target="_blank" rel="noopener" href="' + esc(link) + '">' + icon('open') + '<span>Open</span></a>' + (l.main ? '' : '<button type="button" class="qa rmc" data-rmc="' + i + '"><span>Remove link ' + (i + 1) + '</span></button>') + '</div></div></div>';
 			});
 			return h + '</div>';
 		}
 		function groupsHtml() {
-			return '<section class="od-sec"><div class="sec-h"><div><h2>Invitation links</h2><p class="hint">Send each link to the guests it is meant for. They see only the cards of their combination.</p></div>' + (page === 'groups' ? '' : '<button type="button" class="btn-p" data-nav="groups">+ Create combination</button>') + '</div>' + comboLinksHtml() + '</section>';
+			return '<section class="od-sec"><div class="sec-h"><div><h2>Invitation links</h2><p class="hint">Send each link to the guests it is meant for. They see only the cards of their own invitation link.</p></div>' + (page === 'groups' ? '' : '<button type="button" class="btn-p" data-nav="groups">+ Create invitation link</button>') + '</div>' + comboLinksHtml() + '</section>';
 		}
 		/* ----- seats, event by event ----- */
 		var ABBR = { nikkah: 'N', mehndi: 'M', qawaali: 'Q', baraat: 'B', walima: 'W', dholki: 'D', mayun: 'My', rukhsati: 'R', shalima: 'S', shendi: 'Sh', bridalshower: 'BS', engagement: 'E', baatpakki: 'BP' };
@@ -648,7 +648,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			m.addEventListener('click', function (ev) { if (ev.target === m) m.close(); });
 			setTimeout(function () { var f = m.querySelector('#ao-n'); if (f) f.focus(); }, 30);
 		}
-		/* step 4: add guests, one combination at a time */
+		/* step 4: add guests */
 		function addGuestsPage() {
 			var h = '<div class="ag-grid"><div class="ag-main"><section class="od-sec gs-sec"><div class="sec-h gd-only"><div><h2>Guest list</h2><p class="hint">Type the guest name and phone number in the first row, then press Enter. The row is created with the group and seats dropdowns.</p></div></div>';
 			h += sheetTop(true) + '<div id="od-glist">' + guestsListHtml() + '</div><p class="err" id="od-newerr" hidden></p></section></div>';
@@ -657,7 +657,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 		}
 		/* step 3: card combinations */
 		function comboHowHtml() {
-			return '<h3>How card combinations work</h3><p>Not every guest is invited to every event. Create different combinations of event cards for different guests.</p><p><b>Each combination has its own invitation link.</b></p><div class="cp-ex"><b>Combo 1: Nikkah only</b><span>Ali gets a link with only the Nikkah card.</span></div><div class="cp-ex"><b>Combo 2: Nikkah + Mehndi + Baraat</b><span>Sara gets a link with the 3 events she is invited to.</span></div><p>Create as many combinations as you like.</p><p><b>Send on WhatsApp:</b> copy the link of a combination and send it to the guests who belong to it.</p><button type="button" class="btn-p" data-pclose="1">Got it</button>';
+			return '<h3>How invitation links work</h3><p>Not every guest is invited to every event. Create different invitation links for different guests.</p><p><b>Each invitation link shows its own cards.</b></p><div class="cp-ex"><b>Combo 1: Nikkah only</b><span>Ali gets a link with only the Nikkah card.</span></div><div class="cp-ex"><b>Combo 2: Nikkah + Mehndi + Baraat</b><span>Sara gets a link with the 3 events she is invited to.</span></div><p>Create as many invitation links as you like.</p><p><b>Send on WhatsApp:</b> copy an invitation link and send it to the guests who belong to it.</p><button type="button" class="btn-p" data-pclose="1">Got it</button>';
 		}
 		function combosPage() {
 			return '<div class="cp-main"><section class="od-sec"><div id="od-finder"></div></section></div>';
@@ -918,7 +918,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 				if (window.__ihCards) return res();
 				window.__ihCardsReady = res;
 				var sc = document.createElement('script');
-				sc.src = '/envelope-engine.js?v=35';
+				sc.src = '/envelope-engine.js?v=36';
 				sc.onerror = rej;
 				document.head.appendChild(sc);
 			});
@@ -1025,7 +1025,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			var head = '<div class="pg-h"><span class="pg-step">Step ' + it.n + '</span><h2>' + info[0] + '</h2>' + (info[1] ? '<p>' + info[1] + '</p>' : '') + '</div>';
 			if (page === 'couple') return head + wrapSec(coupleBody()) + cont;
 			if (page === 'events') return head + eventsBody() + cont;
-			if (page === 'groups') return head + combosPage() + '<section class="od-sec"><div class="sec-h"><div><h2>Your combination links</h2><p class="hint">Copy a link, or press Open to check that it shows the right cards.</p></div></div><div id="od-lklist">' + comboLinksHtml() + '</div></section><section class="od-sec"><h3 class="sec-t">Preview a combination</h3>' + previewAllBody() + '</section>' + cont;
+			if (page === 'groups') return head + combosPage() + '<section class="od-sec"><div class="sec-h"><div><h2>Your Invitation Links</h2><p class="hint">Copy a link, or press Open to check that it shows the right cards.</p></div></div><div id="od-lklist">' + comboLinksHtml() + '</div></section><section class="od-sec"><h3 class="sec-t">Preview an invitation link</h3>' + previewAllBody() + '</section>' + cont;
 			if (page === 'guests') return head + addGuestsPage() + cont;
 			if (page === 'hosts') return head + wrapSec(hostsBody()) + cont;
 			if (page === 'music') return head + wrapSec(musicBody()) + cont;
@@ -2515,5 +2515,12 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 		.ag-main .gr-new .gr-c::before { content: attr(data-l); display: block; font: 700 12px 'Nunito', sans-serif; color: #8a7a62; margin-bottom: 4px; }
 		.ag-main .gr-new .gr-g select { max-width: none; }
 		.ag-main .gr-new .vd { width: 100%; text-align: center; min-height: 46px; border-radius: 12px; font-size: 15px; }
+	}
+
+	@media (max-width: 999px) {
+		.cl-b { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
+		.cl-b .qa, .cl-b .qa.wa2 { width: 100%; flex: none; min-height: 46px; justify-content: center; padding: 10px 8px; font-size: 14px; border-radius: 12px; }
+		.cl-b .qa span { white-space: nowrap; text-align: center; }
+		.cl-b .qa { font-size: 13.5px; padding: 10px 4px; }
 	}
 </style>

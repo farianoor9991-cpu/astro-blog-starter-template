@@ -12,7 +12,7 @@
 }
 .ihf2-in.v-seats { background-image: url('/haya-footer-seats-m.jpg'); }
 @media (min-width: 700px) and (orientation: landscape) {
-	.ihf2-in { max-width: none; width: min(100%, calc(100svh * 16 / 9)); aspect-ratio: 1920 / 1080; background-image: url('/haya-footer-family-d.jpg'); }
+	.ihf2-in { max-width: none; width: 100%; /* full width: her gold border sits on the screen edges */ aspect-ratio: 1920 / 1080; background-image: url('/haya-footer-family-d.jpg'); }
 	.ihf2-in.v-seats { background-image: url('/haya-footer-seats-d.jpg'); }
 }
 .ihf2-in.f-m { max-width: 640px; width: 100%; aspect-ratio: 1080 / 1500; background-image: url('/haya-footer-family-m.jpg'); }

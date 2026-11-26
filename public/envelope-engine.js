@@ -1313,7 +1313,7 @@
 			vw.classList.remove('vw-hold');
 			state = 'open';
 			closeBtn.classList.add('show');
-		}, true);
+		});
 	}
 	// close: row > pile
 	function fromRow() {
@@ -1608,8 +1608,10 @@
 			);
 		})
 		.catch(function () {});
-	// no visible "preparing" screen: the tray and envelope come in as soon as their own pictures are ready (cards keep decoding quietly)
-	Promise.race([firstImgs, wait(2500)]).then(function () {
+	// no visible text any more, but the cards are still decoded BEFORE the tray comes in (so the cards glide out without any stutter, as in round 12g)
+	Promise.race([Promise.all([firstImgs, cardsDecoded]), wait(6000)]).then(function () {
+		return wait(150);
+	}).then(function () {
 		stage.classList.add('ev-in');
 		fireConfetti(); // confetti falls as soon as the invitation opens, once
 		wait((TM.hintDelay || 0) + 900).then(function () {
