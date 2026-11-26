@@ -228,7 +228,7 @@ const save = () => {};
 			await new Promise<void>((res) => {
 				const l = document.createElement('link');
 				l.rel = 'stylesheet';
-				l.href = 'https://fonts.googleapis.com/css2?family=Unna:wght@400;700&family=Berkshire+Swash&display=swap';
+				l.href = 'https://fonts.googleapis.com/css2?family=Unna:wght@400;700&family=Berkshire+Swash&family=Nunito:wght@400;500;600;700;800&display=swap';
 				l.onload = () => res();
 				l.onerror = () => res();
 				document.head.appendChild(l);
@@ -619,6 +619,17 @@ const save = () => {};
 				<div class="acts"><button class="btn-g" type="button" data-act="next" data-n="2">Continue to Step 3</button></div>`;
 		};
 
+		const hostBoxes = (): string => {
+			if (!S.hosts.list.length) S.hosts.list.push({ name: '', phone: '' });
+			const rows = S.hosts.list
+				.slice(0, MAX_HOSTS)
+				.map(
+					(h: D, i: number) => `<div class="host-row"><div class="f"><label>Host ${i + 1} name</label><input data-host="${i}" data-k="name" value="${esc(h.name)}" placeholder="e.g. ${esc(tpl.sampleHosts[i % tpl.sampleHosts.length].name)}" maxlength="40" autocomplete="off"></div><div class="f"><label>Phone number</label><input type="tel" inputmode="tel" data-host="${i}" data-k="phone" value="${esc(h.phone)}" placeholder="e.g. 03111234567" maxlength="16" autocomplete="off"></div>${i > 0 ? `<button type="button" class="host-rm" data-act="rmhost" data-i="${i}">Remove host</button>` : ''}</div>`
+				)
+				.join('');
+			return `<div class="host-boxes">${rows}${S.hosts.list.length < MAX_HOSTS ? '<button type="button" class="btn-s host-add" data-act="addhost">+ Add another host</button>' : ''}</div>`;
+		};
+
 		const body3 = (): string => {
 			const w = S.hosts.want;
 			const yn = `<div class="chips"><button type="button" class="chip${w === true ? ' on' : ''}" data-hosts="yes">Yes</button><button type="button" class="chip${w === false ? ' on' : ''}" data-hosts="no">No</button></div>`;
@@ -626,13 +637,13 @@ const save = () => {};
 				<p class="hint" style="font-size:14px;color:#1a1a1a"><b>Do you want a Reception Hosts card?</b></p>
 				<p class="hint">It lists the people your guests can call for the reception. You can add up to ${MAX_HOSTS} hosts in your invitation.</p>
 				${yn}
-				<p class="hint">You will add the hosts\u2019 names and phone numbers later, on your personal dashboard.</p>
+				${w === true ? hostBoxes() : ''}
 				<div class="err" data-err="3"></div>
 				<div class="acts"><button class="btn-g" type="button" data-act="next" data-n="3">Continue to Step 5</button></div>`;
 		};
 
 		const optHead = (t: string, price: string) =>
-			`<b style="display:flex;justify-content:space-between;align-items:baseline;gap:10px"><span>${t}</span><span style="font:700 15px Poppins,sans-serif;color:#b8793c;white-space:nowrap">${price}</span></b>`;
+			`<b style="display:flex;justify-content:space-between;align-items:baseline;gap:10px"><span>${t}</span><span style="font:700 15px 'Nunito', sans-serif;color:#b8793c;white-space:nowrap">${price}</span></b>`;
 		const body4 = (): string => {
 			const cards = pkg();
 			if (!cards.length) {
@@ -695,7 +706,7 @@ const save = () => {};
 				<div class="st1"><i>3</i><div><b>Get its link</b><span class="lkb">ali-weds-sara/group=walima-guests</span></div></div>
 				<div class="st1"><i>4</i><div><b>Copy the link and send it on WhatsApp</b></div></div>
 				<p style="margin:12px 0 0">Create as many groups as you like. Each link shows only the event cards you choose for that group.</p>
-				<div class="acts"><button type="button" data-act="howclose" style="background:#d4a276;color:#fff;border:0;border-radius:999px;padding:10px 24px;font:600 14px Poppins,sans-serif;cursor:pointer">Got it</button></div></div>`;
+				<div class="acts"><button type="button" data-act="howclose" style="background:#d4a276;color:#fff;border:0;border-radius:999px;padding:10px 24px;font:600 14px 'Nunito', sans-serif;cursor:pointer">Got it</button></div></div>`;
 			w.addEventListener('click', (e) => { const t = e.target as HTMLElement; if (t === w || t.closest('[data-act="howclose"]')) w.remove(); });
 			document.body.appendChild(w);
 		};
@@ -914,7 +925,7 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 						groomParents: tc(cleanParents(S.couple.groomParents)),
 					},
 					events: selEvents().sort(byDate).map((e: D) => ({ id: e.id, date: S.events[e.id].date, time: S.events[e.id].time, venue: String(S.events[e.id].venue).trim(), ...(e.custom ? { custom: true, label: e.label, title: e.title } : {}) })),
-					hosts: [],
+					hosts: S.hosts.want ? S.hosts.list.filter((h: D) => h.name.trim()).slice(0, MAX_HOSTS).map((h: D) => ({ name: tc(h.name), phone: String(h.phone || '').trim() })) : [],
 					hostsOn: !!S.hosts.want,
 					mode: 'one',
 					links: S.links.list.map((l: D) => ({ id: l.id, label: (window as any).IHCombos ? (window as any).IHCombos.label(l.cards, comboEvents()) : '', cards: l.cards })),
@@ -958,7 +969,7 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 		root.addEventListener('click', (ev) => {
 			const b = (ev.target as HTMLElement).closest('[data-ev-toggle],[data-mode],[data-card-pick],[data-act="gtoggle"],[data-act="addlink"],[data-act="addev"],[data-act="rmev"],[data-act="rmlink"]');
 		});
-		const fitTA = () => { document.querySelectorAll('textarea.wrapin').forEach((x) => { const t = x as HTMLTextAreaElement; t.style.height = 'auto'; t.style.height = t.scrollHeight + 'px'; }); };
+		const fitTA = () => { document.querySelectorAll('textarea.wrapin').forEach((x) => { const t = x as HTMLTextAreaElement; if (!t.value) { t.style.height = ''; return; } t.style.height = '0px'; t.style.height = Math.max(42, t.scrollHeight) + 'px'; }); };
 		root.addEventListener('keydown', (ev) => { if ((ev.target as HTMLElement).matches?.('textarea.wrapin') && (ev as KeyboardEvent).key === 'Enter') ev.preventDefault(); });
 		root.addEventListener('click', () => { setTimeout(fitTA, 0); setTimeout(fitTA, 350); });
 		window.addEventListener('resize', fitTA);
@@ -1297,7 +1308,7 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 	}
 	.cz {
 		padding-bottom: 76px;
-		font-family: 'Poppins', sans-serif;
+		font-family: 'Nunito', sans-serif;
 	}
 	.cz-head {
 		text-align: center;
@@ -1305,7 +1316,7 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 	}
 	.cz-title {
 		margin: 0 0 8px;
-		font-family: 'Playfair Display', serif;
+		font-family: 'Nunito', sans-serif;
 		font-weight: 700;
 		font-size: clamp(1.7rem, 7vw, 2.6rem);
 		line-height: 1.2;
@@ -1378,7 +1389,7 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 		border: none;
 		text-align: left;
 		cursor: pointer;
-		font-family: 'Poppins', sans-serif;
+		font-family: 'Nunito', sans-serif;
 		color: #1a1a1a;
 	}
 	.cz .st-n {
@@ -1449,7 +1460,7 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 	.cz .f input {
 		width: 100%;
 		box-sizing: border-box;
-		font: 400 14px 'Poppins', sans-serif;
+		font: 400 14px 'Nunito', sans-serif;
 		color: #1a1a1a;
 		background: #fcf9f1;
 		border: 1px solid rgba(26, 26, 26, 0.18);
@@ -1473,12 +1484,17 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 		white-space: nowrap;
 		border-right: 1px solid rgba(26, 26, 26, 0.18);
 	}
+	.cz .host-boxes { margin-top: 14px; display: flex; flex-direction: column; gap: 12px; }
+	.cz .host-row { display: flex; flex-direction: column; gap: 4px; background: #fff; border: 1px solid #ead9b9; border-radius: 14px; padding: 12px 14px 8px; }
+	.cz .host-rm { align-self: flex-start; border: 0; background: none; color: #b3261e; font: 500 12px 'Nunito', sans-serif; text-decoration: underline; padding: 4px 0 6px; cursor: pointer; }
+	.cz .host-add { align-self: flex-start; border: 1px dashed #d4a276; background: #fff; color: #7a4f24; border-radius: 999px; padding: 9px 16px; font: 600 13px 'Nunito', sans-serif; cursor: pointer; }
 	.cz .pre textarea.wrapin {
+		height: 42px;
 		flex: 1;
 		min-width: 0;
 		width: 100%;
 		box-sizing: border-box;
-		font: 400 14px 'Poppins', sans-serif;
+		font: 400 14px 'Nunito', sans-serif;
 		color: #1a1a1a;
 		background: transparent;
 		border: none;
@@ -1495,7 +1511,7 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 		min-width: 0;
 		width: 100%;
 		box-sizing: border-box;
-		font: 400 14px 'Poppins', sans-serif;
+		font: 400 14px 'Nunito', sans-serif;
 		color: #1a1a1a;
 		background: transparent;
 		border: none;
@@ -1505,7 +1521,7 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 	.cz textarea {
 		width: 100%;
 		box-sizing: border-box;
-		font: 400 14px 'Poppins', sans-serif;
+		font: 400 14px 'Nunito', sans-serif;
 		color: #1a1a1a;
 		background: #ffffff;
 		border: 1px solid rgba(26, 26, 26, 0.18);
@@ -1561,7 +1577,7 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 	.cz .btn-g,
 	.cz .btn-o {
 		display: inline-block;
-		font: 500 13px 'Poppins', sans-serif;
+		font: 500 13px 'Nunito', sans-serif;
 		padding: 10px 22px;
 		border-radius: 999px;
 		cursor: pointer;
@@ -1582,7 +1598,7 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 		background: none;
 		border: none;
 		padding: 4px 0;
-		font: 400 12px 'Poppins', sans-serif;
+		font: 400 12px 'Nunito', sans-serif;
 		color: #1a1a1a;
 		text-decoration: underline;
 		cursor: pointer;
@@ -1594,7 +1610,7 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 		margin: 6px 0 12px;
 	}
 	.cz .chip {
-		font: 500 12px 'Poppins', sans-serif;
+		font: 500 12px 'Nunito', sans-serif;
 		padding: 7px 14px;
 		border-radius: 999px;
 		border: 1px solid rgba(26, 26, 26, 0.18);
@@ -1661,7 +1677,7 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 		border: 1.5px solid rgba(26, 26, 26, 0.18);
 		background: #fcf9f1;
 		cursor: pointer;
-		font-family: 'Poppins', sans-serif;
+		font-family: 'Nunito', sans-serif;
 	}
 	.cz .opt b {
 		display: block;
@@ -1795,7 +1811,7 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 		color: #1a1a1a;
 	}
 
-	/* Swipe arrows in the preview popup */ 	.cz .cz-sheet { 		position: relative; 	} 	.cz .sw { 		position: absolute; 		top: 45%; 		z-index: 2; 		width: 38px; 		height: 38px; 		border: none; 		border-radius: 50%; 		background: rgba(255, 255, 255, 0.92); 		color: #1a1a1a; 		font-size: 26px; 		line-height: 1; 		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); 		cursor: pointer; 	} 	.cz .sw-l { 		left: 18px; 	} 	.cz .sw-r { 		right: 18px; 	} 	.cz .cz-modal.single .sw { 		display: none; 	} 	.cz .cz-modal canvas { 		touch-action: pan-y; 		cursor: grab; 	}  	/* Date and time dropdowns */ 	.cz .three { 		display: grid; 		grid-template-columns: 1fr 1fr 1fr; 		gap: 6px; 	} 	.cz select { 		width: 100%; 		box-sizing: border-box; 		font: 400 13px 'Poppins', sans-serif; 		color: #1a1a1a; 		background: #ffffff; 		border: 1px solid rgba(26, 26, 26, 0.18); 		border-radius: 10px; 		padding: 10px 6px; 	} 	.cz select:focus { 		outline: 2px solid #d4a276; 		outline-offset: 0; 	}  	/* Preview */
+	/* Swipe arrows in the preview popup */ 	.cz .cz-sheet { 		position: relative; 	} 	.cz .sw { 		position: absolute; 		top: 45%; 		z-index: 2; 		width: 38px; 		height: 38px; 		border: none; 		border-radius: 50%; 		background: rgba(255, 255, 255, 0.92); 		color: #1a1a1a; 		font-size: 26px; 		line-height: 1; 		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); 		cursor: pointer; 	} 	.cz .sw-l { 		left: 18px; 	} 	.cz .sw-r { 		right: 18px; 	} 	.cz .cz-modal.single .sw { 		display: none; 	} 	.cz .cz-modal canvas { 		touch-action: pan-y; 		cursor: grab; 	}  	/* Date and time dropdowns */ 	.cz .three { 		display: grid; 		grid-template-columns: 1fr 1fr 1fr; 		gap: 6px; 	} 	.cz select { 		width: 100%; 		box-sizing: border-box; 		font: 400 13px 'Nunito', sans-serif; 		color: #1a1a1a; 		background: #ffffff; 		border: 1px solid rgba(26, 26, 26, 0.18); 		border-radius: 10px; 		padding: 10px 6px; 	} 	.cz select:focus { 		outline: 2px solid #d4a276; 		outline-offset: 0; 	}  	/* Preview */
 	.cz canvas[data-preview] {
 		display: block;
 		margin: 0 auto;
@@ -1815,7 +1831,7 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 		margin: 12px 0 6px;
 	}
 	.cz .pt {
-		font: 500 11.5px 'Poppins', sans-serif;
+		font: 500 11.5px 'Nunito', sans-serif;
 		padding: 6px 12px;
 		border-radius: 999px;
 		border: 1px solid rgba(26, 26, 26, 0.18);
@@ -1854,7 +1870,7 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 		box-shadow: 0 -4px 14px rgba(0, 0, 0, 0.08);
 	}
 	.cz .cz-bar .pr {
-		font: 700 15px 'Poppins', sans-serif;
+		font: 700 15px 'Nunito', sans-serif;
 		color: #1a1a1a;
 	}
 	.cz .cz-modal {
@@ -1925,12 +1941,12 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 		flex: 1;
 	}
 	.cz .cz-asidebar .pr {
-		font: 700 17px 'Poppins', sans-serif;
+		font: 700 17px 'Nunito', sans-serif;
 		color: #1a1a1a;
 		white-space: nowrap;
 	}
 
 	.cz .pcombo { margin: 8px 0 4px; }
-	.cz .pcombo label { display: block; font: 500 12px Poppins, sans-serif; color: #5a5a5a; margin: 0 0 4px; }
-	.cz .pcombo select { width: 100%; padding: 9px 12px; border: 1px solid #e0d2b4; border-radius: 10px; background: #fff; font: 500 13px Poppins, sans-serif; color: #1a1a1a; }
+	.cz .pcombo label { display: block; font: 500 12px 'Nunito', sans-serif; color: #5a5a5a; margin: 0 0 4px; }
+	.cz .pcombo select { width: 100%; padding: 9px 12px; border: 1px solid #e0d2b4; border-radius: 10px; background: #fff; font: 500 13px 'Nunito', sans-serif; color: #1a1a1a; }
 </style>

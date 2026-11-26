@@ -32,7 +32,12 @@ export const POST: APIRoute = async ({ request, locals }) => {
 	const base = clean(body);
 	if (!base.events.length || !base.couple.brideName || !base.couple.groomName) return json({ error: 'Missing details' }, 400);
 	// groups and guest lists are made later, on the order page; the order starts with the one main link
-	const links = cleanLinks(body.links, base.events);
+	// the form only sends the EXTRA links the customer made; the main "all events" link is always added here
+	const extra = (Array.isArray(body.links) ? body.links : []).filter((l: any) => {
+		const cards = (Array.isArray(l?.cards) ? l.cards : []).filter((c: any) => base.events.some((e: any) => e.id === c));
+		return cards.length > 0 && cards.length < base.events.length;
+	});
+	const links = cleanLinks([{ id: 'all' }, ...extra], base.events);
 	const guests: any[] = [];
 	// private link = 10 characters that find the order + 14 secret characters
 	const pid = rid(10);

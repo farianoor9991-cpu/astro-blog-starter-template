@@ -156,7 +156,9 @@ export const cleanGuests = (input: any, links: any[], existing?: any[]) => {
 				seatMap[k] = v >= 1 && v <= 50 ? v : 0;
 			});
 		}
-		return { id, name, linkId, slug, phone, seats, seatMap };
+		// a message the customer rewrote for this one guest ('' = the standard message is used)
+		const msg = String(g?.msg !== undefined ? g.msg : prev?.msg ?? '').replace(/\r/g, '').slice(0, 1500);
+		return { id, name, linkId, slug, phone, seats, seatMap, ...(msg.trim() ? { msg } : {}) };
 	}).filter((g: any) => g.name);
 };
 
