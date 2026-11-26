@@ -3,7 +3,7 @@ import PageLayout from '../layouts/PageLayout.astro';
 ---
 
 <PageLayout title="Customize" description="Personalize your invitation cards." showReviews={false}>
-	<script is:inline src="/ih-combos.js?v=4"></script>
+	<script is:inline src="/ih-combos.js?v=5"></script>
 	<div class="cz" id="cz">
 		<div id="cz-main">
 			<header class="cz-head">
@@ -129,7 +129,7 @@ const MAX_HOSTS: number = tpl.maxHosts || 6;
 			active: tpl.events.find(e => e.label.toLowerCase().includes('nikah'))?.id || tpl.events[0].id,
 			couple: { brideName: '', brideParents: '', groomName: '', groomParents: '' },
 			events: {},
-			hosts: { want: true, list: tpl.sampleHosts.map((h: D) => ({ name: h.name, phone: String(h.phone).replace(/x/gi, '1') })) },
+			hosts: { want: null, list: [{ name: '', phone: '' }] },
 			links: { mode: 'one', list: [] },
 			setup: 'self',
 			guests: { on: false, one: '' },
@@ -811,6 +811,10 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 					if (!String(v.venue).trim()) er.push(`${e.label}: please enter the venue.`);
 				});
 			}
+			if (n === 3) {
+				if (S.hosts.want !== true && S.hosts.want !== false) er.push('Please choose Yes or No.');
+				else if (S.hosts.want && !S.hosts.list.some((h: D) => String(h.name).trim())) er.push('Please write at least one host name, or choose No.');
+			}
 			return er;
 		};
 
@@ -856,7 +860,7 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 				S.events[e.id] = SAMPLE_ON.indexOf(e.id) >= 0 ? { on: true, date: e.sample.date, time: e.sample.time, venue: tpl.sampleVenue } : { on: false, date: '', time: '', venue: '' };
 			});
 			S.hosts = { want: true, list: tpl.sampleHosts.map((h: D) => ({ name: h.name, phone: String(h.phone).replace(/x/gi, '1') })) };
-			S.links = { mode: 'many', list: [{ id: uid(), label: '', cards: ['mehndi', 'baraat'] }] };
+			S.links = { mode: 'many', list: [{ id: uid(), label: '', cards: [] }] };
 			S.guests = { on: true, one: '' };
 			S.done = { 1: true, 2: true, 7: true, 3: true, 4: true, 6: true };
 			S.active = pkg()[0];
@@ -1013,7 +1017,7 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 		root.addEventListener('click', (ev) => {
 			const b = (ev.target as HTMLElement).closest('[data-ev-toggle],[data-mode],[data-card-pick],[data-act="gtoggle"],[data-act="addlink"],[data-act="addev"],[data-act="rmev"],[data-act="rmlink"]');
 		});
-		const fitTA = () => { document.querySelectorAll('textarea.wrapin').forEach((x) => { const t = x as HTMLTextAreaElement; if (!t.value) { t.style.height = ''; return; } t.style.height = '0px'; t.style.height = Math.max(42, t.scrollHeight) + 'px'; }); };
+		const fitTA = () => { document.querySelectorAll('textarea.wrapin').forEach((x) => { const t = x as HTMLTextAreaElement; if (!t.value) { t.style.height = ''; return; } t.style.height = '0px'; t.style.height = Math.max(36, t.scrollHeight) + 'px'; }); };
 		root.addEventListener('keydown', (ev) => { if ((ev.target as HTMLElement).matches?.('textarea.wrapin') && (ev as KeyboardEvent).key === 'Enter') ev.preventDefault(); });
 		root.addEventListener('click', () => { setTimeout(fitTA, 0); setTimeout(fitTA, 350); });
 		window.addEventListener('resize', fitTA);
@@ -1533,7 +1537,8 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 	.cz .host-rm { align-self: flex-start; border: 0; background: none; color: #b3261e; font: 500 12px 'Nunito', sans-serif; text-decoration: underline; padding: 4px 0 6px; cursor: pointer; }
 	.cz .host-add { align-self: flex-start; border: 1px dashed #d4a276; background: #fff; color: #7a4f24; border-radius: 999px; padding: 9px 16px; font: 600 13px 'Nunito', sans-serif; cursor: pointer; }
 	.cz .pre textarea.wrapin {
-		height: 42px;
+		height: 36px;
+		min-height: 0;
 		flex: 1;
 		min-width: 0;
 		width: 100%;
@@ -1543,10 +1548,10 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 		background: transparent;
 		border: none;
 		border-radius: 0;
-		padding: 10px 12px;
+		padding: 8px 12px;
 		resize: none;
 		overflow: hidden;
-		line-height: 1.4;
+		line-height: 20px;
 		outline: none;
 		display: block;
 	}

@@ -109,6 +109,7 @@
 		'.hw2-arrow{height:56px;display:flex;align-items:center;justify-content:center}' +
 		'.hw2-url{width:100%;margin-top:auto;background:#fff;border:1px dashed #d4a276;border-radius:12px;padding:10px 8px;font:500 11.5px/1.6 Nunito,sans-serif;color:#1a1a1a;word-break:break-all;text-align:center}' +
 		'.hw2-url b{color:#b8793c}' +
+		'.hw2-send u{color:#c58b52;font-weight:800;text-decoration:underline;text-underline-offset:3px}' +
 		'.hw2-send{margin:0;text-align:center;font:600 13px/1.65 Nunito,sans-serif;color:#3a3a3a}' +
 		'.hw2-list{list-style:none;margin:24px 0 0;padding:16px 16px;background:#fff;border:1px solid #ead9b9;border-radius:14px;display:flex;flex-direction:column;gap:11px}' +
 		'.hw2-list li{color:#1a1a1a;font:500 13.5px/1.4 Nunito,sans-serif}' +
@@ -171,11 +172,11 @@
 		w.innerHTML =
 			'<div class="hw2" role="dialog" aria-modal="true" aria-label="How it works"><h3>How It Works</h3>' +
 			'<div class="hw2-two">' +
-			'<div class="hw2-card"><h4>Invitation Link 1</h4><span class="hw2-tag">All events selected</span>' + tiles(['Mehndi', 'Baraat', 'Walima']) + '<div class="hw2-url">&#9989; <b>Link 1:</b> ali-weds-sara/group=all-events/</div></div>' +
-			'<div class="hw2-card"><h4>Invitation Link 2</h4><span class="hw2-tag green">&#9989;2 events selected</span>' + tiles(['Baraat', 'Walima']) + '<div class="hw2-url">&#9989; <b>Link 2:</b> ali-weds-sara/group=baraat&amp;walima/</div></div>' +
+			'<div class="hw2-card"><h4>Invitation Link 1</h4><span class="hw2-tag">All events selected</span>' + tiles(['Mehndi', 'Baraat', 'Walima']) + '<div class="hw2-url"><b>Link 1:</b> ali-weds-sara/group=all-events/</div></div>' +
+			'<div class="hw2-card"><h4>Invitation Link 2</h4><span class="hw2-tag green">&#9989;2 events selected</span>' + tiles(['Baraat', 'Walima']) + '<div class="hw2-url"><b>Link 2:</b> ali-weds-sara/group=baraat&amp;walima/</div></div>' +
 			'<div class="hw2-arrow">' + ARROW + '</div><div class="hw2-arrow">' + ARROW + '</div>' +
-			'<p class="hw2-send">Send Link 1 to 50 guests invited to all events.</p>' +
-			'<p class="hw2-send">Send Link 2 to 20 guests invited to Baraat &amp; Walima only.</p>' +
+			'<p class="hw2-send">Send <u>Link 1</u> to 50 guests invited to all events.</p>' +
+			'<p class="hw2-send">Send <u>Link 2</u> to 20 guests invited to Baraat &amp; Walima only.</p>' +
 			'</div>' +
 			'<ul class="hw2-list"><li>&#9989; Personal dashboard provided</li><li>&#9989; Edit anything anytime</li><li>&#9989; Create as many invitation links as you like</li></ul>' +
 			'<div style="text-align:center;margin-top:18px"><button type="button" class="cm-ok">Got it</button></div></div>';

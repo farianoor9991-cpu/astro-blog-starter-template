@@ -14,7 +14,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Berkshire+Swash&family=Unna:ital,wght@0,400;0,700;1,600&family=Playfair+Display:wght@600;700&family=Poppins:wght@400;500;600&family=Inter:wght@500;600&family=Nunito:wght@400;500;600;700;800&family=Pinyon+Script&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&display=swap" />
 	<link rel="stylesheet" href="/ih-footer.css?v=5" />
 	<script is:inline src="/ih-footer.js?v=4"></script>
-	<script is:inline src="/ih-combos.js?v=4"></script>
+	<script is:inline src="/ih-combos.js?v=5"></script>
 	<div id="env-root" hidden></div>
 	<script is:inline id="env-config" type="application/json" set:html={JSON.stringify(previewConfig)} />
 	<div class="od-bar" id="od-bar" hidden>
@@ -445,7 +445,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			var ph = '<span class="phw"><input type="tel" inputmode="tel" class="phin" data-gphone="' + i + '" value="' + esc(g.phone || '') + '" placeholder="03XX XXXXXXX" maxlength="16" aria-label="Phone number" readonly><button type="button" class="ph-pen" data-gpedit="' + i + '" aria-label="Edit phone number" title="Edit phone number">' + PENCIL + '</button></span>';
 			return '<div class="gr-dt tb-row" data-gi="' + i + '"><div class="gr-dl"><div class="gr-edit"><span class="gr-el">Guest name</span><span class="gr-el">Phone number</span><div class="gr-ef">' + title + '</div><div class="gr-ef">' + ph + '<button type="button" class="rm-t" data-grm="' + i + '">Remove guest</button></div></div>' +
 				'<div class="gr-lab msg-h"><span>Invitation message</span><button type="button" class="msg-edit" data-gmedit="' + i + '">Edit message</button></div><div class="msg">' + msgHtml(msg) + '</div>' + (g.msg ? '<button type="button" class="msg-reset" data-gmreset="' + i + '">Use the standard message</button>' : '') +
-				'<div class="gr-lab" style="margin-top:12px">' + icon('link') + ' Invitation URL</div><button type="button" class="urlb" data-copy="' + esc(link) + '" title="Click to copy">' + '<span class="url">' + esc(link) + '</span>' + icon('link') + '</button></div>' +
+				'</div>' +
 				'<div class="gr-dr"><div class="gr-lab">Quick actions</div><div class="gr-qa gr-qa-stack"><button type="button" class="qa" data-copy="' + esc(link) + '">' + icon('link') + '<span>Copy link</span></button>' + wa + '<button type="button" class="qa" data-copy="' + esc(msg) + '" data-msg="1">' + icon('msg') + '<span>Copy message</span></button>' + op + '</div></div></div>';
 		}
 		function groupSel(i) {
@@ -537,10 +537,12 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			var t = seatSummaryText({ linkId: newLink, seatMap: newSeat, seats: 0 });
 			return '<div class="sd">' + (t ? '<span class="sd-t">' + esc(t) + '</span>' : '<span class="sd-t full">✅ Full family</span>') + '<button type="button" class="sd-b" data-seats="new">Edit seats</button></div>';
 		}
+		function isMob() { return window.matchMedia('(max-width: 1000px)').matches; }
 		function entryRow() {
 			var lid = newLink && O.links.some(function (l) { return l.id === newLink; }) ? newLink : (gfilter && gfilter !== '__all' ? gfilter : O.links[0].id);
 			newLink = lid;
-			return '<div class="gr-row gr-new"><div class="gr-c gr-n"><input class="ge-in" id="od-newg" data-agt="' + esc(lid) + '" maxlength="80" autocomplete="off" placeholder="e.g, Hamza Chachu 0333122678" aria-label="New guest: name and phone number"></div>' +
+			return '<div class="gr-row gr-new"><div class="gr-c gr-n"><input class="ge-in" id="od-newg" data-agt="' + esc(lid) + '" maxlength="80" autocomplete="off" placeholder="' + (isMob() ? 'Hamza Chachu' : 'e.g, Hamza Chachu 0333122678') + '" aria-label="New guest: name"></div>' +
+				'<div class="gr-c gr-ph" data-l="Phone number"><input class="ge-in" id="od-newph" type="tel" inputmode="tel" maxlength="16" autocomplete="off" placeholder="0333122678" aria-label="New guest: phone number"></div>' +
 				'<div class="gr-c gr-g" data-l="Group"><select id="od-newlink" aria-label="Group for the new guest">' + O.links.map(function (l) { return '<option value="' + esc(l.id) + '"' + (l.id === lid ? ' selected' : '') + '>' + esc(comboTitle(l)) + '</option>'; }).join('') + '</select></div>' +
 				'<div class="gr-c gr-s" data-l="Seats Details" id="od-newseat">' + newSeatInner() + '</div><div class="gr-c gr-a"><button type="button" class="vd" data-newadd="1">Add</button></div></div>';
 		}
@@ -609,7 +611,6 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			h += '<div class="gm-card"><span class="gm-ic">' + IC.ph + '</span><span class="gm-ct"><small>Phone Number</small><input type="tel" inputmode="tel" class="gm-phin" data-gphone="' + i + '" value="' + esc(g.phone || '') + '" placeholder="03XX XXXXXXX" maxlength="16" aria-label="Phone number" readonly></span><button type="button" class="ph-pen" data-gpedit="' + i + '" aria-label="Edit phone number" title="Edit phone number">' + PENCIL + '</button></div>';
 			h += '<div class="gm-card"><span class="gm-ic">' + IC.seat + '</span><span class="gm-ct"><small>Seats Details</small><b>' + (t ? esc(t) : 'Full Family') + '</b></span><button type="button" class="gm-eb" data-seats="' + i + '">' + PENCIL + ' Edit Seats</button></div>';
 			h += '<div class="gm-card gm-col"><div class="gm-lab"><span class="gm-lt">' + icon('msg') + ' Invitation Message</span><button type="button" class="msg-edit" data-gmedit="' + i + '">Edit message</button></div><div class="msg gm-msg">' + msgHtml(msg) + '</div>' + (g.msg ? '<button type="button" class="msg-reset" data-gmreset="' + i + '">Use the standard message</button>' : '') + '</div>';
-			h += '<div class="gm-card gm-col"><div class="gm-lab">' + icon('link') + ' Personal Invitation Link</div><div class="gm-linkrow"><span class="url">' + esc(link) + '</span><button type="button" class="gm-cp" data-copy="' + esc(link) + '" aria-label="Copy link">' + icon('link') + '</button></div></div>';
 			h += '<div class="gm-card gm-col gm-qcard"><div class="gm-lab">Quick Actions</div><div class="gm-q3"><button type="button" data-copy="' + esc(link) + '"><span class="gm-qi">' + icon('link') + '</span>Copy Link</button><button type="button" data-copy="' + esc(msg) + '" data-msg="1"><span class="gm-qi">' + icon('msg') + '</span>Copy Message</button><a target="_blank" rel="noopener" href="' + esc(waUrl(msg, g.phone)) + '"><span class="gm-qi gm-wa">' + WA + '</span>Share on WhatsApp</a></div></div>';
 			h += '<a class="gm-open" target="_blank" rel="noopener" href="' + esc(link) + '">' + icon('open') + ' Open Invitation</a>';
 			return shw(h);
@@ -878,6 +879,62 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			h += '<div class="pv" id="od-pv"><p class="hint">Loading preview...</p></div>';
 			return h;
 		}
+		var gcache = {};
+		function gNames() { return O.guests.map(function (g) { return g.name.trim(); }).filter(Boolean); }
+		function gUrl(nm) {
+			if (gcache[nm]) return Promise.resolve(gcache[nm]);
+			return pvCards({ couple: O.couple, events: [], hosts: [], guest: nm, gid: '' }).then(function (l) { gcache[nm] = l[0].url; return gcache[nm]; });
+		}
+		function gFill(fig) {
+			if (!fig || fig.dataset.ok) return;
+			fig.dataset.ok = '1';
+			gUrl(fig.dataset.gnm).then(function (u) {
+				var ph = fig.querySelector('.gl-ph');
+				if (!ph) return;
+				var im = new Image();
+				im.alt = fig.dataset.gnm;
+				im.draggable = false;
+				im.src = u;
+				ph.replaceWith(im);
+			}).catch(function () { fig.dataset.ok = ''; });
+		}
+		function gallBody() {
+			var names = gNames();
+			if (!names.length) return '<p class="hint">Add your guests first (Add/remove guests), then the greeting card of every guest appears here.</p>';
+			var h = '<p class="hint">Swipe to see the greeting card of every guest, one after another, and check that each name looks good. Below this, you can look at all the cards one guest receives.</p>';
+			h += '<div class="pv-wrap"><button type="button" class="pv-ar pv-l" data-pv="-1" data-pvt="g" aria-label="Previous guest">&#8249;</button><div class="pv-track" id="od-pvtg">';
+			names.forEach(function (n) { h += '<figure class="pv-slide" data-gnm="' + esc(n) + '"><div class="gl-ph">Loading...</div><figcaption>' + esc(n) + '</figcaption></figure>'; });
+			h += '</div><button type="button" class="pv-ar pv-r" data-pv="1" data-pvt="g" aria-label="Next guest">&#8250;</button></div><div class="gl-count" id="od-glc">1 of ' + names.length + '</div>';
+			h += '<div class="acts" style="justify-content:center"><button type="button" class="btn-o" data-gwin="1">See all greeting cards in a window</button></div>';
+			return h;
+		}
+		function gallInit() {
+			var tr = document.getElementById('od-pvtg');
+			if (!tr) return;
+			var figs = tr.querySelectorAll('.pv-slide');
+			var upd = function () {
+				var i = Math.round(tr.scrollLeft / Math.max(1, tr.clientWidth));
+				for (var k = Math.max(0, i - 1); k <= Math.min(figs.length - 1, i + 2); k++) gFill(figs[k]);
+				var c = document.getElementById('od-glc');
+				if (c) c.textContent = (i + 1) + ' of ' + figs.length;
+			};
+			tr.addEventListener('scroll', function () { clearTimeout(tr._t); tr._t = setTimeout(upd, 60); });
+			upd();
+		}
+		function gallWin() {
+			var names = gNames();
+			var m = document.createElement('div');
+			m.className = 'gw-modal';
+			m.innerHTML = '<div class="gw-in" role="dialog" aria-label="All greeting cards"><div class="gw-h"><b>All greeting cards (' + names.length + ')</b><button type="button" class="gw-x" data-gwx="1">Close</button></div><div class="gw-grid">' + names.map(function (n) { return '<figure class="gw-c" data-gnm="' + esc(n) + '"><div class="gl-ph">Loading...</div><figcaption>' + esc(n) + '</figcaption></figure>'; }).join('') + '</div></div>';
+			document.body.appendChild(m);
+			document.body.style.overflow = 'hidden';
+			var inner = m.querySelector('.gw-in');
+			var io = new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) { io.unobserve(e.target); gFill(e.target); } }); }, { root: inner, rootMargin: '500px' });
+			m.querySelectorAll('[data-gnm]').forEach(function (f) { io.observe(f); });
+			m.addEventListener('click', function (e) {
+				if (e.target === m || e.target.closest('[data-gwx]')) { io.disconnect(); m.remove(); document.body.style.overflow = ''; }
+			});
+		}
 		function previewAllBody() {
 			var h = '<p class="hint">Your event cards' + (hostsOn() ? ' and the reception hosts card' : '') + ', exactly as guests see them. Change a date, time or venue and the cards update here.</p>';
 			if (many()) {
@@ -1032,7 +1089,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			if (page === 'footer') return head + wrapSec(footerBody()) + cont;
 			if (page === 'message') return head + wrapSec(messageBody()) + cont;
 			var ph = head;
-			if (O.guestsOn) ph += '<section class="od-sec od-narrow"><h3 class="sec-t">Preview by guest</h3>' + previewBody() + '</section>';
+			if (O.guestsOn) ph += '<section class="od-sec od-narrow"><h3 class="sec-t">See all greeting cards</h3>' + gallBody() + '</section><section class="od-sec od-narrow"><h3 class="sec-t">Preview by guest</h3>' + previewBody() + '</section>';
 			return ph + '<section class="od-sec od-narrow"><h3 class="sec-t">Preview event cards</h3>' + previewAllBody() + '</section>' + cont;
 		}
 		function render() {
@@ -1057,6 +1114,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			root.classList.toggle('od-view', !editing);
 			applyView();
 			if (page === 'groups') mountFinder();
+			if (page === 'preview') gallInit();
 			pvRefresh();
 			document.title = coupleTitle() + ' | Order ' + O.orderNo;
 			window.scrollTo(0, y);
@@ -1144,6 +1202,8 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			var ln = inp.value.replace(/[*]+$/, '').trim();
 			if (!ln) return;
 			var r = parseGuestLine(ln);
+			var phb = document.getElementById('od-newph');
+			if (phb && phb.value.trim() && isMob()) r.phone = phb.value.replace(/[^0-9+]/g, '');
 			if (r.name.length > 45) return fail('That name is too long. Please keep each name within 45 characters.');
 			if (O.guests.length >= 500) return fail('You can add up to 500 guests.');
 			if (er) er.hidden = true;
@@ -1156,6 +1216,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			var nsc = document.getElementById('od-newseat');
 			if (nsc) nsc.innerHTML = newSeatInner();
 			inp.value = '';
+			if (phb) phb.value = '';
 			pv.typed = '';
 			pv.c.reset = true;
 			setDirty(true);
@@ -1303,13 +1364,14 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			pv.c.reset = true;
 			pvRefresh();
 		}
-		function fitTA() { document.querySelectorAll('textarea.wrapin').forEach(function (t) { if (!t.value) { t.style.height = ''; return; } t.style.height = '0px'; t.style.height = Math.max(42, t.scrollHeight) + 'px'; }); }
+		function fitTA() { document.querySelectorAll('textarea.wrapin').forEach(function (t) { if (!t.value) { t.style.height = ''; return; } t.style.height = '0px'; t.style.height = Math.max(44, t.scrollHeight) + 'px'; }); }
 		root.addEventListener('input', function (ev) { if (ev.target && ev.target.matches && ev.target.matches('textarea.wrapin')) fitTA(); });
 		root.addEventListener('click', function () { setTimeout(fitTA, 0); setTimeout(fitTA, 350); });
 		window.addEventListener('resize', fitTA);
 		root.addEventListener('keydown', function (ev) {
 			if (ev.key === 'Enter' && ev.target && ev.target.matches && ev.target.matches('textarea.wrapin')) ev.preventDefault();
-			if (ev.key === 'Enter' && ev.target && ev.target.id === 'od-newg') { ev.preventDefault(); addFromEntry(); }
+			if (ev.key === 'Enter' && ev.target && ev.target.id === 'od-newg') { ev.preventDefault(); var nph = document.getElementById('od-newph'); if (isMob() && nph && !nph.value.trim()) nph.focus(); else addFromEntry(); }
+			if (ev.key === 'Enter' && ev.target && ev.target.id === 'od-newph') { ev.preventDefault(); addFromEntry(); }
 		});
 		root.addEventListener('click', function (ev) {
 			if (ev.target && ev.target.classList && ev.target.classList.contains('gm-shw')) { mobOpen = null; renderSheet(); }
@@ -1489,6 +1551,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			if (!b) return;
 			var d = b.dataset;
 			if (!editing && (d.sameven !== undefined || d.erm !== undefined || d.addstd !== undefined || d.htoggle !== undefined || d.newgroup !== undefined || b.id === 'od-addcustom' || b.id === 'od-gnew' || d.grm !== undefined || d.acOpen === 'addguests' || b.id === 'od-addg' || b.id === 'od-reset' || b.id === 'od-addh' || d.tpl !== undefined || d.fmode !== undefined)) { askPin(); return; }
+			if (d.gwin !== undefined) { gallWin(); return; }
 			if (d.how !== undefined) {
 				var mh = popup(comboHowHtml());
 				mh.addEventListener('click', function (e2) { if (e2.target === mh || (e2.target.dataset && e2.target.dataset.pclose)) mh.close(); });
@@ -1515,7 +1578,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 				renderGuestList();
 				return;
 			}
-			if (d.gadd !== undefined) { page = 'guests'; navOpen = false; try { history.replaceState(null, '', '#guests'); } catch (e) {} render(); window.scrollTo(0, 0); return; }
+			if (d.gadd !== undefined) { page = 'guests'; navOpen = false; try { history.replaceState(null, '', '#guests'); } catch (e) {} render(); window.scrollTo(0, 0); var gne = document.getElementById('od-newg'); if (gne) { gne.focus(); try { gne.scrollIntoView({ block: 'center' }); } catch (e1) {} } return; }
 			if (d.newadd !== undefined) { addFromEntry(); return; }
 			if (d.seats !== undefined) { openSeats(d.seats === 'new' ? 'new' : Number(d.seats)); return; }
 			if (d.gm !== undefined) { mobOpen = Number(d.gm); pvGuest(mobOpen); renderSheet(); return; }
@@ -1656,7 +1719,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 					b.innerHTML = TICK;
 					b.classList.add('on');
 					pi.focus();
-					try { pi.setSelectionRange(pi.value.length, pi.value.length); } catch (e0) {}
+					try { pi.select(); pi.setSelectionRange(0, pi.value.length); } catch (e0) {}
 				} else pi.blur();
 				return;
 			}
@@ -2421,7 +2484,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 	.od-start { width: min(100%, 440px); aspect-ratio: auto; padding: 16px 22px 18px; margin: 2px auto 16px; gap: 6px; }
 	.od-start h3 { margin-bottom: 2px; }
 	.chip-more { background: #fff; border-style: dashed; }
-	textarea.wrapin { height: 42px; flex: 1; min-width: 0; width: 100%; box-sizing: border-box; font: 400 14px 'Nunito', sans-serif; color: #1A1A1A; background: transparent; border: none; padding: 10px 12px; resize: none; overflow: hidden; line-height: 1.4; outline: none; display: block; }
+	.od textarea.wrapin { height: 44px; min-height: 0; flex: 1; min-width: 0; width: 100%; box-sizing: border-box; font: 400 14px 'Nunito', sans-serif; color: #1A1A1A; background: transparent; border: none; padding: 12px 12px; resize: none; overflow: hidden; line-height: 20px; outline: none; display: block; }
 	.od .pre { align-items: stretch; }
 	.od .pre span { display: flex; align-items: center; }
 	@media (max-width: 999px) {
@@ -2522,5 +2585,36 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 		.cl-b .qa, .cl-b .qa.wa2 { width: 100%; flex: none; min-height: 46px; justify-content: center; padding: 10px 8px; font-size: 14px; border-radius: 12px; }
 		.cl-b .qa span { white-space: nowrap; text-align: center; }
 		.cl-b .qa { font-size: 13.5px; padding: 10px 4px; }
+	}
+
+	/* ===== round 12m ===== */
+	.gl-ph { width: 225px; height: 400px; max-width: 100%; margin: 0 auto; border-radius: 10px; background: #F3E7D0; color: #8a7a5c; display: grid; place-items: center; font: 600 13px 'Nunito', sans-serif; }
+	.gl-count { text-align: center; margin: 10px 0 4px; font: 700 13px 'Nunito', sans-serif; color: #5A5A5A; }
+	.gw-modal { position: fixed; inset: 0; z-index: 400; background: rgba(20, 16, 10, 0.55); display: flex; align-items: center; justify-content: center; padding: 14px; }
+	.gw-in { width: min(1100px, 100%); max-height: 100%; overflow-y: auto; background: #FCF9F1; border-radius: 18px; padding: 18px 18px 22px; }
+	.gw-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; position: sticky; top: -18px; background: #FCF9F1; padding: 6px 0 14px; z-index: 2; font: 700 17px 'Nunito', sans-serif; color: #1A1A1A; }
+	.gw-x { border: 0; background: #1A1A1A; color: #fff; border-radius: 999px; padding: 9px 20px; font: 700 14px 'Nunito', sans-serif; cursor: pointer; }
+	.gw-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 12px; }
+	.gw-c { margin: 0; text-align: center; }
+	.gw-c img, .gw-c .gl-ph { width: 100%; height: auto; aspect-ratio: 9 / 16; display: block; border-radius: 10px; box-shadow: 0 6px 16px rgba(0, 0, 0, .16); }
+	.gw-c figcaption { margin-top: 8px; font: 700 13px 'Nunito', sans-serif; color: #1A1A1A; overflow-wrap: anywhere; }
+	@media (min-width: 700px) { .gw-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+	@media (min-width: 1000px) { .gw-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+	.gr-ph { display: none; }
+	.gr-qa-stack { display: grid; grid-template-columns: max-content; justify-content: center; gap: 12px; }
+	.gr-qa-stack .qa { width: auto; min-width: 0; justify-content: center; text-align: center; padding-left: 22px; padding-right: 22px; }
+	.gr-head span:last-child { text-align: center; justify-self: stretch; white-space: nowrap; }
+	.gr-row .gr-a { justify-self: stretch; text-align: center; display: flex; justify-content: center; }
+	@media (max-width: 1000px) {
+		.ag-main .gr-new { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 10px 10px; padding: 14px; }
+		.ag-main .gr-new .gr-ph { display: block; }
+		.ag-main .gr-new .gr-n, .ag-main .gr-new .gr-ph, .ag-main .gr-new .gr-g, .ag-main .gr-new .gr-s { min-width: 0; }
+		.ag-main .gr-new .gr-c::before { margin-bottom: 3px; }
+		.ag-main .gr-new .gr-n::before { content: 'Guest name'; display: block; font: 700 12px 'Nunito', sans-serif; color: #8a7a62; margin-bottom: 3px; }
+		.ag-main .gr-new .ge-in { font-size: 14px; padding: 9px 10px; }
+		.ag-main .gr-new .gr-g select { width: 100%; font-size: 14px; }
+		.ag-main .gr-new .gr-n { grid-column: auto; }
+		.ag-main .gr-new .gr-a { grid-column: 1 / -1; display: flex; justify-content: center; }
+		.ag-main .gr-new .vd { width: 100%; text-align: center; display: flex; align-items: center; justify-content: center; min-height: 44px; }
 	}
 </style>
