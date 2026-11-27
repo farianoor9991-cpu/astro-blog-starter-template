@@ -3,7 +3,7 @@ import PageLayout from '../layouts/PageLayout.astro';
 ---
 
 <PageLayout title="Customize" description="Personalize your invitation cards." showReviews={false}>
-	<script is:inline src="/ih-combos.js?v=5"></script>
+	<script is:inline src="/ih-combos.js?v=6"></script>
 	<div class="cz" id="cz">
 		<div id="cz-main">
 			<header class="cz-head">
@@ -632,10 +632,14 @@ const save = () => {};
 				)
 				.join('');
 			const n = S.hosts.list.length + 1;
+			const showForm = S.hosts.list.length === 0 || S.hosts.adding;
+			const more = S.hosts.list.length > 0 && !S.hosts.adding && S.hosts.list.length < MAX_HOSTS ? `<button type="button" class="btn-o host-more" data-act="hostmore">+Add another host</button>` : '';
 			const form =
-				S.hosts.list.length < MAX_HOSTS
-					? `<div class="host-row"><div class="f"><label>Host ${n} name</label><input data-hd="name" value="${esc(dr.name)}" placeholder="e.g. ${esc(tpl.sampleHosts[(n - 1) % tpl.sampleHosts.length].name)}" maxlength="40" autocomplete="off"></div><div class="f"><label>Phone number</label><input type="tel" inputmode="tel" data-hd="phone" value="${esc(dr.phone)}" placeholder="e.g. 03111234567" maxlength="16" autocomplete="off"></div><div class="err" data-err="host"></div><button type="button" class="btn-g host-addbtn" data-act="hostsave">Add</button></div>`
-					: `<p class="hint">You have added the most hosts you can (${MAX_HOSTS}).</p>`;
+				S.hosts.list.length >= MAX_HOSTS
+					? `<p class="hint">You have added the most hosts you can (${MAX_HOSTS}).</p>`
+					: !showForm
+					? more
+					: `<div class="host-row"><div class="f"><label>Host ${n} name</label><input data-hd="name" value="${esc(dr.name)}" placeholder="e.g. ${esc(tpl.sampleHosts[(n - 1) % tpl.sampleHosts.length].name)}" maxlength="40" autocomplete="off"></div><div class="f"><label>Phone number</label><input type="tel" inputmode="tel" data-hd="phone" value="${esc(dr.phone)}" placeholder="e.g. 03111234567" maxlength="16" autocomplete="off"></div><div class="err" data-err="host"></div><button type="button" class="btn-g host-addbtn" data-act="hostsave">Add</button></div>`;
 			return `<div class="host-boxes">${saved}${form}</div>`;
 		};
 
@@ -1210,6 +1214,7 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 					}
 					if (S.hosts.list.length < MAX_HOSTS) S.hosts.list.push({ name: nm, phone: ph });
 					S.hosts.draft = { name: '', phone: '' };
+					S.hosts.adding = false;
 					S.active = 'hosts';
 					refreshBody(3);
 					updateSummaries();
@@ -1217,6 +1222,10 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 					scheduleDraw();
 					break;
 				}
+				case 'hostmore':
+					S.hosts.adding = true;
+					refreshBody(3);
+					break;
 				case 'rmhost':
 					S.hosts.list.splice(Number(d.i), 1);
 					refreshBody(3);
@@ -2029,5 +2038,6 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 	.cz .host-saved { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: #fbf3e4; border: 1px solid #ead9b9; border-radius: 14px; padding: 10px 14px; }
 	.cz .host-sv { display: flex; flex-direction: column; min-width: 0; font: 500 13px 'Nunito', sans-serif; color: #5a5a5a; }
 	.cz .host-sv b { color: #1a1a1a; font-weight: 700; overflow-wrap: anywhere; }
+	.cz .host-more { width: 100%; margin: 6px 0 4px; padding: 11px 16px; text-align: center; justify-content: center; }
 	.cz .host-addbtn { align-self: stretch; margin: 6px 0 4px; padding: 11px 16px; text-align: center; }
 </style>

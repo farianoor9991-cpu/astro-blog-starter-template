@@ -16,7 +16,7 @@
 	};
 	// rows: [{ label, n }] in the guest's event order; n = 0 means Full Family.
 	// Lines with a seat number first (fewest seats on top, same number keeps the event order), then ONE "Full Family" line.
-	// If every event is Full Family there is nothing to write.
+	// Full Family is always written too (e.g. "Baraat & Walima: Full Family").
 	var seatLines = function (rows) {
 		rows = (rows || []).filter(function (r) { return r && r.label; });
 		var specific = rows
@@ -25,7 +25,6 @@
 			.sort(function (a, b) { return a.r.n - b.r.n || a.i - b.i; })
 			.map(function (x) { return { text: x.r.label + ': ' + x.r.n + (x.r.n === 1 ? ' Seat' : ' Seats') }; });
 		var full = rows.filter(function (r) { return !(r.n >= 1); }).map(function (r) { return r.label; });
-		if (!specific.length) return [];
 		if (full.length) specific.push({ text: joinNames(full) + ': Full Family' });
 		return specific;
 	};
@@ -43,7 +42,8 @@
 		var P = wide ? PD : PM;
 		var bw = box.clientWidth;
 		if (!bw) return;
-		var k = bw / P.W; // design px > real px
+		var bh = box.clientHeight;
+		var k = bh ? Math.min(bw / P.W, bh / P.H) : bw / P.W; // design px > real px (a shorter footer shrinks the text too)
 		var place = function (el, y, fs) {
 			el.style.top = (y / P.H) * 100 + '%';
 			el.style.fontSize = fs * k + 'px';
@@ -116,7 +116,7 @@
 			if (mode === 'family') names = String(o.family || '').trim() || names;
 			if (mode === 'none') names = 'With Love & Warm Regards';
 			var lines = seatLines(o.seatRows);
-			var v = lines.length ? 'seats' : 'family'; // everyone Full Family: the small picture instead of the seat lines
+			var v = lines.length ? 'seats' : 'family'; // no events at all: the small picture instead of the seat lines
 			var force = o.layout === 'd' || o.layout === 'm' ? ' data-force="' + o.layout + '"' : '';
 			return (
 				'<div class="ihf2"><div class="ihf2-in v-' + v + (o.layout ? ' f-' + o.layout : '') + '"' + force + '>' +

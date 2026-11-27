@@ -91,3 +91,9 @@
 .ev-scroll svg { width: 18px; height: 12px; animation: ev-nudge 1.7s ease-in-out infinite; }
 @keyframes ev-nudge { 0%, 100% { transform: translateY(0); opacity: 0.6; } 50% { transform: translateY(4px); opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .ev-scroll svg { animation: none; } }
+
+/* round 12o: on a laptop the footer is exactly one screen tall (like the envelope page), so its bottom border is visible
+   as soon as the footer is fully scrolled to. The picture is stretched to fill that height. */
+@media (min-width: 700px) and (orientation: landscape) {
+	.ev-foot .ihf2-in:not(.f-d):not(.f-m) { aspect-ratio: auto; height: 100vh; height: 100svh; background-size: 100% 100%; }
+}
