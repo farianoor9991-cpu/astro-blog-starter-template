@@ -916,7 +916,7 @@
 
 	/* --- 3. fairy dust and twinkling stars while the flap opens and the cards come out --- */
 	var dust = null;
-	var startDust = function () {
+	var startDust = function (src) {
 		var Sp = S.sparkle;
 		if (!Sp || !Sp.enabled) return;
 		stopDust(true);
@@ -936,6 +936,12 @@
 			var fr = flapEl.getBoundingClientRect();
 			var px = wide ? rnd(r.left - r.width * 0.12, r.right + r.width * 0.12) : rnd(fr.left + fr.width * 0.2, fr.right - fr.width * 0.185);
 			var py = wide ? rnd(r.top - r.height * 0.55, r.bottom - r.height * 0.15) : rnd(fr.top + fr.height * 0.15, fr.bottom - fr.height * 0.15);
+			if (src) {
+				// footer dust: specks across the part of the footer that is on the screen
+				var q = src();
+				px = rnd(q.l, q.r);
+				py = rnd(q.t, q.b);
+			}
 			ps.push({
 				x: px,
 				y: py,
@@ -1059,6 +1065,8 @@
 			return Y(t);
 		};
 	};
+	// the top edge of the pocket front is a V (taken from the picture): the part of a card under this line is hidden
+	var POCKET_CLIP = 'polygon(-2% -400%, 102% -400%, 102% 0%, 95% 0%, 80% 17%, 65% 36.3%, 50% 42.8%, 35% 36.4%, 20% 16.6%, 5% 0%, -2% 0%)';
 	var easeUp = bez(0.42, 0.04, 0.22, 1); // opening: soft start, long gentle finish
 	var easeDown = bez(0.4, 0, 0.2, 1); // closing and settling: smooth in and out
 	var tl = null;
@@ -1354,33 +1362,25 @@
 		cards.forEach(function (c) {
 			ctl.to(c.el, { y: c.pose.pile.out, x: 0, scale: 1, rotation: 0, duration: D.cardDown, ease: easeDown }, 0);
 		});
-		// each card goes back behind the pocket front only once it has dropped to the same height where it came out in front
-		// (moving them all at the top made the stack jump behind the raised flap for a moment = the blink)
+		// Going back in: the cards stay in the front layer the WHOLE time (nothing is moved from one layer to another while they
+		// move, which is what made it blink on phones). Instead the front layer is cut along the edge of the pocket, so the part of a card
+		// that is below that edge is hidden exactly as the pocket front would hide it. The front card goes first, the others follow one by one.
+		ctl.call(function () {
+			cardsTop.style.clipPath = POCKET_CLIP;
+		}, null, D.cardDown);
 		cards.forEach(function (c) {
-			var swap = c.pose.lift.y + (c.pose.pile.out - c.pose.lift.y) * 0.85;
-			var done = false;
-			ctl.to(
-				c.el,
-				{
-					y: c.pose.lift.y,
-					duration: D.cardDown,
-					ease: easeDown,
-					onUpdate: function () {
-						if (!done && gsap.getProperty(c.el, 'y') >= swap) {
-							done = true;
-							cardsEl.appendChild(c.el);
-						}
-					},
-					onComplete: function () {
-						if (!done) {
-							done = true;
-							cardsEl.appendChild(c.el);
-						}
-					},
-				},
-				D.cardDown + c.pose.k * step
-			);
+			ctl.to(c.el, { y: c.pose.lift.y, duration: D.cardDown, ease: easeDown }, D.cardDown + c.pose.k * step);
 		});
+		// all cards are in place: now (in one go, nothing moving, the picture looks the same) they go back behind the pocket front
+		ctl.call(function () {
+			cards
+				.slice()
+				.reverse()
+				.forEach(function (c) {
+					cardsEl.appendChild(c.el);
+				});
+			cardsTop.style.clipPath = '';
+		}, null, '>');
 	}
 
 	var closeAll = function () {
@@ -1574,6 +1574,26 @@
 				});
 			}, { threshold: 0.25 });
 			io.observe(ft);
+			// the same fairy dust rises from the footer whenever the guest scrolls down to it
+			var lastFt = 0;
+			var io2 = new IntersectionObserver(function (en) {
+				en.forEach(function (e) {
+					if (!e.isIntersecting || dust || !S.sparkle || !S.sparkle.enabled) return;
+					var now = Date.now();
+					if (now - lastFt < 9000) return;
+					lastFt = now;
+					startDust(function () {
+						var r = ft.getBoundingClientRect();
+						return { l: 0, r: window.innerWidth, t: Math.max(0, r.top) + 10, b: Math.min(window.innerHeight, r.bottom) - 10 };
+					});
+					if (!dust) return;
+					dust.setRate(26);
+					setTimeout(function () {
+						if (dust) dust.fade();
+					}, 3200);
+				});
+			}, { threshold: 0.3 });
+			io2.observe(ft);
 		} else ft.classList.add('vis');
 		window.__evShowScroll = function () {
 			if (sc) sc.classList.add('on');

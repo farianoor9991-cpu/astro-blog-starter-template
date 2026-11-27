@@ -129,7 +129,7 @@ const MAX_HOSTS: number = tpl.maxHosts || 6;
 			active: tpl.events.find(e => e.label.toLowerCase().includes('nikah'))?.id || tpl.events[0].id,
 			couple: { brideName: '', brideParents: '', groomName: '', groomParents: '' },
 			events: {},
-			hosts: { want: null, list: [{ name: '', phone: '' }] },
+			hosts: { want: null, list: [], draft: { name: '', phone: '' } },
 			links: { mode: 'one', list: [] },
 			setup: 'self',
 			guests: { on: false, one: '' },
@@ -623,14 +623,20 @@ const save = () => {};
 		};
 
 		const hostBoxes = (): string => {
-			if (!S.hosts.list.length) S.hosts.list.push({ name: '', phone: '' });
-			const rows = S.hosts.list
+			const dr = S.hosts.draft || (S.hosts.draft = { name: '', phone: '' });
+			const saved = S.hosts.list
 				.slice(0, MAX_HOSTS)
 				.map(
-					(h: D, i: number) => `<div class="host-row"><div class="f"><label>Host ${i + 1} name</label><input data-host="${i}" data-k="name" value="${esc(h.name)}" placeholder="e.g. ${esc(tpl.sampleHosts[i % tpl.sampleHosts.length].name)}" maxlength="40" autocomplete="off"></div><div class="f"><label>Phone number</label><input type="tel" inputmode="tel" data-host="${i}" data-k="phone" value="${esc(h.phone)}" placeholder="e.g. 03111234567" maxlength="16" autocomplete="off"></div>${i > 0 ? `<button type="button" class="host-rm" data-act="rmhost" data-i="${i}">Remove host</button>` : ''}</div>`
+					(h: D, i: number) =>
+						`<div class="host-saved"><div class="host-sv"><b>${i + 1}. ${esc(h.name)}</b><span>${esc(h.phone || '')}</span></div><button type="button" class="host-rm" data-act="rmhost" data-i="${i}">Remove</button></div>`
 				)
 				.join('');
-			return `<div class="host-boxes">${rows}${S.hosts.list.length < MAX_HOSTS ? '<button type="button" class="btn-s host-add" data-act="addhost">+ Add another host</button>' : ''}</div>`;
+			const n = S.hosts.list.length + 1;
+			const form =
+				S.hosts.list.length < MAX_HOSTS
+					? `<div class="host-row"><div class="f"><label>Host ${n} name</label><input data-hd="name" value="${esc(dr.name)}" placeholder="e.g. ${esc(tpl.sampleHosts[(n - 1) % tpl.sampleHosts.length].name)}" maxlength="40" autocomplete="off"></div><div class="f"><label>Phone number</label><input type="tel" inputmode="tel" data-hd="phone" value="${esc(dr.phone)}" placeholder="e.g. 03111234567" maxlength="16" autocomplete="off"></div><div class="err" data-err="host"></div><button type="button" class="btn-g host-addbtn" data-act="hostsave">Add</button></div>`
+					: `<p class="hint">You have added the most hosts you can (${MAX_HOSTS}).</p>`;
+			return `<div class="host-boxes">${saved}${form}</div>`;
 		};
 
 		const body3 = (): string => {
@@ -654,11 +660,11 @@ const save = () => {};
 			}
 			const g = S.guests.on;
 			const opt1 = `<div class="opt${g ? '' : ' on'}" role="checkbox" aria-checked="${!g}" tabindex="0" data-act="ltoggle"><span class="cb"></span><span class="ot">${optHead('Invitation links', fmtRs(P_BASE))}${
-				g ? '' : `<small>\u2714\uFE0F One link for everyone with all cards<br>\u2714\uFE0F Separate links for different guest groups</small>`
+				g ? '' : `<small>\u2714\uFE0F One link with all your chosen event cards<br>\u2714\uFE0F Separate links for different guest groups</small>`
 			}</span></div>`;
 			const opt2 = `<div class="opt${g ? ' on' : ''}" role="checkbox" aria-checked="${g}" tabindex="0" data-act="gtoggle"><span class="cb"></span><span class="ot">${optHead('Invitation links + Guest name greeting cards', fmtRs(P_FULL))}${
 				g
-					? `<small>\u2714\uFE0F One link for everyone with all cards<br>\u2714\uFE0F Separate links for different guest groups<br>\u2714\uFE0F A personalized greeting card for each guest you list (unlimited guests). Their first card greets them by name: "Dear Shaheer Aslam! You are specially invited to..."</small>`
+					? `<small>\u2714\uFE0F One link with all your chosen event cards<br>\u2714\uFE0F Separate links for different guest groups<br>\u2714\uFE0F A personalized greeting card for each guest you list (unlimited guests). Their first card greets them by name: "Dear Shaheer Aslam! You are specially invited to..."</small>`
 					: ''
 			}</span></div>`;
 			return `
@@ -677,6 +683,7 @@ const save = () => {};
 			(window as any).IHCombos.createLinks({
 				mount: m,
 				showHeading: false,
+				readyNote: 'You will get it after payment',
 				getEvents: comboEvents,
 				getLinks: () => S.links.list.filter((l: D) => l.cards.length).map((l: D) => ({ id: l.id, cards: l.cards.slice() })),
 				add: (cards: string[]) => { const id = uid(); S.links.list.push({ id, label: '', cards: cards.slice() }); lkDone(); return id; },
@@ -813,7 +820,7 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 			}
 			if (n === 3) {
 				if (S.hosts.want !== true && S.hosts.want !== false) er.push('Please choose Yes or No.');
-				else if (S.hosts.want && !S.hosts.list.some((h: D) => String(h.name).trim())) er.push('Please write at least one host name, or choose No.');
+				else if (S.hosts.want && !S.hosts.list.some((h: D) => String(h.name).trim())) er.push(S.hosts.draft && String(S.hosts.draft.name).trim() ? 'Please press "Add" to save this host.' : 'Please add at least one host, or choose No.');
 			}
 			return er;
 		};
@@ -1038,10 +1045,8 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 					if (tag) tag.textContent = d ? DAYS[d.getDay()] : '';
 				}
 				renderTabs();
-			} else if (ds.host !== undefined) {
-				S.hosts.list[Number(ds.host)][ds.k as string] = t.value;
-				S.active = 'hosts';
-				renderTabs();
+			} else if (ds.hd !== undefined) {
+				(S.hosts.draft || (S.hosts.draft = { name: '', phone: '' }))[ds.hd as string] = t.value;
 			} else if (ds.gst) {
 				const applyG = (v: string) => {
 					if (ds.gst === 'one') S.guests.one = v;
@@ -1194,14 +1199,26 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 					}
 					break;
 				}
-				case 'addhost':
-					if (S.hosts.list.length < MAX_HOSTS) S.hosts.list.push({ name: '', phone: '' });
+				case 'hostsave': {
+					const dr = S.hosts.draft || (S.hosts.draft = { name: '', phone: '' });
+					const nm = String(dr.name).trim();
+					const ph = String(dr.phone).trim();
+					const eb = $('[data-err="host"]');
+					if (!nm || ph.replace(/\D/g, '').length < 7) {
+						if (eb) eb.textContent = !nm ? 'Please write the host name.' : 'Please write the phone number.';
+						break;
+					}
+					if (S.hosts.list.length < MAX_HOSTS) S.hosts.list.push({ name: nm, phone: ph });
+					S.hosts.draft = { name: '', phone: '' };
+					S.active = 'hosts';
 					refreshBody(3);
+					updateSummaries();
 					save();
+					scheduleDraw();
 					break;
+				}
 				case 'rmhost':
 					S.hosts.list.splice(Number(d.i), 1);
-					if (!S.hosts.list.length) S.hosts.list.push({ name: '', phone: '' });
 					refreshBody(3);
 					updateSummaries();
 					save();
@@ -1475,9 +1492,8 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 		margin-top: 1px;
 		font-size: 12px;
 		color: #5a5a5a;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
+		white-space: normal;
+		line-height: 1.4;
 	}
 	.cz .chev {
 		flex-shrink: 0;
@@ -2009,4 +2025,9 @@ if (n === 3 && S.hosts.want) S.active = 'hosts';
 	.cz .cz-lb-n.n { right: 10px; }
 	.cz .cz-lb.one .cz-lb-n { display: none; }
 	.cz .cz-lb-c { position: absolute; bottom: 14px; left: 0; right: 0; text-align: center; color: #fff; font: 600 14px 'Nunito', sans-serif; }
+
+	.cz .host-saved { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: #fbf3e4; border: 1px solid #ead9b9; border-radius: 14px; padding: 10px 14px; }
+	.cz .host-sv { display: flex; flex-direction: column; min-width: 0; font: 500 13px 'Nunito', sans-serif; color: #5a5a5a; }
+	.cz .host-sv b { color: #1a1a1a; font-weight: 700; overflow-wrap: anywhere; }
+	.cz .host-addbtn { align-self: stretch; margin: 6px 0 4px; padding: 11px 16px; text-align: center; }
 </style>

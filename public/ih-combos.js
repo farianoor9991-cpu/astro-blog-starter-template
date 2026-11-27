@@ -321,7 +321,7 @@
 					'<div class="lk-fld"><input class="lk-q' + (!it.dd && it.cards.length ? ' lk-set' : '') + '" type="text" data-lkq="' + it.k + '" placeholder="' + esc(ph(n)) + '" autocomplete="off" value="' + esc(!it.dd && it.cards.length ? summary(it) : it.q) + '" aria-label="Choose events for Invitation Link ' + n + '"><button type="button" class="lk-car" data-lkcar="' + it.k + '" aria-label="Show events">' + (it.dd ? '&#9652;' : '&#9662;') + '</button></div>' +
 					(it.dd ? '<div class="lk-dd" data-lkdd="' + it.k + '">' + ddRows(it) + '</div><button type="button" class="lk-done" data-lkdone="' + it.k + '">Done</button>' : '') +
 					(it.dd ? '<div class="lk-pills" data-lkpl="' + it.k + '">' + pills(it) + '</div>' : '') +
-					(!it.dd && it.id && it.cards.length ? '<p class="lk-ok">&#9989; Invitation Link ' + n + ' is ready: ' + esc(summary(it)) + '</p>' : '') +
+					(!it.dd && it.id && it.cards.length ? '<p class="lk-ok">&#9989; Invitation link ' + n + ' is ready' + (o.readyNote ? '. ' + esc(o.readyNote) : '') + '</p>' : '') +
 					'<p class="lk-err" data-lker="' + it.k + '"' + (it.err ? '' : ' hidden') + '>' + esc(it.err) + '</p>' +
 					(it.id || ix > 0 ? '<button type="button" class="lk-rm" data-lkdel="' + it.k + '">Remove Link ' + n + '</button>' : '') + '</div>';
 			});

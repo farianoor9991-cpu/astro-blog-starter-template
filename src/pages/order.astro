@@ -541,8 +541,8 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 		function entryRow() {
 			var lid = newLink && O.links.some(function (l) { return l.id === newLink; }) ? newLink : (gfilter && gfilter !== '__all' ? gfilter : O.links[0].id);
 			newLink = lid;
-			return '<div class="gr-row gr-new"><div class="gr-c gr-n"><input class="ge-in" id="od-newg" data-agt="' + esc(lid) + '" maxlength="80" autocomplete="off" placeholder="' + (isMob() ? 'Hamza Chachu' : 'e.g, Hamza Chachu 0333122678') + '" aria-label="New guest: name"></div>' +
-				'<div class="gr-c gr-ph" data-l="Phone number"><input class="ge-in" id="od-newph" type="tel" inputmode="tel" maxlength="16" autocomplete="off" placeholder="0333122678" aria-label="New guest: phone number"></div>' +
+			return '<div class="gr-row gr-new"><div class="gr-c gr-n" data-l="Guest name">' + (isMob() ? '<textarea class="ge-in ge-ta" id="od-newg" rows="1" data-agt="' + esc(lid) + '" maxlength="80" autocomplete="off" placeholder="e.g, Hamza Chachu" aria-label="New guest: name"></textarea>' : '<input class="ge-in" id="od-newg" data-agt="' + esc(lid) + '" maxlength="80" autocomplete="off" placeholder="e.g, Hamza Chachu 0333122678" aria-label="New guest: name">') + '</div>' +
+				'<div class="gr-c gr-ph" data-l="Phone number"><input class="ge-in" id="od-newph" type="tel" inputmode="tel" maxlength="16" autocomplete="off" placeholder="e.g, 03331122334" aria-label="New guest: phone number"></div>' +
 				'<div class="gr-c gr-g" data-l="Group"><select id="od-newlink" aria-label="Group for the new guest">' + O.links.map(function (l) { return '<option value="' + esc(l.id) + '"' + (l.id === lid ? ' selected' : '') + '>' + esc(comboTitle(l)) + '</option>'; }).join('') + '</select></div>' +
 				'<div class="gr-c gr-s" data-l="Seats Details" id="od-newseat">' + newSeatInner() + '</div><div class="gr-c gr-a"><button type="button" class="vd" data-newadd="1">Add</button></div></div>';
 		}
@@ -777,16 +777,21 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			O.events.forEach(function (e, i) { h += evBlock(e, i); });
 			return '<div class="ev-grid"><div class="ev-main"><section class="od-sec">' + h + '</section></div><aside class="ev-aside"><section class="od-sec">' + add + '</section></aside></div>';
 		}
+		var hostDraft = { name: '', phone: '' };
 		function hostsBody() {
 			if (!hostsOn()) return '<p class="hint">The Reception Hosts card is not in your invitation.</p><button type="button" class="btn-s" data-htoggle="1">Add the Reception Hosts card</button>';
 			var h = '<p class="hint">The Reception Hosts card is part of your invitation. Add the hosts\' names and phone numbers, or remove the card.</p>';
-			if (!O.hosts.length) O.hosts.push({ name: '', phone: '' });
+			O.hosts = O.hosts.filter(function (x) { return String(x.name || '').trim(); });
 			O.hosts.forEach(function (x, i) {
 				h += '<div class="od-ev"><div class="f"><label>Name</label><input data-h="' + i + '" data-k="name" value="' + esc(x.name) + '" maxlength="60"></div>';
 				h += '<div class="f"><label>Phone</label><input data-h="' + i + '" data-k="phone" value="' + esc(x.phone) + '" maxlength="25"></div>';
 				h += '<button type="button" class="rm" data-hrm="' + i + '">Remove host</button></div>';
 			});
-			if (O.hosts.length < 6) h += '<button type="button" class="btn-s" id="od-addh">+ Add another host</button>';
+			if (O.hosts.length < 6) {
+				h += '<div class="od-ev hs-new"><div class="f"><label>Host ' + (O.hosts.length + 1) + ' name</label><input data-hd="name" value="' + esc(hostDraft.name) + '" maxlength="60" placeholder="e.g, Hamza Chachu" autocomplete="off"></div>';
+				h += '<div class="f"><label>Phone number</label><input type="tel" inputmode="tel" data-hd="phone" value="' + esc(hostDraft.phone) + '" maxlength="25" placeholder="e.g, 03331122334" autocomplete="off"></div>';
+				h += '<div class="err" id="od-herr" style="color:#b3261e;font-size:13px"></div><button type="button" class="btn-p hs-add" id="od-addh">Add</button></div>';
+			} else h += '<p class="hint">You have added the most hosts you can (6).</p>';
 			h += '<div class="od-addev"><button type="button" class="rm" data-htoggle="0">Remove the Reception Hosts card</button></div>';
 			return h;
 		}
@@ -975,7 +980,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 				if (window.__ihCards) return res();
 				window.__ihCardsReady = res;
 				var sc = document.createElement('script');
-				sc.src = '/envelope-engine.js?v=36';
+				sc.src = '/envelope-engine.js?v=37';
 				sc.onerror = rej;
 				document.head.appendChild(sc);
 			});
@@ -1217,6 +1222,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			if (nsc) nsc.innerHTML = newSeatInner();
 			inp.value = '';
 			if (phb) phb.value = '';
+			inp.style.height = '';
 			pv.typed = '';
 			pv.c.reset = true;
 			setDirty(true);
@@ -1365,7 +1371,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			pvRefresh();
 		}
 		function fitTA() { document.querySelectorAll('textarea.wrapin').forEach(function (t) { if (!t.value) { t.style.height = ''; return; } t.style.height = '0px'; t.style.height = Math.max(44, t.scrollHeight) + 'px'; }); }
-		root.addEventListener('input', function (ev) { if (ev.target && ev.target.matches && ev.target.matches('textarea.wrapin')) fitTA(); });
+		root.addEventListener('input', function (ev) { if (ev.target && ev.target.matches && ev.target.matches('textarea.wrapin')) fitTA(); if (ev.target && ev.target.id === 'od-newg' && ev.target.tagName === 'TEXTAREA') { ev.target.style.height = '0px'; ev.target.style.height = Math.max(44, ev.target.scrollHeight) + 'px'; } });
 		root.addEventListener('click', function () { setTimeout(fitTA, 0); setTimeout(fitTA, 350); });
 		window.addEventListener('resize', fitTA);
 		root.addEventListener('keydown', function (ev) {
@@ -1436,6 +1442,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 				var tg = evc.querySelector('[data-evday]');
 				if (tg) tg.textContent = ev0.date ? evDayName(ev0) : (gv('day') && gv('month') && gv('year') ? 'Please check the date' : '');
 			} else if (d.e !== undefined) O.events[Number(d.e)][d.k] = t.value;
+			else if (d.hd !== undefined) hostDraft[d.hd] = t.value;
 			else if (d.h !== undefined) O.hosts[Number(d.h)][d.k] = t.value;
 			else if (d.gname !== undefined) {
 				O.guests[Number(d.gname)].name = t.value;
@@ -1691,7 +1698,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 			}
 			if (d.htoggle !== undefined) {
 				O.hostsOn = d.htoggle === '1';
-				if (O.hostsOn && !O.hosts.length) O.hosts.push({ name: '', phone: '' });
+
 								setDirty(true);
 				render();
 				return;
@@ -1840,7 +1847,13 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 				setDirty(true);
 				render();
 			} else if (b.id === 'od-addh') {
-				O.hosts.push({ name: '', phone: '' });
+				if (!editing) { askPin(); return; }
+				var hn = String(hostDraft.name).trim();
+				var hp = String(hostDraft.phone).trim();
+				var he = document.getElementById('od-herr');
+				if (!hn || hp.replace(/\D/g, '').length < 7) { if (he) he.textContent = !hn ? 'Please write the host name.' : 'Please write the phone number.'; return; }
+				O.hosts.push({ name: hn, phone: hp });
+				hostDraft = { name: '', phone: '' };
 				setDirty(true);
 				render();
 			} else if (b.id === 'od-gnew') {
@@ -2577,7 +2590,7 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 		.ag-main .gr-new .gr-c { width: 100%; max-width: none; }
 		.ag-main .gr-new .gr-c::before { content: attr(data-l); display: block; font: 700 12px 'Nunito', sans-serif; color: #8a7a62; margin-bottom: 4px; }
 		.ag-main .gr-new .gr-g select { max-width: none; }
-		.ag-main .gr-new .vd { width: 100%; text-align: center; min-height: 46px; border-radius: 12px; font-size: 15px; }
+		.ag-main .gr-new .vd { width: 100%; display: flex; align-items: center; justify-content: center; text-align: center; min-height: 46px; border-radius: 12px; font-size: 15px; }
 	}
 
 	@media (max-width: 999px) {
@@ -2606,15 +2619,31 @@ const previewConfig = { design: hayaEnvelope, template: haya, invitation: { coup
 	.gr-head span:last-child { text-align: center; justify-self: stretch; white-space: nowrap; }
 	.gr-row .gr-a { justify-self: stretch; text-align: center; display: flex; justify-content: center; }
 	@media (max-width: 1000px) {
-		.ag-main .gr-new { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 10px 10px; padding: 14px; }
+		.ag-main .gr-new { display: flex; flex-direction: column; align-items: stretch; gap: 14px; padding: 16px; }
+		.ag-main .gr-new .gr-c { width: 100%; max-width: none; min-width: 0; }
 		.ag-main .gr-new .gr-ph { display: block; }
-		.ag-main .gr-new .gr-n, .ag-main .gr-new .gr-ph, .ag-main .gr-new .gr-g, .ag-main .gr-new .gr-s { min-width: 0; }
-		.ag-main .gr-new .gr-c::before { margin-bottom: 3px; }
-		.ag-main .gr-new .gr-n::before { content: 'Guest name'; display: block; font: 700 12px 'Nunito', sans-serif; color: #8a7a62; margin-bottom: 3px; }
-		.ag-main .gr-new .ge-in { font-size: 14px; padding: 9px 10px; }
-		.ag-main .gr-new .gr-g select { width: 100%; font-size: 14px; }
-		.ag-main .gr-new .gr-n { grid-column: auto; }
-		.ag-main .gr-new .gr-a { grid-column: 1 / -1; display: flex; justify-content: center; }
-		.ag-main .gr-new .vd { width: 100%; text-align: center; display: flex; align-items: center; justify-content: center; min-height: 44px; }
+		.ag-main .gr-new .gr-c::before { content: attr(data-l); display: block; font: 700 12.5px 'Nunito', sans-serif; color: #8a7a62; margin-bottom: 5px; }
+		.ag-main .gr-new .ge-in { width: 100%; box-sizing: border-box; font-size: 14px; padding: 11px 12px; border: 1px solid #E4D2B2; border-radius: 12px; background: #fff; }
+		.ag-main .gr-new textarea.ge-in { display: block; min-height: 44px; height: 44px; resize: none; overflow: hidden; line-height: 20px; padding: 11px 12px; }
+		.ag-main .gr-new .gr-g select { width: 100%; max-width: none; font-size: 14px; }
+		.ag-main .gr-new .gr-a { display: flex; justify-content: center; }
+		.ag-main .gr-new .gr-a::before { display: none; }
+		.ag-main .gr-new .vd { width: 100%; display: flex; align-items: center; justify-content: center; text-align: center; min-height: 46px; border-radius: 12px; font-size: 15px; }
+	}
+
+	.hs-new .hs-add { width: 100%; margin-top: 8px; text-align: center; justify-content: center; }
+
+	/* ===== round 12n ===== */
+	.gr-dt .gr-dr { align-self: stretch; display: flex; flex-direction: column; justify-content: center; align-items: center; padding-top: 14px; padding-bottom: 14px; }
+	.gr-dt .gr-dr .gr-lab { text-align: center; margin: 0 0 14px; }
+	.gr-dt .gr-dr .gr-qa-stack { margin: 0 auto; }
+	@media (max-width: 999px) {
+		.gm-sh { gap: 12px; }
+		.gm-card.gm-col { gap: 10px; padding: 12px 14px; }
+		.gm-msg { max-height: 150px; min-height: 104px; padding: 10px 12px; }
+		.gm-qcard { padding: 14px 10px 16px; gap: 12px; }
+		.gm-qcard .gm-lab { padding: 0 4px; }
+		.gm-q3 { padding: 2px 0 4px; }
+		.gm-open { margin-top: 0; min-height: 52px; }
 	}
 </style>
