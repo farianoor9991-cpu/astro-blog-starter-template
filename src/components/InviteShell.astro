@@ -24,7 +24,7 @@ const config = {
 			rel="stylesheet"
 		/>
 		<link rel="stylesheet" href="/envelope.css?v=26" />
-		<link rel="stylesheet" href="/ih-footer.css?v=6" />
+		<link rel="stylesheet" href="/ih-footer.css?v=8" />
 		<link rel="preload" as="image" href="/haya-tray-m.webp" media="(max-width: 699px), (orientation: portrait)" />
 		<link rel="preload" as="image" href="/haya-tray.webp" media="(min-width: 700px) and (orientation: landscape)" />
 		<link rel="preload" as="image" href="/haya3-closed.webp?v=2" />
@@ -74,9 +74,9 @@ const config = {
 						cfg.invitation = { couple: d.couple, events: d.events, hosts: d.hosts || [], guest: d.guest || '', musicSrc: d.musicSrc || '', seats: d.seats || 0, seatRows: d.seatRows || [], footer: d.footer || { mode: 'couple', family: '' } };
 						el.textContent = JSON.stringify(cfg);
 						document.title = d.couple.groomName.split(' ')[0] + ' & ' + d.couple.brideName.split(' ')[0] + ' | Invitation';
-						load('/ih-footer.js?v=5', function () {
+						load('/ih-footer.js?v=6', function () {
 							load('/gsap.min.js', function () {
-								load('/envelope-engine.js?v=37');
+								load('/envelope-engine.js?v=38');
 							});
 						});
 					})

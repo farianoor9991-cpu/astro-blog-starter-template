@@ -1,32 +1,29 @@
-/* InviteHeaven invitation footer: her own footer pictures (blank) with the names and seat lines written on top.
-   Everything is scoped to .ihf2 so it can sit inside any page. Text positions are set by ih-footer.js */
-.ihf2 { width: 100%; background: #071c0e; display: flex; justify-content: center; }
+/* InviteHeaven invitation footer: her own blank footer picture with the names, the parchment scroll and the seat lines on top.
+   Everything is scoped to .ihf2 so it can sit inside any page. Sizes and positions are set by ih-footer.js */
+.ihf2 { width: 100%; background: transparent; display: flex; justify-content: center; }
 .ihf2 *, .ihf2 *::before, .ihf2 *::after { box-sizing: border-box; }
 .ihf2-in {
 	position: relative;
 	width: 100%;
 	max-width: 640px;
 	aspect-ratio: 1080 / 1500;
-	background: #071c0e url('/haya-footer-family-m.jpg') center / 100% 100% no-repeat;
+	background: transparent url('/haya-footer-bg-m.webp') center / 100% 100% no-repeat;
 	overflow: hidden;
 }
-.ihf2-in.v-seats { background-image: url('/haya-footer-seats-m.jpg'); }
 @media (min-width: 700px) and (orientation: landscape) {
-	.ihf2-in { max-width: none; width: 100%; /* full width: her gold border sits on the screen edges */ aspect-ratio: 1920 / 1080; background-image: url('/haya-footer-family-d.jpg'); }
-	.ihf2-in.v-seats { background-image: url('/haya-footer-seats-d.jpg'); }
+	/* full width: her gold border sits on the screen edges; one screen tall at most, so the bottom border can be seen */
+	.ihf2-in { max-width: none; width: 100%; aspect-ratio: auto; height: 56.25vw; max-height: 100vh; max-height: 100svh; background-image: url('/haya-footer-bg-d.webp'); }
 }
-.ihf2-in.f-m { max-width: 640px; width: 100%; aspect-ratio: 1080 / 1500; background-image: url('/haya-footer-family-m.jpg'); }
-.ihf2-in.f-m.v-seats { background-image: url('/haya-footer-seats-m.jpg'); }
-.ihf2-in.f-d { max-width: none; width: 100%; aspect-ratio: 1920 / 1080; background-image: url('/haya-footer-family-d.jpg'); }
-.ihf2-in.f-d.v-seats { background-image: url('/haya-footer-seats-d.jpg'); }
-/* all the text: Berkshire Swash with one gold gradient (180deg) */
+.ihf2-in.f-m { max-width: 640px; width: 100%; height: auto; max-height: none; aspect-ratio: 1080 / 1500; background-image: url('/haya-footer-bg-m.webp'); }
+.ihf2-in.f-d { max-width: none; width: 100%; height: auto; max-height: none; aspect-ratio: 1920 / 1080; background-image: url('/haya-footer-bg-d.webp'); }
+/* names and the "Your presence" line: Berkshire Swash with one gold gradient (180deg) */
 .ihf2-t {
 	position: absolute;
 	left: 50%;
 	top: 50%;
 	transform: translate(-50%, -50%);
 	margin: 0;
-	padding: 0.06em 0.04em;
+	padding: 0.08em 0.05em;
 	width: max-content;
 	max-width: none;
 	white-space: nowrap;
@@ -42,6 +39,29 @@
 	-webkit-text-fill-color: transparent;
 	border: 0;
 }
+.ihf2-pres { white-space: normal; max-width: 96%; }
+/* the parchment: left roll, right roll and the paper between them; it is closed until the footer scrolls into view */
+.ihf2-scr { position: absolute; transform: translate(-50%, -50%); font-size: 12px; }
+.ihf2-scr img { position: absolute; top: 0; height: 100%; display: block; user-select: none; -webkit-user-drag: none; pointer-events: none; }
+.ihf2-scr .sc-mid { left: 0; width: 100%; clip-path: inset(0 0 0 0); }
+.ihf2-scr .sc-l { left: 0; width: 17.708%; z-index: 3; }
+.ihf2-scr .sc-r { left: 84.245%; width: 15.755%; z-index: 3; }
+.ihf2-scr .sc-txt { position: absolute; inset: 0; z-index: 2; clip-path: inset(0 0 0 0); }
+.ihf2-scr .sc-txt p {
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%);
+	margin: 0;
+	width: max-content;
+	white-space: nowrap;
+	text-align: center;
+	font-family: 'Berkshire Swash', serif;
+	font-weight: 400;
+	line-height: 1.3;
+}
+.ihf2-res { color: #022401; }
+.ihf2-l { color: #551f03; }
 .ihf2-brand {
 	position: absolute;
 	left: 50%;
@@ -59,10 +79,37 @@
 .ihf2-bn { font: 700 1em / 1.1 'Playfair Display', serif; color: #fbf6ea; }
 .ihf2-bn b { font-weight: 700; color: #d4a276; }
 .ihf2-hook { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
-/* on the invitation page: the text fades in when the footer scrolls into view */
-.ev-foot { position: relative; z-index: 3; background: #071c0e; }
+/* on the invitation page: the writing fades in and the scroll opens when the footer scrolls into view */
+.ev-foot { position: relative; z-index: 3; background: transparent; isolation: isolate; overflow: hidden; }
+/* the same silk as the envelope page, mirrored, so the footer starts exactly where the silk ends */
+.ev-foot::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 100vh; height: max(100svh, 620px); z-index: -1; background: var(--ev-bg) var(--ev-bgimg, none) center / cover no-repeat; transform: scaleY(-1); }
+@media (min-width: 700px) and (orientation: landscape) { .ev-foot::before { background-image: var(--ev-bgimg-w, var(--ev-bgimg, none)); } }
+.ft-pv { background: #0b1f14; }
 .ev-foot .ihf2-t, .ev-foot .ihf2-brand { opacity: 0; transition: opacity 1.1s ease; }
 .ev-foot.vis .ihf2-t, .ev-foot.vis .ihf2-brand { opacity: 1; }
+.ev-foot .ihf2-scr .sc-mid, .ev-foot .ihf2-scr .sc-txt { clip-path: inset(0 43.5% 0 43%); }
+.ev-foot .ihf2-scr .sc-l { transform: translateX(192.6%); }
+.ev-foot .ihf2-scr .sc-r { transform: translateX(-228.9%); }
+.ev-foot .ihf2-scr .sc-txt p { opacity: 0; will-change: clip-path, opacity, filter; }
+.ev-foot.vis .ihf2-scr .sc-mid, .ev-foot.vis .ihf2-scr .sc-txt { clip-path: inset(0 0 0 0); transition: clip-path 2.1s cubic-bezier(0.62, 0, 0.2, 1) 0.5s; }
+.ev-foot.vis .ihf2-scr .sc-l, .ev-foot.vis .ihf2-scr .sc-r { transform: none; transition: transform 2.1s cubic-bezier(0.62, 0, 0.2, 1) 0.5s; }
+.ev-foot.vis .ihf2-scr .sc-txt p { opacity: 1; animation: ihfInk 1.5s cubic-bezier(0.3, 0.6, 0.2, 1) both; animation-delay: calc(2.0s + var(--i, 0) * 0.42s); }
+.ev-foot.vis .ihf2-scr .sc-txt p:nth-child(1) { --i: 0; }
+.ev-foot.vis .ihf2-scr .sc-txt p:nth-child(2) { --i: 1; }
+.ev-foot.vis .ihf2-scr .sc-txt p:nth-child(3) { --i: 2; }
+.ev-foot.vis .ihf2-scr .sc-txt p:nth-child(4) { --i: 3; }
+.ev-foot.vis .ihf2-scr .sc-txt p:nth-child(5) { --i: 4; }
+.ev-foot.vis .ihf2-scr .sc-txt p:nth-child(n+6) { --i: 5; }
+/* ink-writing reveal: the line is drawn from left to right, rising and sharpening */
+@keyframes ihfInk {
+	0% { opacity: 0; clip-path: inset(-20% 100% -20% 0); filter: blur(3px); margin-top: 6px; }
+	35% { opacity: 1; }
+	100% { opacity: 1; clip-path: inset(-20% -3% -20% -3%); filter: blur(0); margin-top: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+	.ev-foot.vis .ihf2-scr .sc-mid, .ev-foot.vis .ihf2-scr .sc-txt, .ev-foot.vis .ihf2-scr .sc-l, .ev-foot.vis .ihf2-scr .sc-r { transition-duration: 0.01s; transition-delay: 0s; }
+	.ev-foot.vis .ihf2-scr .sc-txt p { animation: none; opacity: 1; }
+}
 /* the small hint on the first screen: there is more below */
 .ev-scroll {
 	position: absolute;
@@ -91,9 +138,3 @@
 .ev-scroll svg { width: 18px; height: 12px; animation: ev-nudge 1.7s ease-in-out infinite; }
 @keyframes ev-nudge { 0%, 100% { transform: translateY(0); opacity: 0.6; } 50% { transform: translateY(4px); opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .ev-scroll svg { animation: none; } }
-
-/* round 12o: on a laptop the footer is exactly one screen tall (like the envelope page), so its bottom border is visible
-   as soon as the footer is fully scrolled to. The picture is stretched to fill that height. */
-@media (min-width: 700px) and (orientation: landscape) {
-	.ev-foot .ihf2-in:not(.f-d):not(.f-m) { aspect-ratio: auto; height: 100vh; height: 100svh; background-size: 100% 100%; }
-}

@@ -176,7 +176,7 @@
 			'<div class="hw2-card"><h4>Invitation Link 2</h4><span class="hw2-tag green">&#9989;2 events selected</span>' + tiles(['Baraat', 'Walima']) + '<div class="hw2-url"><b>Link 2:</b> ali-weds-sara/group=baraat&amp;walima/</div></div>' +
 			'<div class="hw2-arrow">' + ARROW + '</div><div class="hw2-arrow">' + ARROW + '</div>' +
 			'<p class="hw2-send">Send <u>Link 1</u> to 50 guests invited to all events.</p>' +
-			'<p class="hw2-send">Send <u>Link 2</u> to 20 guests invited to ONLY Baraat &amp; Walima.</p>' +
+			'<p class="hw2-send">Send <u>Link 2</u> to 20 guests invited ONLY to Baraat &amp; Walima.</p>' +
 			'</div>' +
 			'<ul class="hw2-list"><li>&#9989; Personal dashboard provided</li><li>&#9989; Edit anything anytime</li><li>&#9989; Create as many invitation links as you like</li></ul>' +
 			'<div style="text-align:center;margin-top:18px"><button type="button" class="cm-ok">Got it</button></div></div>';

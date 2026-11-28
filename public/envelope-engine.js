@@ -1582,17 +1582,25 @@
 					var now = Date.now();
 					if (now - lastFt < 9000) return;
 					lastFt = now;
+					// fairy dust rises around the parchment (most of it) and across the rest of the footer while the scroll opens
 					startDust(function () {
 						var r = ft.getBoundingClientRect();
-						return { l: 0, r: window.innerWidth, t: Math.max(0, r.top) + 10, b: Math.min(window.innerHeight, r.bottom) - 10 };
+						var pr = ft.querySelector('.ihf2-scr');
+						var t = Math.max(0, r.top) + 10, bt = Math.min(window.innerHeight, r.bottom) - 10;
+						if (pr && Math.random() < 0.7) {
+							var q = pr.getBoundingClientRect();
+							var ex = q.width * 0.12, ey = q.height * 0.3;
+							return { l: q.left - ex, r: q.right + ex, t: Math.max(t, q.top - ey), b: Math.min(bt, q.bottom + ey) };
+						}
+						return { l: 0, r: window.innerWidth, t: t, b: bt };
 					});
 					if (!dust) return;
-					dust.setRate(26);
+					dust.setRate(46);
 					setTimeout(function () {
 						if (dust) dust.fade();
-					}, 3200);
+					}, 4200);
 				});
-			}, { threshold: 0.3 });
+			}, { threshold: 0.25 });
 			io2.observe(ft);
 		} else ft.classList.add('vis');
 		window.__evShowScroll = function () {
